@@ -6,7 +6,7 @@ import java.util.Map;
 
 @Data //lombok annotation for generating boilerplate (getters, setters, tostring, etc)
 @Document(collection = "enums") //specify collection
-public class Fighter {
+public class EnumDocument {
 
     //this is the 'hashed' ID that mongodb uses to locate the collection within the database
     @Id

@@ -1,25 +1,29 @@
 package org.tekkenstats;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.tekkenstats.interfaces.FighterRepository;
+import org.tekkenstats.interfaces.EnumRepository;
+
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class FighterService
 {
-    private final FighterRepository fighterRepository;
+    private final EnumRepository enumRepository;
 
     //constructor injection
     @Autowired
-    public FighterService(FighterRepository fighterRepository)
+    public FighterService(EnumRepository enumRepository)
     {
-        this.fighterRepository = fighterRepository;
+        this.enumRepository = enumRepository;
     }
 
-    public List<Fighter> getAllFighters()
-    {
-        return fighterRepository.findAll();
+    public Map<String, String> getAllFighters() {
+        EnumDocument fightersDoc = enumRepository.findFightersDocument();
+
+        return fightersDoc != null ? fightersDoc.getFighters() : Collections.emptyMap();
     }
 }
