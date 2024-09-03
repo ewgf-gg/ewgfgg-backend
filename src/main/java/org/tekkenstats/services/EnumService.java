@@ -1,6 +1,7 @@
-package org.tekkenstats;
+package org.tekkenstats.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.tekkenstats.mdbDocuments.EnumDocument;
 import org.tekkenstats.interfaces.EnumRepository;
 
 import org.springframework.stereotype.Service;
@@ -9,13 +10,13 @@ import java.util.Collections;
 import java.util.Map;
 
 @Service
-public class FighterService
+public class EnumService
 {
     private final EnumRepository enumRepository;
 
     //constructor injection
     @Autowired
-    public FighterService(EnumRepository enumRepository)
+    public EnumService(EnumRepository enumRepository)
     {
         this.enumRepository = enumRepository;
     }

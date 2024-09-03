@@ -17,6 +17,7 @@ public class Player {
     private long tekkenPower;
     private int rating; //glicko2 rating
     private int danRank;
+    private float winRate;
 
     private List<String> playerNames;
     private List<Battle> Last10Battles;

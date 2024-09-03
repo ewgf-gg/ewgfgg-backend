@@ -1,4 +1,4 @@
-package org.tekkenstats;
+package org.tekkenstats.mdbDocuments;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

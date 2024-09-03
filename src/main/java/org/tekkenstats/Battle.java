@@ -2,6 +2,7 @@ package org.tekkenstats;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Document(collection = "replay-data")
 @Data
@@ -13,24 +14,43 @@ public class Battle {
     private int battleType;
     private int gameVersion;
 
-    private int player1CharacterID; //ID for playable character
+    @JsonProperty("p1_chara_id")
+    private int player1CharacterID; // ID for playable character
+    @JsonProperty("p1_name")
     private String player1Name;
+    @JsonProperty("p1_polaris_id")
     private String player1PolarisID;
+    @JsonProperty("p1_power")
     private long player1TekkenPower;
+    @JsonProperty("p1_rank")
     private int player1DanRank;
-    private int player1RatingBefore;
-    private int player1RatingChange;
+    @JsonProperty("p1_rating_before")
+    private Integer player1RatingBefore; // it is possible for this field to be null, so wrapper class is used instead
+    @JsonProperty("p1_rating_change")
+    private Integer player1RatingChange; //it is possible for this field to be null, so wrapper class is used instead
+    @JsonProperty("p1_rounds")
     private int player1RoundsWon;
-    private String player1UserID; //this is a huge number, so i just cast it to a string instead
+    @JsonProperty("p1_user_id")
+    private String player1UserID; // this is a huge number, so I just cast it to a string instead
 
+
+    @JsonProperty("p2_chara_id")
     private int player2CharacterID;
+    @JsonProperty("p2_name")
     private String player2Name;
+    @JsonProperty("p2_polaris_id")
     private String player2PolarisID;
+    @JsonProperty("p2_power")
     private long player2TekkenPower;
+    @JsonProperty("p2_rank")
     private int player2DanRank;
-    private int player2RatingBefore;
-    private int player2RatingChange;
+    @JsonProperty("p2_rating_before")
+    private Integer player2RatingBefore;
+    @JsonProperty("p2_rating_change")
+    private Integer player2RatingChange;
+    @JsonProperty("p2_rounds")
     private int player2RoundsWon;
+    @JsonProperty("p2_user_id")
     private String player2UserID;
 
     private int stageID;
