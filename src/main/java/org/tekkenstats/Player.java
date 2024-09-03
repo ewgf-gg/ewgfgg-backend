@@ -18,6 +18,8 @@ public class Player {
     private int rating; //glicko2 rating
     private int danRank;
     private float winRate;
+    private int wins;
+    private int losses;
 
     private List<String> playerNames;
     private List<Battle> Last10Battles;

@@ -12,9 +12,9 @@ import java.util.List;
 public interface PlayerRepository extends MongoRepository<Player, String> {
 
     // Custom query to find players by name
-    @Query(value = "{ 'name': ?0 }")
     List<Player> findByName(String name);
 
-    @Query(value = "{'user_id: ?0} ")
-    PlayerDocument findPlayerByID();
+    // Corrected Query Syntax
+    @Query(value = "{ 'userId' : ?0 }")  // Use correct field name, no colon in the query key
+    PlayerDocument findPlayerByID(String userId);  // Add parameter and use appropriate return type
 }

@@ -1,6 +1,8 @@
 package org.tekkenstats.services;
 
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.tekkenstats.Battle;
 import org.tekkenstats.Player;
@@ -12,6 +14,8 @@ import java.util.Optional;
 
 @Service
 public class ReplayService {
+
+    private static final Logger logger = LogManager.getLogger(ReplayService.class);
 
     @Autowired
     private BattleRepository battleRepository;
@@ -26,6 +30,7 @@ public class ReplayService {
         Integer player1RatingBefore = battle.getPlayer1RatingBefore() != null ? battle.getPlayer1RatingBefore() : 0;
         Integer player1RatingChange = battle.getPlayer1RatingChange() != null ? battle.getPlayer1RatingChange() : 0;
 
+        logger.info("Attempting to retrieve player1 info...");
         Player player1 = getOrCreatePlayer(
                 battle.getPlayer1UserID(),
                 battle.getPlayer1Name(),
@@ -33,9 +38,6 @@ public class ReplayService {
                 battle.getPlayer1TekkenPower(),
                 battle.getPlayer1DanRank(),
                 player1RatingBefore + player1RatingChange);
-
-
-        updatePlayerWithBattle(player1, battle);
 
         // API can return null for these fields, these are safeguards
         Integer player2RatingBefore = battle.getPlayer2RatingBefore() != null ? battle.getPlayer2RatingBefore() : 0;
@@ -50,7 +52,7 @@ public class ReplayService {
                 battle.getPlayer2DanRank(),
                 player2RatingBefore + player2RatingChange);
 
-        updatePlayerWithBattle(player2, battle);
+        updatePlayerWithBattle(player1, player2, battle);
 
         // Save the battle
         battleRepository.save(battle);
@@ -60,11 +62,16 @@ public class ReplayService {
         Optional<Player> playerOptional = playerRepository.findById(userId);
         Player player;
 
+
         if (playerOptional.isPresent()) {
+            logger.info("Player information found in Database! Retrieving...");
             player = playerOptional.get();
         } else {
+            logger.info("Player information not found. Creating new Player object");
             player = new Player();
             player.setUserId(userId);
+            player.setLosses(0);
+            player.setWins(0);
         }
 
         // Update player's details with the latest information
@@ -74,19 +81,45 @@ public class ReplayService {
         player.setDanRank(danRank);
         player.setRating(rating);
 
+
         return playerRepository.save(player);
     }
 
-    private void updatePlayerWithBattle(Player player, Battle battle) {
+    private void updatePlayerWithBattle(Player player1, Player player2, Battle battle) {
         // Update player's last 10 battles list
-        List<Battle> last10Battles = player.getLast10Battles();
-        if (last10Battles.size() >= 10) {
-            last10Battles.remove(0); // Remove the oldest battle if we already have 10
+        List<Battle> last10BattlesPlayer1 = player1.getLast10Battles();
+        if (last10BattlesPlayer1.size() >= 10) {
+            last10BattlesPlayer1.remove(0); // Remove the oldest battle if we already have 10
         }
-        last10Battles.add(battle);
-        player.setLast10Battles(last10Battles);
+        last10BattlesPlayer1.add(battle);
+        player1.setLast10Battles(last10BattlesPlayer1);
 
+        List<Battle> last10BattlesPlayer2 = player2.getLast10Battles();
+        if (last10BattlesPlayer2.size() >= 10) {
+            last10BattlesPlayer2.remove(0); // Remove the oldest battle if we already have 10
+        }
+        last10BattlesPlayer2.add(battle);
+        player1.setLast10Battles(last10BattlesPlayer1);
+
+        if(battle.getWinner() == 1)
+        {
+            player1.setWins(player1.getWins()+1);
+            player2.setLosses(player2.getLosses()+1);
+        }
+        else if(battle.getWinner() == 2) //have to specify in the case of a draw
+        {
+            player2.setWins(player2.getWins()+1);
+            player1.setLosses(player1.getLosses()+1);
+        }
+
+        player1.setWinRate(player1.getWins() / (float) (player1.getWins() + player1.getLosses()));
+        player2.setWinRate(player2.getWinRate() / (float) (player2.getWins() + player2.getLosses()));
+
+
+        logger.info("Saving Player 1 Information into Database: {}", player1.getName());
         // Save the updated player information
-        playerRepository.save(player);
+        playerRepository.save(player1);
+        logger.info("Saving Player 2 Information into Database: {}", player2.getName());
+        playerRepository.save(player2);
     }
 }
