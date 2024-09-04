@@ -1,9 +1,10 @@
 package org.tekkenstats.services;
 
 import org.apache.logging.log4j.LogManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tekkenstats.Battle;
 import org.tekkenstats.Player;
 import org.tekkenstats.interfaces.BattleRepository;
@@ -11,7 +12,6 @@ import org.tekkenstats.interfaces.PlayerRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReplayService {
@@ -20,139 +20,149 @@ public class ReplayService {
 
     @Autowired
     private BattleRepository battleRepository;
-
     @Autowired
     private PlayerRepository playerRepository;
 
-    public void saveBattleData(Battle battle) {
+    @Transactional
+    public void processBattleData(Battle battle) {
 
+        if (battleRepository.findById(battle.getBattleId()).isPresent())
+        {
+            logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
+            return;
+        }
+        Player player1 = getOrCreatePlayer(battle, 1);
+        Player player2 = getOrCreatePlayer(battle, 2);
 
-        // API can return null for these fields, these are safeguards
-        Integer player1RatingBefore = battle.getPlayer1RatingBefore() != null ? battle.getPlayer1RatingBefore() : 0;
-        Integer player1RatingChange = battle.getPlayer1RatingChange() != null ? battle.getPlayer1RatingChange() : 0;
+        boolean isNewBattleForPlayer1 = isNewBattle(battle, player1);
+        boolean isNewBattleForPlayer2 = isNewBattle(battle, player2);
 
-        logger.info("Attempting to retrieve player1 info...");
-        Player player1 = getOrCreatePlayer(
-                battle.getPlayer1UserID(),
-                battle.getPlayer1Name(),
-                battle.getPlayer1PolarisID(),
-                battle.getPlayer1TekkenPower(),
-                battle.getPlayer1DanRank(),
-                player1RatingBefore + player1RatingChange);
+        updatePlayerWithBattle(player1, battle, isNewBattleForPlayer1, 1);
+        updatePlayerWithBattle(player2, battle, isNewBattleForPlayer2, 2);
 
-        // API can return null for these fields, these are safeguards
-        Integer player2RatingBefore = battle.getPlayer2RatingBefore() != null ? battle.getPlayer2RatingBefore() : 0;
-        Integer player2RatingChange = battle.getPlayer2RatingChange() != null ? battle.getPlayer2RatingChange() : 0;
-
-        // Save or update player2
-        Player player2 = getOrCreatePlayer(
-                battle.getPlayer2UserID(),
-                battle.getPlayer2Name(),
-                battle.getPlayer2PolarisID(),
-                battle.getPlayer2TekkenPower(),
-                battle.getPlayer2DanRank(),
-                player2RatingBefore + player2RatingChange);
-
-        updatePlayerWithBattle(player1, player2, battle);
-
-
-        // Save the battle
         battleRepository.save(battle);
     }
 
-    private Player getOrCreatePlayer(String userId, String name, String polarisId, long tekkenPower, int danRank, int rating) {
-        Optional<Player> playerOptional = playerRepository.findById(userId);
-        Player player;
+    private boolean isNewBattle(Battle battle, Player player) {
+        List<Battle> last10Battles = player.getLast10Battles();
+        if (last10Battles.isEmpty()) {
+            return true;  // If no battles, consider it new
+        }
+        Battle newestBattle = last10Battles.get(0);
+        return battle.getBattleAt() > newestBattle.getBattleAt();
+    }
 
+    private Player getOrCreatePlayer(Battle battle, int playerNumber) {
+        String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
+        logger.info("Attempting to retrieve player{} info...", playerNumber);
 
-        if (playerOptional.isPresent()) {
-            logger.info("Player information found in Database! Retrieving...");
-            player = playerOptional.get();
+        return playerRepository.findById(userId)
+                .map(player -> updateExistingPlayer(player, battle, playerNumber))
+                .orElseGet(() -> createNewPlayer(battle, playerNumber));
+    }
 
-            if (player.getPlayerNames() == null)
-            {
-                player.setPlayerNames(new ArrayList<>());
-            }
+    private Player updateExistingPlayer(Player player, Battle battle, int playerNumber) {
+        logger.info("Player information found in Database! Updating...");
+        addPlayerNameIfNew(player, getPlayerName(battle, playerNumber));
+        return player;
+    }
 
-            if (!player.getPlayerNames().contains(name))
-            {
-                player.getPlayerNames().add(name);
-            }
-        } else {
-            logger.info("Player information not found. Creating new Player object");
-            player = new Player();
-            player.setUserId(userId);
-            player.setRating(rating);
-            player.setLosses(0);
-            player.setWins(0);
+    private Player createNewPlayer(Battle battle, int playerNumber) {
+        logger.info("Player information not found. Creating new Player object");
+        Player player = new Player();
+        player.setUserId(getPlayerUserId(battle, playerNumber));
+        player.setLosses(0);
+        player.setWins(0);
+        player.setPlayerNames(new ArrayList<>());
+        player.setLast10Battles(new ArrayList<>());
+        updatePlayerDetails(player, battle, playerNumber);
+        return player;
+    }
+
+    private void updatePlayerWithBattle(Player player, Battle battle, boolean isNewBattle, int playerNumber) {
+        updateLast10Battles(player, battle);
+        updateWinsAndLosses(player, battle.getWinner(), playerNumber);
+        updateWinRate(player);
+
+        if (isNewBattle) {
+            updatePlayerDetails(player, battle, playerNumber);
+        }
+
+        playerRepository.save(player);
+    }
+
+    private void updatePlayerDetails(Player player, Battle battle, int playerNumber) {
+        player.setName(getPlayerName(battle, playerNumber));
+        player.setPolarisId(getPlayerPolarisId(battle, playerNumber));
+        player.setTekkenPower(getPlayerTekkenPower(battle, playerNumber));
+        player.setDanRank(getPlayerDanRank(battle, playerNumber));
+        player.setRating(calculatePlayerRating(battle, playerNumber));
+    }
+
+    private void addPlayerNameIfNew(Player player, String name) {
+        if (player.getPlayerNames() == null) {
             player.setPlayerNames(new ArrayList<>());
+        }
+        if (!player.getPlayerNames().contains(name)) {
             player.getPlayerNames().add(name);
-            player.setLast10Battles(new ArrayList<>());
-
         }
-
-        // Update player's details with the latest information
-        player.setName(name);
-        player.setPolarisId(polarisId);
-        player.setTekkenPower(tekkenPower);
-        player.setDanRank(danRank);
-        player.setRating(rating);
-
-
-        return playerRepository.save(player);
     }
 
-    private void updatePlayerWithBattle(Player player1, Player player2, Battle battle) {
-        // Update player's last 10 battles list
-        List<Battle> last10BattlesPlayer1 = player1.getLast10Battles();
-        if (last10BattlesPlayer1.size() >= 10) {
-            last10BattlesPlayer1.remove(0); // Remove the oldest battle if we already have 10
+    private void updateLast10Battles(Player player, Battle battle) {
+        List<Battle> last10Battles = player.getLast10Battles();
+
+        // Add the new battle
+        last10Battles.add(battle);
+
+        // Sort the list in descending order
+        last10Battles.sort((b1, b2) -> Long.compare(b2.getBattleAt(), b1.getBattleAt()));
+
+        // Keep only the first 10 elements
+        if (last10Battles.size() > 10) {
+            last10Battles.remove(last10Battles.size()-1);
         }
-        last10BattlesPlayer1.add(battle);
-        player1.setLast10Battles(last10BattlesPlayer1);
-
-        List<Battle> last10BattlesPlayer2 = player2.getLast10Battles();
-        if (last10BattlesPlayer2.size() >= 10) {
-            last10BattlesPlayer2.remove(0); // Remove the oldest battle if we already have 10
-        }
-        last10BattlesPlayer2.add(battle);
-        player2.setLast10Battles(last10BattlesPlayer2);
-
-        if(battle.getWinner() == 1)
-        {
-            player1.setWins(player1.getWins()+1);
-            player2.setLosses(player2.getLosses()+1);
-        }
-        else if(battle.getWinner() == 2) //have to specify in the case of a draw
-        {
-            player2.setWins(player2.getWins()+1);
-            player1.setLosses(player1.getLosses()+1);
-        }
-
-        if (player1.getWins() + player1.getLosses() > 0)
-        {
-            player1.setWinRate(player1.getWins() / (float) (player1.getWins() + player1.getLosses()) * 100);
-        } else
-        {
-            player1.setWinRate(0); // Safeguard for division by zero
-        }
-
-        if (player2.getWins() + player2.getLosses() > 0)
-        {
-            player2.setWinRate(player2.getWins() / (float) (player2.getWins() + player2.getLosses()) * 100);
-        } else
-        {
-            player2.setWinRate(0); // Safeguard for division by zero
-        }
-
-
-
-        logger.info("Saving Player 1 Information into Database: {}", player1.getName());
-        // Save the updated player information
-        playerRepository.save(player1);
-        logger.info("Saving Player 2 Information into Database: {}", player2.getName());
-        playerRepository.save(player2);
     }
 
+    private void updateWinsAndLosses(Player player, int winner, int playerNumber) {
+        if (winner == playerNumber) {
+            player.setWins(player.getWins() + 1);
+        } else if (winner != 0) {  // 0 might indicate a draw, adjust as needed
+            player.setLosses(player.getLosses() + 1);
+        }
+    }
 
+    private void updateWinRate(Player player) {
+        float winRate = (player.getWins() + player.getLosses() > 0) ? (player.getWins() / (float) (player.getWins() + player.getLosses()) * 100) : 0;
+        player.setWinRate(winRate);
+    }
+
+    private String getPlayerName(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1Name() : battle.getPlayer2Name();
+    }
+
+    private String getPlayerUserId(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
+    }
+
+    private String getPlayerPolarisId(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1PolarisID() : battle.getPlayer2PolarisID();
+    }
+
+    private long getPlayerTekkenPower(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower();
+    }
+
+    private int getPlayerDanRank(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1DanRank() : battle.getPlayer2DanRank();
+    }
+
+    private int calculatePlayerRating(Battle battle, int playerNumber) {
+        if (playerNumber == 1) {
+            return (battle.getPlayer1RatingBefore() != null ? battle.getPlayer1RatingBefore() : 0) +
+                    (battle.getPlayer1RatingChange() != null ? battle.getPlayer1RatingChange() : 0);
+        } else {
+            return (battle.getPlayer2RatingBefore() != null ? battle.getPlayer2RatingBefore() : 0) +
+                    (battle.getPlayer2RatingChange() != null ? battle.getPlayer2RatingChange() : 0);
+        }
+    }
 }

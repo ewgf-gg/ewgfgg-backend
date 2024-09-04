@@ -1,26 +1,339 @@
 {
-  "battle_at": 1725389383,
-  "battle_id": "2CF8318308B54BFA81FDA13B8A2E21DD",
-  "battle_type": 2,
-  "game_version": 10700,
-  "p1_chara_id": 6,
-  "p1_name": "Thekiller",
-  "p1_polaris_id": "44fYqEL4jH2n",
-  "p1_power": 146695,
-  "p1_rank": 16,
-  "p1_rating_before": 1356,
-  "p1_rating_change": -8,
-  "p1_rounds": 1,
-  "p1_user_id": 178587240309155520,
-  "p2_chara_id": 1,
-  "p2_name": "Zhaic",
-  "p2_polaris_id": "2nbTm7jBemg8",
-  "p2_power": 139718,
-  "p2_rank": 18,
-  "p2_rating_before": 1486,
-  "p2_rating_change": 7,
-  "p2_rounds": 3,
-  "p2_user_id": 871278220924093400,
-  "stage_id": 1700,
-  "winner": 2
+  "_id": "730270240201230310",
+  "name": "DR.PLAGUE",
+  "polarisId": "5gD376gi2jaE",
+  "tekkenPower": {
+    "$numberLong": "149367"
+  },
+  "rating": 1467,
+  "danRank": 18,
+  "winRate": 100,
+  "wins": 9,
+  "losses": 12,
+  "playerNames": [
+    "DR.PLAGUE"
+  ],
+  "Last10Battles": [
+    {
+      "_id": "94735C396CFA412ABCB8A142382B344C",
+      "battleAt": {
+        "$numberLong": "1725423630"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "OddJobs",
+      "player1PolarisID": "5QARAY9Dq7Qr",
+      "player1TekkenPower": {
+        "$numberLong": "129391"
+      },
+      "player1DanRank": 17,
+      "player1RatingBefore": 1461,
+      "player1RatingChange": -14,
+      "player1RoundsWon": 1,
+      "player1UserID": "465816230207225511",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "149681"
+      },
+      "player2DanRank": 17,
+      "player2RatingBefore": 1388,
+      "player2RatingChange": 13,
+      "player2RoundsWon": 3,
+      "player2UserID": "730270240201230310",
+      "stageID": 1700,
+      "winner": 2
+    },
+    {
+      "_id": "E310460117CC44CFA15AD897E327366B",
+      "battleAt": {
+        "$numberLong": "1725423470"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "OddJobs",
+      "player1PolarisID": "5QARAY9Dq7Qr",
+      "player1TekkenPower": {
+        "$numberLong": "129510"
+      },
+      "player1DanRank": 17,
+      "player1RatingBefore": 1452,
+      "player1RatingChange": 9,
+      "player1RoundsWon": 3,
+      "player1UserID": "465816230207225511",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "150040"
+      },
+      "player2DanRank": 17,
+      "player2RatingBefore": 1397,
+      "player2RatingChange": -10,
+      "player2RoundsWon": 1,
+      "player2UserID": "730270240201230310",
+      "stageID": 1700,
+      "winner": 1
+    },
+    {
+      "_id": "D1AA3BE6B898496CA4070748D34E4DFE",
+      "battleAt": {
+        "$numberLong": "1725423276"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "DR.PLAGUE",
+      "player1PolarisID": "5gD376gi2jaE",
+      "player1TekkenPower": {
+        "$numberLong": "149919"
+      },
+      "player1DanRank": 17,
+      "player1RatingBefore": 1404,
+      "player1RatingChange": -8,
+      "player1RoundsWon": 1,
+      "player1UserID": "730270240201230310",
+      "player2CharacterID": 12,
+      "player2Name": "kaJe",
+      "player2PolarisID": "4Fg7jgtDGBJ4",
+      "player2TekkenPower": {
+        "$numberLong": "187291"
+      },
+      "player2DanRank": 19,
+      "player2RatingBefore": 1540,
+      "player2RatingChange": 6,
+      "player2RoundsWon": 3,
+      "player2UserID": "917060190910225649",
+      "stageID": 900,
+      "winner": 2
+    },
+    {
+      "_id": "182EA768F6DE498FB0ECE61EF00D1A9D",
+      "battleAt": {
+        "$numberLong": "1725423113"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "DR.PLAGUE",
+      "player1PolarisID": "5gD376gi2jaE",
+      "player1TekkenPower": {
+        "$numberLong": "150073"
+      },
+      "player1DanRank": 18,
+      "player1RatingBefore": 1412,
+      "player1RatingChange": -8,
+      "player1RoundsWon": 1,
+      "player1UserID": "730270240201230310",
+      "player2CharacterID": 12,
+      "player2Name": "kaJe",
+      "player2PolarisID": "4Fg7jgtDGBJ4",
+      "player2TekkenPower": {
+        "$numberLong": "187530"
+      },
+      "player2DanRank": 19,
+      "player2RatingBefore": 1533,
+      "player2RatingChange": 7,
+      "player2RoundsWon": 3,
+      "player2UserID": "917060190910225649",
+      "stageID": 900,
+      "winner": 2
+    },
+    {
+      "_id": "383035BA9495468AA02D257387A216B9",
+      "battleAt": {
+        "$numberLong": "1725422871"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "DR.PLAGUE",
+      "player1PolarisID": "5gD376gi2jaE",
+      "player1TekkenPower": {
+        "$numberLong": "150552"
+      },
+      "player1DanRank": 18,
+      "player1RatingBefore": 1415,
+      "player1RatingChange": -4,
+      "player1RoundsWon": 0,
+      "player1UserID": "730270240201230310",
+      "player2CharacterID": 4,
+      "player2Name": "PWNERX",
+      "player2PolarisID": "43ffTh5n226h",
+      "player2TekkenPower": {
+        "$numberLong": "188277"
+      },
+      "player2DanRank": 23,
+      "player2RatingBefore": 1708,
+      "player2RatingChange": 3,
+      "player2RoundsWon": 3,
+      "player2UserID": "782110200719175621",
+      "stageID": 500,
+      "winner": 2
+    },
+    {
+      "_id": "D0BF159C1D2A47CFB7C1B608D9A6519A",
+      "battleAt": {
+        "$numberLong": "1725422767"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 7,
+      "player1Name": "DR.PLAGUE",
+      "player1PolarisID": "5gD376gi2jaE",
+      "player1TekkenPower": {
+        "$numberLong": "150551"
+      },
+      "player1DanRank": 18,
+      "player1RatingBefore": 1419,
+      "player1RatingChange": -4,
+      "player1RoundsWon": 2,
+      "player1UserID": "730270240201230310",
+      "player2CharacterID": 4,
+      "player2Name": "PWNERX",
+      "player2PolarisID": "43ffTh5n226h",
+      "player2TekkenPower": {
+        "$numberLong": "188636"
+      },
+      "player2DanRank": 23,
+      "player2RatingBefore": 1704,
+      "player2RatingChange": 3,
+      "player2RoundsWon": 3,
+      "player2UserID": "782110200719175621",
+      "stageID": 500,
+      "winner": 2
+    },
+    {
+      "_id": "A306FAFB086447CCAFA1565ABC7D9ECF",
+      "battleAt": {
+        "$numberLong": "1725422507"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 36,
+      "player1Name": "EatYoCharms",
+      "player1PolarisID": "4aL3HEBfifaJ",
+      "player1TekkenPower": {
+        "$numberLong": "177807"
+      },
+      "player1DanRank": 17,
+      "player1RatingBefore": 1463,
+      "player1RatingChange": 9,
+      "player1RoundsWon": 3,
+      "player1UserID": "537950220924023541",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "150790"
+      },
+      "player2DanRank": 18,
+      "player2RatingBefore": 1429,
+      "player2RatingChange": -10,
+      "player2RoundsWon": 1,
+      "player2UserID": "730270240201230310",
+      "stageID": 101,
+      "winner": 1
+    },
+    {
+      "_id": "C0708B8A69E34F25A80CF30F5D45E607",
+      "battleAt": {
+        "$numberLong": "1725422265"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 6,
+      "player1Name": "Dmgdon",
+      "player1PolarisID": "5Tg6GqFHTy2T",
+      "player1TekkenPower": {
+        "$numberLong": "176382"
+      },
+      "player1DanRank": 20,
+      "player1RatingBefore": 1603,
+      "player1RatingChange": 6,
+      "player1RoundsWon": 3,
+      "player1UserID": "6858240729134034",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "150789"
+      },
+      "player2DanRank": 18,
+      "player2RatingBefore": 1435,
+      "player2RatingChange": -7,
+      "player2RoundsWon": 0,
+      "player2UserID": "730270240201230310",
+      "stageID": 101,
+      "winner": 1
+    },
+    {
+      "_id": "26B40F38163F417999186A441DB2DAEF",
+      "battleAt": {
+        "$numberLong": "1725422105"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 36,
+      "player1Name": "Dark Nova VF",
+      "player1PolarisID": "26TQiANEJL7d",
+      "player1TekkenPower": {
+        "$numberLong": "146635"
+      },
+      "player1DanRank": 18,
+      "player1RatingBefore": 1561,
+      "player1RatingChange": 9,
+      "player1RoundsWon": 3,
+      "player1UserID": "215138240126065204",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "150788"
+      },
+      "player2DanRank": 18,
+      "player2RatingBefore": 1442,
+      "player2RatingChange": -8,
+      "player2RoundsWon": 0,
+      "player2UserID": "730270240201230310",
+      "stageID": 1400,
+      "winner": 1
+    },
+    {
+      "_id": "4871C69E36E74381BD8289FADFB1A91D",
+      "battleAt": {
+        "$numberLong": "1725421971"
+      },
+      "battleType": 2,
+      "gameVersion": 10700,
+      "player1CharacterID": 36,
+      "player1Name": "Dark Nova VF",
+      "player1PolarisID": "26TQiANEJL7d",
+      "player1TekkenPower": {
+        "$numberLong": "146514"
+      },
+      "player1DanRank": 18,
+      "player1RatingBefore": 1551,
+      "player1RatingChange": 10,
+      "player1RoundsWon": 3,
+      "player1UserID": "215138240126065204",
+      "player2CharacterID": 7,
+      "player2Name": "DR.PLAGUE",
+      "player2PolarisID": "5gD376gi2jaE",
+      "player2TekkenPower": {
+        "$numberLong": "150667"
+      },
+      "player2DanRank": 18,
+      "player2RatingBefore": 1450,
+      "player2RatingChange": -8,
+      "player2RoundsWon": 2,
+      "player2UserID": "730270240201230310",
+      "stageID": 1400,
+      "winner": 1
+    }
+  ],
+  "_class": "org.tekkenstats.Player"
 }

@@ -11,4 +11,5 @@ public interface BattleRepository extends MongoRepository<Battle, String> {
 
     @Query("{ }")
     Battle FindLatestBattle();
+
 }

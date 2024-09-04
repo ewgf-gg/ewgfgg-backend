@@ -30,7 +30,7 @@ public class APIService {
 
     private String API_URL = "https://wank.wavu.wiki/api/replays";// Example URL
 
-    long before = 1725412760;
+    long before = 1725433286;
 
 
     @Scheduled(fixedRate = 1000)
@@ -48,7 +48,7 @@ public class APIService {
             for (Battle battle : battles)
             {
                 // Process the battle data internally
-                replayService.saveBattleData(battle);
+                replayService.processBattleData(battle);
             }
             before -= TIME_STEP;
         } catch (Exception e) {
