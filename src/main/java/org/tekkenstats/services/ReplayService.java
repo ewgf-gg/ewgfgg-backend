@@ -9,6 +9,7 @@ import org.tekkenstats.Player;
 import org.tekkenstats.interfaces.BattleRepository;
 import org.tekkenstats.interfaces.PlayerRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ public class ReplayService {
     private PlayerRepository playerRepository;
 
     public void saveBattleData(Battle battle) {
-        // Save or update player1
+
 
         // API can return null for these fields, these are safeguards
         Integer player1RatingBefore = battle.getPlayer1RatingBefore() != null ? battle.getPlayer1RatingBefore() : 0;
@@ -54,6 +55,7 @@ public class ReplayService {
 
         updatePlayerWithBattle(player1, player2, battle);
 
+
         // Save the battle
         battleRepository.save(battle);
     }
@@ -66,12 +68,27 @@ public class ReplayService {
         if (playerOptional.isPresent()) {
             logger.info("Player information found in Database! Retrieving...");
             player = playerOptional.get();
+
+            if (player.getPlayerNames() == null)
+            {
+                player.setPlayerNames(new ArrayList<>());
+            }
+
+            if (!player.getPlayerNames().contains(name))
+            {
+                player.getPlayerNames().add(name);
+            }
         } else {
             logger.info("Player information not found. Creating new Player object");
             player = new Player();
             player.setUserId(userId);
+            player.setRating(rating);
             player.setLosses(0);
             player.setWins(0);
+            player.setPlayerNames(new ArrayList<>());
+            player.getPlayerNames().add(name);
+            player.setLast10Battles(new ArrayList<>());
+
         }
 
         // Update player's details with the latest information
@@ -99,7 +116,7 @@ public class ReplayService {
             last10BattlesPlayer2.remove(0); // Remove the oldest battle if we already have 10
         }
         last10BattlesPlayer2.add(battle);
-        player1.setLast10Battles(last10BattlesPlayer1);
+        player2.setLast10Battles(last10BattlesPlayer2);
 
         if(battle.getWinner() == 1)
         {
@@ -112,8 +129,22 @@ public class ReplayService {
             player1.setLosses(player1.getLosses()+1);
         }
 
-        player1.setWinRate(player1.getWins() / (float) (player1.getWins() + player1.getLosses()));
-        player2.setWinRate(player2.getWinRate() / (float) (player2.getWins() + player2.getLosses()));
+        if (player1.getWins() + player1.getLosses() > 0)
+        {
+            player1.setWinRate(player1.getWins() / (float) (player1.getWins() + player1.getLosses()) * 100);
+        } else
+        {
+            player1.setWinRate(0); // Safeguard for division by zero
+        }
+
+        if (player2.getWins() + player2.getLosses() > 0)
+        {
+            player2.setWinRate(player2.getWins() / (float) (player2.getWins() + player2.getLosses()) * 100);
+        } else
+        {
+            player2.setWinRate(0); // Safeguard for division by zero
+        }
+
 
 
         logger.info("Saving Player 1 Information into Database: {}", player1.getName());
@@ -122,4 +153,6 @@ public class ReplayService {
         logger.info("Saving Player 2 Information into Database: {}", player2.getName());
         playerRepository.save(player2);
     }
+
+
 }

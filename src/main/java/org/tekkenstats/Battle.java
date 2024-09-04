@@ -8,10 +8,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Data
 public class Battle {
 
-    @Id
+    @Id @JsonProperty("battle_id")
     private String battleId;
+    @JsonProperty("battle_at")
     private long battleAt;
+    @JsonProperty("battle_type")
     private int battleType;
+    @JsonProperty("game_version")
     private int gameVersion;
 
     @JsonProperty("p1_chara_id")
@@ -53,7 +56,9 @@ public class Battle {
     @JsonProperty("p2_user_id")
     private String player2UserID;
 
+    @JsonProperty("stage_id")
     private int stageID;
+    @JsonProperty("winner")
     private int winner; // 1 or 2 respectively
 
 

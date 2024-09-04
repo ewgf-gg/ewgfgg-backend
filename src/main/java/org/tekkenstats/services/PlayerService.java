@@ -14,8 +14,6 @@ public class PlayerService {
     @Autowired
     private PlayerRepository playerRepository;
 
-    @Autowired
-    private PlayerDocument playerDocument;
 
     public List<Player> getPlayersByName(String name) {
         return playerRepository.findByName(name);
@@ -23,6 +21,6 @@ public class PlayerService {
 
     public PlayerDocument findPlayerByID(String ID)
     {
-        return playerRepository.findPlayerByID();
+        return playerRepository.findPlayerByID(ID);
     }
 }
