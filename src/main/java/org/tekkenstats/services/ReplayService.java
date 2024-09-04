@@ -24,13 +24,14 @@ public class ReplayService {
     private PlayerRepository playerRepository;
 
     @Transactional
-    public void processBattleData(Battle battle) {
-
+    public void processBattleData(Battle battle)
+    {
         if (battleRepository.findById(battle.getBattleId()).isPresent())
         {
             logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
             return;
         }
+
         Player player1 = getOrCreatePlayer(battle, 1);
         Player player2 = getOrCreatePlayer(battle, 2);
 
@@ -43,16 +44,19 @@ public class ReplayService {
         battleRepository.save(battle);
     }
 
-    private boolean isNewBattle(Battle battle, Player player) {
+    private boolean isNewBattle(Battle battle, Player player)
+    {
         List<Battle> last10Battles = player.getLast10Battles();
-        if (last10Battles.isEmpty()) {
+        if (last10Battles.isEmpty())
+        {
             return true;  // If no battles, consider it new
         }
         Battle newestBattle = last10Battles.get(0);
         return battle.getBattleAt() > newestBattle.getBattleAt();
     }
 
-    private Player getOrCreatePlayer(Battle battle, int playerNumber) {
+    private Player getOrCreatePlayer(Battle battle, int playerNumber)
+    {
         String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
         logger.info("Attempting to retrieve player{} info...", playerNumber);
 
@@ -61,13 +65,15 @@ public class ReplayService {
                 .orElseGet(() -> createNewPlayer(battle, playerNumber));
     }
 
-    private Player updateExistingPlayer(Player player, Battle battle, int playerNumber) {
+    private Player updateExistingPlayer(Player player, Battle battle, int playerNumber)
+    {
         logger.info("Player information found in Database! Updating...");
         addPlayerNameIfNew(player, getPlayerName(battle, playerNumber));
         return player;
     }
 
-    private Player createNewPlayer(Battle battle, int playerNumber) {
+    private Player createNewPlayer(Battle battle, int playerNumber)
+    {
         logger.info("Player information not found. Creating new Player object");
         Player player = new Player();
         player.setUserId(getPlayerUserId(battle, playerNumber));
@@ -79,27 +85,32 @@ public class ReplayService {
         return player;
     }
 
-    private void updatePlayerWithBattle(Player player, Battle battle, boolean isNewBattle, int playerNumber) {
+    private void updatePlayerWithBattle(Player player, Battle battle, boolean isNewBattle, int playerNumber)
+    {
         updateLast10Battles(player, battle);
         updateWinsAndLosses(player, battle.getWinner(), playerNumber);
         updateWinRate(player);
 
-        if (isNewBattle) {
+        if (isNewBattle)
+        {
             updatePlayerDetails(player, battle, playerNumber);
         }
 
         playerRepository.save(player);
     }
 
-    private void updatePlayerDetails(Player player, Battle battle, int playerNumber) {
+    private void updatePlayerDetails(Player player, Battle battle, int playerNumber)
+    {
         player.setName(getPlayerName(battle, playerNumber));
         player.setPolarisId(getPlayerPolarisId(battle, playerNumber));
         player.setTekkenPower(getPlayerTekkenPower(battle, playerNumber));
         player.setDanRank(getPlayerDanRank(battle, playerNumber));
         player.setRating(calculatePlayerRating(battle, playerNumber));
+        addPlayerNameIfNew(player, player.getName());
     }
 
-    private void addPlayerNameIfNew(Player player, String name) {
+    private void addPlayerNameIfNew(Player player, String name)
+    {
         if (player.getPlayerNames() == null) {
             player.setPlayerNames(new ArrayList<>());
         }
@@ -108,7 +119,8 @@ public class ReplayService {
         }
     }
 
-    private void updateLast10Battles(Player player, Battle battle) {
+    private void updateLast10Battles(Player player, Battle battle)
+    {
         List<Battle> last10Battles = player.getLast10Battles();
 
         // Add the new battle
@@ -123,15 +135,16 @@ public class ReplayService {
         }
     }
 
-    private void updateWinsAndLosses(Player player, int winner, int playerNumber) {
-        if (winner == playerNumber) {
+    private void updateWinsAndLosses(Player player, int winner, int playerNumber)
+    {
+        if (winner == playerNumber)
+        {
             player.setWins(player.getWins() + 1);
-        } else if (winner != 0) {  // 0 might indicate a draw, adjust as needed
-            player.setLosses(player.getLosses() + 1);
         }
     }
 
-    private void updateWinRate(Player player) {
+    private void updateWinRate(Player player)
+    {
         float winRate = (player.getWins() + player.getLosses() > 0) ? (player.getWins() / (float) (player.getWins() + player.getLosses()) * 100) : 0;
         player.setWinRate(winRate);
     }
