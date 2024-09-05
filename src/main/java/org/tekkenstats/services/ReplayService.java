@@ -10,6 +10,9 @@ import org.tekkenstats.Player;
 import org.tekkenstats.interfaces.BattleRepository;
 import org.tekkenstats.interfaces.PlayerRepository;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +35,7 @@ public class ReplayService {
             return;
         }
 
+        battle.setDate(getReadableDateInUTC(battle));
         Player player1 = getOrCreatePlayer(battle, 1);
         Player player2 = getOrCreatePlayer(battle, 2);
 
@@ -43,6 +47,44 @@ public class ReplayService {
 
         battleRepository.save(battle);
     }
+
+    @Transactional
+    public void processBattles(List<Battle> battles) {
+        List<Battle> newBattles = new ArrayList<>();
+        List<Player> updatedPlayers = new ArrayList<>();
+
+        List<String> battleIDs = new ArrayList<>();
+        List<String> playerIDs = new ArrayList<>();
+
+
+        for (Battle battle : battles)
+        {
+
+            if (!battleRepository.findById(battle.getBattleId()).isPresent()) {
+                battle.setDate(getReadableDateInUTC(battle));
+                Player player1 = getOrCreatePlayer(battle, 1);
+                Player player2 = getOrCreatePlayer(battle, 2);
+
+                boolean isNewBattleForPlayer1 = isNewBattle(battle, player1);
+                boolean isNewBattleForPlayer2 = isNewBattle(battle, player2);
+
+                updatePlayerWithBattle(player1, battle, isNewBattleForPlayer1, 1);
+                updatePlayerWithBattle(player2, battle, isNewBattleForPlayer2, 2);
+                updatedPlayers.add(player1);
+                updatedPlayers.add(player2);
+                newBattles.add(battle);
+            } else {
+                logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
+            }
+        }
+
+        if (!newBattles.isEmpty()) {
+            battleRepository.saveAll(newBattles);
+            playerRepository.saveAll(updatedPlayers);
+            logger.info("Bulk inserted {} new battles.", newBattles.size());
+        }
+    }
+
 
     private boolean isNewBattle(Battle battle, Player player)
     {
@@ -96,7 +138,6 @@ public class ReplayService {
             updatePlayerDetails(player, battle, playerNumber);
         }
 
-        playerRepository.save(player);
     }
 
     private void updatePlayerDetails(Player player, Battle battle, int playerNumber)
@@ -122,7 +163,10 @@ public class ReplayService {
     private void updateLast10Battles(Player player, Battle battle)
     {
         List<Battle> last10Battles = player.getLast10Battles();
-
+        if (battle.getDate() == null || battle.getDate().isEmpty())
+        {
+            battle.setDate(getReadableDateInUTC(battle));
+        }
         // Add the new battle
         last10Battles.add(battle);
 
@@ -135,11 +179,22 @@ public class ReplayService {
         }
     }
 
+    private String getReadableDateInUTC(Battle battle)
+    {
+        return Instant.ofEpochSecond(battle.getBattleAt())
+                .atZone(ZoneId.of("UTC"))
+                .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm 'UTC'"));
+    }
+
     private void updateWinsAndLosses(Player player, int winner, int playerNumber)
     {
         if (winner == playerNumber)
         {
             player.setWins(player.getWins() + 1);
+        }
+        else
+        {
+            player.setLosses(player.getLosses()+1);
         }
     }
 

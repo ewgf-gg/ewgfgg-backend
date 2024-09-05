@@ -10,6 +10,8 @@ public class Battle {
 
     @Id @JsonProperty("battle_id")
     private String battleId;
+    @JsonProperty
+    private String Date;
     @JsonProperty("battle_at")
     private long battleAt;
     @JsonProperty("battle_type")
@@ -60,6 +62,7 @@ public class Battle {
     private int stageID;
     @JsonProperty("winner")
     private int winner; // 1 or 2 respectively
+
 
 
     // Getters and Setters generated automatically thanks to lombok
