@@ -33,7 +33,7 @@ public class APIService {
     private String API_URL = "https://wank.wavu.wiki/api/replays";
     private static final ZoneId zoneId = ZoneId.systemDefault();
 
-    long unixTimestamp = 1723804210L;
+    long unixTimestamp = 1725525850L;
 
     @Scheduled(fixedRate = 1000)
     public void fetchAndProcessReplays() {
@@ -49,7 +49,7 @@ public class APIService {
 
             // Convert JSON to Battle object
             List<Battle> battles = objectMapper.readValue(jsonResponse, new TypeReference<List<Battle>>() {});
-
+            logger.info("Received {} battles from API", battles.size());
             // Start the timer for bulk operation
             long startTime = System.currentTimeMillis();
 
@@ -60,7 +60,7 @@ public class APIService {
             long endTime = System.currentTimeMillis();
 
             // Log the total time taken for the bulk write operation
-            logger.info("Bulk write of {} battles took {} ms", battles.size(), (endTime - startTime));
+            logger.info("Bulk write process of {} battles took {} ms", battles.size(), (endTime - startTime));
 
             unixTimestamp -= TIME_STEP;
         } catch (Exception e) {

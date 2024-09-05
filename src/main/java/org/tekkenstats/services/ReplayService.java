@@ -13,8 +13,8 @@ import org.tekkenstats.interfaces.PlayerRepository;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ReplayService {
@@ -27,62 +27,86 @@ public class ReplayService {
     private PlayerRepository playerRepository;
 
     @Transactional
-    public void processBattleData(Battle battle)
+    public void processBattles(List<Battle> battles)
     {
-        if (battleRepository.findById(battle.getBattleId()).isPresent())
-        {
-            logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
-            return;
+        Set<String> battleIDs = new HashSet<>();
+        Set<String> playerIDs = new HashSet<>();
+
+        long startTime = System.currentTimeMillis();
+
+        for (Battle battle : battles) {
+            battleIDs.add(battle.getBattleId());
+            playerIDs.add(battle.getPlayer1UserID());
+            playerIDs.add(battle.getPlayer2UserID());
         }
+        long endTime = System.currentTimeMillis();
 
-        battle.setDate(getReadableDateInUTC(battle));
-        Player player1 = getOrCreatePlayer(battle, 1);
-        Player player2 = getOrCreatePlayer(battle, 2);
 
-        boolean isNewBattleForPlayer1 = isNewBattle(battle, player1);
-        boolean isNewBattleForPlayer2 = isNewBattle(battle, player2);
+        logger.error("Fetched info from JSON: {} ms", (endTime - startTime));
+        // Bulk read battles and players
+        startTime = System.currentTimeMillis();
 
-        updatePlayerWithBattle(player1, battle, isNewBattleForPlayer1, 1);
-        updatePlayerWithBattle(player2, battle, isNewBattleForPlayer2, 2);
+        List<Battle> existingBattles = battleRepository.findAllById(battleIDs);
+        List<Player> existingPlayers = playerRepository.findAllById(playerIDs);
+        endTime = System.currentTimeMillis();
 
-        battleRepository.save(battle);
-    }
+        logger.error("Retrieved info from database: {} ms", (endTime -startTime));
+        // Create maps for quick lookups
+        startTime = System.currentTimeMillis();
 
-    @Transactional
-    public void processBattles(List<Battle> battles) {
+        Map<String, Battle> existingBattleMap = existingBattles.stream()
+                .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
+        Map<String, Player> playerMap = existingPlayers.stream()
+                .collect(Collectors.toMap(Player::getUserId, player -> player));
+        endTime = System.currentTimeMillis();
+
+
+        logger.error("Mapped data to objects: {} ms", (endTime-startTime));
         List<Battle> newBattles = new ArrayList<>();
-        List<Player> updatedPlayers = new ArrayList<>();
+        Set<Player> updatedPlayers = new HashSet<>();
 
-        List<String> battleIDs = new ArrayList<>();
-        List<String> playerIDs = new ArrayList<>();
+        startTime = System.currentTimeMillis();
 
-
-        for (Battle battle : battles)
-        {
-
-            if (!battleRepository.findById(battle.getBattleId()).isPresent()) {
+        for (Battle battle : battles) {
+            if (!existingBattleMap.containsKey(battle.getBattleId())) {
                 battle.setDate(getReadableDateInUTC(battle));
-                Player player1 = getOrCreatePlayer(battle, 1);
-                Player player2 = getOrCreatePlayer(battle, 2);
+                Player player1 = getOrCreatePlayer(playerMap, battle, 1);
+                Player player2 = getOrCreatePlayer(playerMap, battle, 2);
 
                 boolean isNewBattleForPlayer1 = isNewBattle(battle, player1);
                 boolean isNewBattleForPlayer2 = isNewBattle(battle, player2);
 
                 updatePlayerWithBattle(player1, battle, isNewBattleForPlayer1, 1);
                 updatePlayerWithBattle(player2, battle, isNewBattleForPlayer2, 2);
+
                 updatedPlayers.add(player1);
                 updatedPlayers.add(player2);
                 newBattles.add(battle);
             } else {
-                logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
+                logger.info("battleId: {} already exists in databse, skipping write", battle.getBattleId());
             }
         }
+        endTime = System.currentTimeMillis();
+
+
+        logger.error("Updated player and battle information: {} ms", (endTime-startTime));
+
 
         if (!newBattles.isEmpty()) {
+            startTime = System.currentTimeMillis();
             battleRepository.saveAll(newBattles);
+            endTime = System.currentTimeMillis();
+            logger.error("Battle Insertion: {} ms", (endTime-startTime));
+
+            startTime = System.currentTimeMillis();
             playerRepository.saveAll(updatedPlayers);
-            logger.info("Bulk inserted {} new battles.", newBattles.size());
+            endTime = System.currentTimeMillis();
+
+            logger.error("Player Insertion: {} ms", (endTime-startTime));
         }
+
+
+
     }
 
 
@@ -97,14 +121,18 @@ public class ReplayService {
         return battle.getBattleAt() > newestBattle.getBattleAt();
     }
 
-    private Player getOrCreatePlayer(Battle battle, int playerNumber)
-    {
+    private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber) {
         String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
         logger.info("Attempting to retrieve player{} info...", playerNumber);
 
-        return playerRepository.findById(userId)
-                .map(player -> updateExistingPlayer(player, battle, playerNumber))
-                .orElseGet(() -> createNewPlayer(battle, playerNumber));
+        Player player = playerMap.get(userId);
+        if (player != null) {
+            return updateExistingPlayer(player, battle, playerNumber);
+        } else {
+            Player newPlayer = createNewPlayer(battle, playerNumber);
+            playerMap.put(userId, newPlayer);
+            return newPlayer;
+        }
     }
 
     private Player updateExistingPlayer(Player player, Battle battle, int playerNumber)
