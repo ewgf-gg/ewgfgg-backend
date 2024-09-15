@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 @Document(collection = "replay-data")
 @Data
 public class Battle {
@@ -62,7 +64,6 @@ public class Battle {
     private int stageID;
     @JsonProperty("winner")
     private int winner; // 1 or 2 respectively
-
 
 
     // Getters and Setters generated automatically thanks to lombok

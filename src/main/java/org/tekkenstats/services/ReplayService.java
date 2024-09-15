@@ -1,14 +1,28 @@
 package org.tekkenstats.services;
 
+import com.mongodb.bulk.BulkWriteResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.BulkOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tekkenstats.Battle;
 import org.tekkenstats.Player;
 import org.tekkenstats.interfaces.BattleRepository;
 import org.tekkenstats.interfaces.PlayerRepository;
+import org.tekkenstats.config.RabbitMQConfig;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.tekkenstats.mdbDocuments.PlayerDocument;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -20,108 +34,148 @@ import java.util.stream.Collectors;
 public class ReplayService {
 
     private static final Logger logger = LogManager.getLogger(ReplayService.class);
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Autowired
     private BattleRepository battleRepository;
     @Autowired
     private PlayerRepository playerRepository;
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
-    @Transactional
-    public void processBattles(List<Battle> battles)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, concurrency = "10")
+    public void receiveMessage(String message)
     {
+        logger.error("Received Battle Data from RabbitMQ.");
+        try
+        {
+            List<Battle> battles = objectMapper.readValue(message, new TypeReference<List<Battle>>() {});
+            processBattlesAsync(battles);
+        }
+        catch(Exception e)
+        {
+            logger.error("Error parsing battles: {}",e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @Async("taskExecutor")
+    public void processBattlesAsync(List<Battle> battles) {
         Set<String> battleIDs = new HashSet<>();
         Set<String> playerIDs = new HashSet<>();
 
         long startTime = System.currentTimeMillis();
 
+        // Extract battle IDs and player IDs
         for (Battle battle : battles) {
             battleIDs.add(battle.getBattleId());
             playerIDs.add(battle.getPlayer1UserID());
             playerIDs.add(battle.getPlayer2UserID());
         }
+
         long endTime = System.currentTimeMillis();
-
-
         logger.error("Fetched info from JSON: {} ms", (endTime - startTime));
-        // Bulk read battles and players
+
+        // Bulk read battles and players using MongoTemplate
         startTime = System.currentTimeMillis();
 
-        List<Battle> existingBattles = battleRepository.findAllById(battleIDs);
-        List<Player> existingPlayers = playerRepository.findAllById(playerIDs);
+        Query battleQuery = new Query(Criteria.where("battleId").in(battleIDs));
+        List<Battle> existingBattles = mongoTemplate.find(battleQuery, Battle.class);
+
+        Query playerQuery = new Query(Criteria.where("userId").in(playerIDs));
+        List<Player> existingPlayers = mongoTemplate.find(playerQuery, Player.class);
+
         endTime = System.currentTimeMillis();
+        logger.error("Retrieved info from database: {} ms", (endTime - startTime));
 
-        logger.error("Retrieved info from database: {} ms", (endTime -startTime));
         // Create maps for quick lookups
-        startTime = System.currentTimeMillis();
-
         Map<String, Battle> existingBattleMap = existingBattles.stream()
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
         Map<String, Player> playerMap = existingPlayers.stream()
                 .collect(Collectors.toMap(Player::getUserId, player -> player));
-        endTime = System.currentTimeMillis();
 
-
-        logger.error("Mapped data to objects: {} ms", (endTime-startTime));
-        List<Battle> newBattles = new ArrayList<>();
         Set<Player> updatedPlayers = new HashSet<>();
+
+        // Initialize bulk operations for battle and player updates
+        BulkOperations battleBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Battle.class);
+        BulkOperations playerBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Player.class);
 
         startTime = System.currentTimeMillis();
 
         for (Battle battle : battles) {
             if (!existingBattleMap.containsKey(battle.getBattleId())) {
                 battle.setDate(getReadableDateInUTC(battle));
+
                 Player player1 = getOrCreatePlayer(playerMap, battle, 1);
                 Player player2 = getOrCreatePlayer(playerMap, battle, 2);
 
-                boolean isNewBattleForPlayer1 = isNewBattle(battle, player1);
-                boolean isNewBattleForPlayer2 = isNewBattle(battle, player2);
-
-                updatePlayerWithBattle(player1, battle, isNewBattleForPlayer1, 1);
-                updatePlayerWithBattle(player2, battle, isNewBattleForPlayer2, 2);
+                updatePlayerWithBattle(player1, battle, 1);
+                updatePlayerWithBattle(player2, battle, 2);
 
                 updatedPlayers.add(player1);
                 updatedPlayers.add(player2);
-                newBattles.add(battle);
+
+                // Queue insert operation for battle
+                battleBulkOps.insert(battle);
             } else {
-                logger.info("battleId: {} already exists in databse, skipping write", battle.getBattleId());
+                logger.info("battleId: {} already exists in database, skipping write", battle.getBattleId());
             }
         }
+
         endTime = System.currentTimeMillis();
+        logger.error("Updated player and battle information: {} ms", (endTime - startTime));
 
+        // Execute bulk operations for battles
+        BulkWriteResult battleResult = battleBulkOps.execute();
+        endTime = System.currentTimeMillis();
+        logger.error("Battle Insertion: {} ms, Inserted: {}", (endTime - startTime), battleResult.getInsertedCount());
 
-        logger.error("Updated player and battle information: {} ms", (endTime-startTime));
-
-
-        if (!newBattles.isEmpty()) {
+        // Prepare and execute bulk operations for players
+        if (!updatedPlayers.isEmpty()) {
             startTime = System.currentTimeMillis();
-            battleRepository.saveAll(newBattles);
-            endTime = System.currentTimeMillis();
-            logger.error("Battle Insertion: {} ms", (endTime-startTime));
+            for (Player player : updatedPlayers)
+            {
+                Player existingPlayer = playerMap.get(player.getUserId());
+                Query query = new Query(Criteria.where("userId").is(player.getUserId()));
+                Update update = new Update();
 
-            startTime = System.currentTimeMillis();
-            playerRepository.saveAll(updatedPlayers);
-            endTime = System.currentTimeMillis();
+                //update only if this is the latest battle
+                if (existingPlayer == null  || existingPlayer.getLatestBattle() < player.getLatestBattle())
+                {
+                    update.set("danRank", player.getDanRank())
+                            .set("tekkenPower", player.getTekkenPower())
+                            .set("latestBattle", player.getLatestBattle())
+                            .inc("rating", player.getRatingChange());
+                }
+                // Use setOnInsert for fields that should only be set for new documents
+                update.setOnInsert("userId", player.getUserId())
+                        .setOnInsert("name", player.getName())
+                        .setOnInsert("danRank", player.getDanRank())
+                        .setOnInsert("tekkenPower", player.getTekkenPower())
+                        .setOnInsert("polarisId", player.getPolarisId())
+                        .setOnInsert("rating", player.getRating());
 
-            logger.error("Player Insertion: {} ms", (endTime-startTime));
+                update.inc("wins", player.getWinsIncrement())
+                        .inc("losses", player.getLossIncrement())
+                        .addToSet("playerNames", player.getName());
+
+
+                playerBulkOps.upsert(query, update);
+
+                player.setLossIncrement(0);
+                player.setWinsIncrement(0);
+                player.setRatingChange(0);
+            }
+
+            BulkWriteResult playerResult = playerBulkOps.execute();
+            endTime = System.currentTimeMillis();
+            logger.error("Player Upsert: {} ms, Upserted: {}, Modified: {}",
+                    (endTime - startTime), playerResult.getUpserts().size(), playerResult.getModifiedCount());
         }
-
-
-
     }
 
 
-    private boolean isNewBattle(Battle battle, Player player)
+    private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber)
     {
-        List<Battle> last10Battles = player.getLast10Battles();
-        if (last10Battles.isEmpty())
-        {
-            return true;  // If no battles, consider it new
-        }
-        Battle newestBattle = last10Battles.get(0);
-        return battle.getBattleAt() > newestBattle.getBattleAt();
-    }
-
-    private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber) {
         String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
         logger.info("Attempting to retrieve player{} info...", playerNumber);
 
@@ -150,22 +204,30 @@ public class ReplayService {
         player.setLosses(0);
         player.setWins(0);
         player.setPlayerNames(new ArrayList<>());
-        player.setLast10Battles(new ArrayList<>());
+        player.setLatestBattle(0);
         updatePlayerDetails(player, battle, playerNumber);
         return player;
     }
 
-    private void updatePlayerWithBattle(Player player, Battle battle, boolean isNewBattle, int playerNumber)
-    {
-        updateLast10Battles(player, battle);
-        updateWinsAndLosses(player, battle.getWinner(), playerNumber);
-        updateWinRate(player);
+    private void updatePlayerWithBattle(Player player, Battle battle, int playerNumber) {
 
-        if (isNewBattle)
+        if (battle.getWinner() == playerNumber)
         {
-            updatePlayerDetails(player, battle, playerNumber);
+            player.setWinsIncrement(player.getWinsIncrement() + 1);
+            player.setWins(player.getWins() + 1);
+        } else
+        {
+            player.setLossIncrement(player.getLossIncrement() + 1);
+            player.setLosses(player.getLosses() + 1);
         }
 
+        if(battle.getBattleAt() > player.getLatestBattle())
+        {
+            player.setLatestBattle(battle.getBattleAt());
+        }
+
+        player.setRatingChange(playerNumber == 1 ? battle.getPlayer1RatingChange() : battle.getPlayer2RatingChange());
+        updateWinRate(player);
     }
 
     private void updatePlayerDetails(Player player, Battle battle, int playerNumber)
@@ -188,24 +250,6 @@ public class ReplayService {
         }
     }
 
-    private void updateLast10Battles(Player player, Battle battle)
-    {
-        List<Battle> last10Battles = player.getLast10Battles();
-        if (battle.getDate() == null || battle.getDate().isEmpty())
-        {
-            battle.setDate(getReadableDateInUTC(battle));
-        }
-        // Add the new battle
-        last10Battles.add(battle);
-
-        // Sort the list in descending order
-        last10Battles.sort((b1, b2) -> Long.compare(b2.getBattleAt(), b1.getBattleAt()));
-
-        // Keep only the first 10 elements
-        if (last10Battles.size() > 10) {
-            last10Battles.remove(last10Battles.size()-1);
-        }
-    }
 
     private String getReadableDateInUTC(Battle battle)
     {
@@ -214,21 +258,9 @@ public class ReplayService {
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm 'UTC'"));
     }
 
-    private void updateWinsAndLosses(Player player, int winner, int playerNumber)
-    {
-        if (winner == playerNumber)
-        {
-            player.setWins(player.getWins() + 1);
-        }
-        else
-        {
-            player.setLosses(player.getLosses()+1);
-        }
-    }
-
     private void updateWinRate(Player player)
     {
-        float winRate = (player.getWins() + player.getLosses() > 0) ? (player.getWins() / (float) (player.getWins() + player.getLosses()) * 100) : 0;
+        double winRate = (player.getWins() + player.getLosses() > 0) ? (player.getWins() / (float) (player.getWins() + player.getLosses()) * 100) : 0;
         player.setWinRate(winRate);
     }
 
