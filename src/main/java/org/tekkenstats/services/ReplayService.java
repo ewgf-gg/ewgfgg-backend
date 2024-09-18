@@ -59,13 +59,37 @@ public class ReplayService {
     }
 
     @Async("taskExecutor")
-    public void processBattlesAsync(List<Battle> battles) {
+    public void processBattlesAsync(List<Battle> battles)
+    {
+        // Extract battle IDs and player IDs
         Set<String> battleIDs = new HashSet<>();
         Set<String> playerIDs = new HashSet<>();
+        extractBattleAndPlayerIDs(battles, battleIDs, playerIDs);
 
+        // Fetch existing battles and players
+        Map<String, Battle> existingBattleMap = fetchExistingBattles(battleIDs);
+        Map<String, Player> playerMap = fetchExistingPlayers(playerIDs);
+
+        Set<Player> updatedPlayers = new HashSet<>();
+
+        // Initialize bulk operations
+        BulkOperations battleBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Battle.class);
+        BulkOperations playerBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Player.class);
+
+        // Process battles
+        processBattles(battles, existingBattleMap, playerMap, updatedPlayers, battleBulkOps);
+
+        // Execute battle bulk operations
+        executeBattleBulkOperations(battleBulkOps);
+
+        // Execute player bulk operations
+        executePlayerBulkOperations(playerMap, updatedPlayers, playerBulkOps);
+    }
+
+    private void extractBattleAndPlayerIDs(List<Battle> battles, Set<String> battleIDs, Set<String> playerIDs)
+    {
         long startTime = System.currentTimeMillis();
 
-        // Extract battle IDs and player IDs
         for (Battle battle : battles) {
             battleIDs.add(battle.getBattleId());
             playerIDs.add(battle.getPlayer1UserID());
@@ -74,32 +98,45 @@ public class ReplayService {
 
         long endTime = System.currentTimeMillis();
         logger.error("Fetched info from JSON: {} ms", (endTime - startTime));
+    }
 
-        // Bulk read battles and players using MongoTemplate
-        startTime = System.currentTimeMillis();
+    private Map<String, Battle> fetchExistingBattles(Set<String> battleIDs)
+    {
+        long startTime = System.currentTimeMillis();
 
         Query battleQuery = new Query(Criteria.where("battleId").in(battleIDs));
         List<Battle> existingBattles = mongoTemplate.find(battleQuery, Battle.class);
 
+        long endTime = System.currentTimeMillis();
+        logger.error("Retrieved existing battles from database: {} ms", (endTime - startTime));
+
+        return existingBattles.stream()
+                .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
+    }
+
+    private Map<String, Player> fetchExistingPlayers(Set<String> playerIDs)
+    {
+        long startTime = System.currentTimeMillis();
+
         Query playerQuery = new Query(Criteria.where("userId").in(playerIDs));
         List<Player> existingPlayers = mongoTemplate.find(playerQuery, Player.class);
 
-        endTime = System.currentTimeMillis();
-        logger.error("Retrieved info from database: {} ms", (endTime - startTime));
+        long endTime = System.currentTimeMillis();
+        logger.error("Retrieved existing players from database: {} ms", (endTime - startTime));
 
-        // Create maps for quick lookups
-        Map<String, Battle> existingBattleMap = existingBattles.stream()
-                .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
-        Map<String, Player> playerMap = existingPlayers.stream()
+        return existingPlayers.stream()
                 .collect(Collectors.toMap(Player::getUserId, player -> player));
+    }
 
-        Set<Player> updatedPlayers = new HashSet<>();
+    private void processBattles(
+            List<Battle> battles,
+            Map<String, Battle> existingBattleMap,
+            Map<String, Player> playerMap,
+            Set<Player> updatedPlayers,
+            BulkOperations battleBulkOps)
+    {
 
-        // Initialize bulk operations for battle and player updates
-        BulkOperations battleBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Battle.class);
-        BulkOperations playerBulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Player.class);
-
-        startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
         for (Battle battle : battles) {
             if (!existingBattleMap.containsKey(battle.getBattleId())) {
@@ -121,26 +158,34 @@ public class ReplayService {
             }
         }
 
-        endTime = System.currentTimeMillis();
+        long endTime = System.currentTimeMillis();
         logger.error("Updated player and battle information: {} ms", (endTime - startTime));
+    }
 
-        // Execute bulk operations for battles
+    private void executeBattleBulkOperations(BulkOperations battleBulkOps)
+    {
+        long startTime = System.currentTimeMillis();
         BulkWriteResult battleResult = battleBulkOps.execute();
-        endTime = System.currentTimeMillis();
-        logger.error("Battle Insertion: {} ms, Inserted: {}", (endTime - startTime), battleResult.getInsertedCount());
+        long endTime = System.currentTimeMillis();
+        logger.error("Battle Insertion: {} ms, Inserted: {}",
+                (endTime - startTime), battleResult.getInsertedCount());
+    }
+    private void executePlayerBulkOperations(
+            Map<String, Player> playerMap,
+            Set<Player> updatedPlayers,
+            BulkOperations playerBulkOps)
+    {
 
-        // Prepare and execute bulk operations for players
         if (!updatedPlayers.isEmpty()) {
-            startTime = System.currentTimeMillis();
-            for (Player player : updatedPlayers)
-            {
+            long startTime = System.currentTimeMillis();
+
+            for (Player player : updatedPlayers) {
                 Player existingPlayer = playerMap.get(player.getUserId());
                 Query query = new Query(Criteria.where("userId").is(player.getUserId()));
                 Update update = new Update();
 
-                //update only if this is the latest battle
-                if (existingPlayer == null  || existingPlayer.getLatestBattle() < player.getLatestBattle())
-                {
+                // Update only if this is the latest battle
+                if (existingPlayer == null || existingPlayer.getLatestBattle() < player.getLatestBattle()) {
                     update.set("danRank", player.getDanRank())
                             .set("tekkenPower", player.getTekkenPower())
                             .set("latestBattle", player.getLatestBattle())
@@ -158,20 +203,22 @@ public class ReplayService {
                         .inc("losses", player.getLossIncrement())
                         .addToSet("playerNames", player.getName());
 
-
                 playerBulkOps.upsert(query, update);
 
+                // Reset increments after processing
                 player.setLossIncrement(0);
                 player.setWinsIncrement(0);
                 player.setRatingChange(0);
             }
 
             BulkWriteResult playerResult = playerBulkOps.execute();
-            endTime = System.currentTimeMillis();
+            long endTime = System.currentTimeMillis();
             logger.error("Player Upsert: {} ms, Upserted: {}, Modified: {}",
                     (endTime - startTime), playerResult.getUpserts().size(), playerResult.getModifiedCount());
         }
     }
+
+
 
 
     private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber)
