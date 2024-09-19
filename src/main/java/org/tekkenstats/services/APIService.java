@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.tekkenstats.config.RabbitMQConfig;
+import org.tekkenstats.configuration.RabbitMQConfig;
 
 
 import java.time.Instant;
@@ -28,19 +28,17 @@ public class APIService {
     private String API_URL = "https://wank.wavu.wiki/api/replays";
     private static final ZoneId zoneId = ZoneId.systemDefault();
 
-    long unixTimestamp = 1726435456L;
+    long unixTimestamp = 1726634211L;
 
-    @Scheduled(fixedRate = 1000)
-    public void fetchReplays()
-    {
-        String readableDate = Instant.ofEpochSecond(unixTimestamp)
+    @Scheduled(fixedRate = 1200)
+    public void fetchReplays() {
+        String dateFromUnix = Instant.ofEpochSecond(unixTimestamp)
                 .atZone(zoneId)
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
 
-        logger.info("Sending query to API endpoint for battle time before: {}, Unix: {}", readableDate, unixTimestamp);
+        logger.info("Sending query to API endpoint for battle time before: {}, Unix: {}", dateFromUnix, unixTimestamp);
 
-        try
-        {
+        try {
             // Fetch battle data
             String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + unixTimestamp, String.class);
             logger.info("Received response from API");
@@ -48,7 +46,7 @@ public class APIService {
             assert jsonResponse != null;
 
             long startTime = System.currentTimeMillis();
-            sendToRabbitMQ(jsonResponse);
+            sendToRabbitMQ(jsonResponse, dateFromUnix);
             long endTime = System.currentTimeMillis();
 
             logger.info("Sending data to RabbitMQ took {} ms", (endTime - startTime));
@@ -59,12 +57,16 @@ public class APIService {
         }
     }
 
-    public void sendToRabbitMQ(String message)
-    {
+    public void sendToRabbitMQ(String message, String dateAndTime) {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EXCHANGE_NAME,
                 RabbitMQConfig.ROUTING_KEY,
-                message
+                message,
+                msg -> {
+                    msg.getMessageProperties().setHeader("unixTimestamp", dateAndTime);
+                    return msg;
+                }
         );
     }
 }
+
