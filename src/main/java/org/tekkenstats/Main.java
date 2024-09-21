@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableRabbit
-
+@EnableRetry
 public class Main {
     public static void main(String[] args)
     {
