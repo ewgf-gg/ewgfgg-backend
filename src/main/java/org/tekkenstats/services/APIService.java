@@ -38,7 +38,8 @@ public class APIService {
 
         logger.info("Sending query to API endpoint for battle time before: {}, Unix: {}", dateFromUnix, unixTimestamp);
 
-        try {
+        try
+        {
             // Fetch battle data
             String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + unixTimestamp, String.class);
             logger.info("Received response from API");
