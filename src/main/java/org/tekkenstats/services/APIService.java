@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.tekkenstats.configuration.BackpressureManager;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
 
@@ -20,6 +21,9 @@ public class APIService {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    BackpressureManager backpressureManager;
+
     private static final Logger logger = LogManager.getLogger(APIService.class);
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -28,15 +32,29 @@ public class APIService {
     private String API_URL = "https://wank.wavu.wiki/api/replays";
     private static final ZoneId zoneId = ZoneId.systemDefault();
 
-    long unixTimestamp = 1726634211L;
+    long unixTimestamp = 1714616200L;
 
     @Scheduled(fixedRate = 1200)
     public void fetchReplays() {
+
+        if(backpressureManager.isBackpressureActive())
+        {
+            logger.warn("BACKPRESSURE ACTIVE: MESSAGE RETRIEVAL IS STOPPED");
+            try
+            {
+                Thread.sleep(1200L * backpressureManager.getSlowdownFactor());
+                return;
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         String dateFromUnix = Instant.ofEpochSecond(unixTimestamp)
                 .atZone(zoneId)
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
 
         logger.info("Sending query to API endpoint for battle time before: {}, Unix: {}", dateFromUnix, unixTimestamp);
+
 
         try
         {

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataSource name="Tekken-Stats@localhost">
+  <database-model serializer="dbm" dbms="MONGO" family-id="MONGO" format-version="4.53">
+    <root id="1">
+      <ServerVersion>7.0.14</ServerVersion>
+    </root>
+    <schema id="2" parent="1" name="Tekken-Stats">
+      <Current>1</Current>
+    </schema>
+    <schema id="3" parent="1" name="admin"/>
+    <schema id="4" parent="1" name="config"/>
+    <schema id="5" parent="1" name="local"/>
+  </database-model>
+</dataSource>

@@ -6,6 +6,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
@@ -76,4 +77,16 @@ public class RabbitMQConfig {
         // Use the SimpleMessageConverter for plain text messages
         return new SimpleMessageConverter();
     }
-}
+
+
+        @Bean
+        public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
+            return new RabbitAdmin(connectionFactory);
+
+        }
+
+
+
+    }
+
