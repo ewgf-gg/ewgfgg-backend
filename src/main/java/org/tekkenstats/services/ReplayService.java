@@ -39,8 +39,7 @@ public class ReplayService {
     private BattleRepository battleRepository;
     @Autowired
     private PlayerRepository playerRepository;
-    @Autowired
-    private PastPlayerNamesRepository pastPlayerNamesRepository;
+
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -272,7 +271,6 @@ public class ReplayService {
             batchArgs.add(args);
 
         }
-
         // Execute batch update
         jdbcTemplate.batchUpdate(sql, batchArgs);
 
@@ -342,9 +340,6 @@ public class ReplayService {
                 (endTime - startTime), batchArgs.size());
     }
 
-
-
-
     private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber) {
         String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
         Player player = playerMap.get(userId);
@@ -404,6 +399,7 @@ public class ReplayService {
         {
             stats.setLatestBattle(battle.getBattleAt());
             player.setLatestBattle();
+            player.updateTekkenPower((getPlayerCharacter(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()), battle.getBattleAt());
             stats.setDanRank(getPlayerDanRank(battle, playerNumber));  // Update dan rank only if the battle is the latest
         }
     }
@@ -445,11 +441,6 @@ public class ReplayService {
                 .atZone(ZoneId.of("UTC"))
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm 'UTC'"));
     }
-
-//    private void updateWinRate(Player player) {
-//        double winRate = (player.getWins() + player.getLosses() > 0) ? (player.getWins() / (float) (player.getWins() + player.getLosses()) * 100) : 0;
-//        player.setWinRate(winRate);
-//    }
 
     private String getPlayerName(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1Name() : battle.getPlayer2Name();
