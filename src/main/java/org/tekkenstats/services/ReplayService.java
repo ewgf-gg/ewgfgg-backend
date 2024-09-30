@@ -1,12 +1,11 @@
 package org.tekkenstats.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.persistence.OptimisticLockException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.tekkenstats.repositories.BattleRepository;
 import org.tekkenstats.repositories.PastPlayerNamesRepository;
 import org.tekkenstats.repositories.PlayerRepository;
-
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -44,9 +42,12 @@ public class ReplayService {
     @Autowired
     private PastPlayerNamesRepository pastPlayerNamesRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, concurrency = "4")
-    @Transactional
-    public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws JsonProcessingException
+
+    public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
         String threadName = Thread.currentThread().getName();
         logger.info("Thread: {}, Received Battle Data from RabbitMQ, Timestamped: {}", threadName, dateAndTime);
@@ -84,7 +85,8 @@ public class ReplayService {
         executeBattleBatchWrite(battleSet);
 
         // Execute player bulk operations
-        executePlayerBulkOperations(mapOfExistingPlayers, updatedPlayers);
+        executePlayerBulkOperations(updatedPlayers);
+        executeCharacterStatsBulkOperations(updatedPlayers);
     }
 
     private void extractBattleAndPlayerIDs(List<Battle> battles, Set<String> battleIDs, Set<String> playerIDs)
@@ -177,8 +179,7 @@ public class ReplayService {
         logger.info("Updated player and battle information: {} ms", (endTime - startTime));
     }
 
-    private void executeBattleBatchWrite(Set<Battle> battleSet)
-    {
+    private void executeBattleBatchWrite(Set<Battle> battleSet) {
         if (battleSet == null || battleSet.isEmpty()) {
             logger.warn("No battles to insert or update.");
             return;
@@ -187,8 +188,50 @@ public class ReplayService {
         try {
             long startTime = System.currentTimeMillis();
 
-            // Save all battles in one go (JPA will handle batching if configured)
-            battleRepository.saveAll(battleSet);
+            String sql = "INSERT INTO battles (" +
+                    "battle_id, date, battle_at, battle_type, game_version, " +
+                    "player1characterid, player1_name, player1_polaris_id, player1tekken_power, player1dan_rank, " +
+                    "player1rating_before, player1rating_change, player1rounds_won, player1userid, " +
+                    "player2characterid, player2_name, player2_polaris_id, player2tekken_power, player2dan_rank, " +
+                    "player2rating_before, player2rating_change, player2rounds_won, player2userid, " +
+                    "stageid, winner" +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT (battle_id) DO NOTHING";
+
+            List<Object[]> batchArgs = new ArrayList<>();
+
+            for (Battle battle : battleSet) {
+                Object[] args = new Object[] {
+                        battle.getBattleId(),
+                        battle.getDate(),
+                        battle.getBattleAt(),
+                        battle.getBattleType(),
+                        battle.getGameVersion(),
+                        battle.getPlayer1CharacterID(),
+                        battle.getPlayer1Name(),
+                        battle.getPlayer1PolarisID(),
+                        battle.getPlayer1TekkenPower(),
+                        battle.getPlayer1DanRank(),
+                        battle.getPlayer1RatingBefore(),
+                        battle.getPlayer1RatingChange(),
+                        battle.getPlayer1RoundsWon(),
+                        battle.getPlayer1UserID(),
+                        battle.getPlayer2CharacterID(),
+                        battle.getPlayer1Name(),
+                        battle.getPlayer2PolarisID(),
+                        battle.getPlayer2TekkenPower(),
+                        battle.getPlayer2DanRank(),
+                        battle.getPlayer2RatingBefore(),
+                        battle.getPlayer2RatingChange(),
+                        battle.getPlayer2RoundsWon(),
+                        battle.getPlayer2UserID(),
+                        battle.getStageID(),
+                        battle.getWinner()
+                };
+                batchArgs.add(args);
+            }
+
+            jdbcTemplate.batchUpdate(sql, batchArgs);
 
             long endTime = System.currentTimeMillis();
             logger.info("Battle Insertion: {} ms, Inserted/Updated: {}", (endTime - startTime), battleSet.size());
@@ -198,11 +241,7 @@ public class ReplayService {
         }
     }
 
-
-    public void executePlayerBulkOperations(
-            Map<String, Player> existingPlayersMap,
-            Set<Player> updatedPlayersSet )
-
+    public void executePlayerBulkOperations(Set<Player> updatedPlayersSet)
     {
 
         if (updatedPlayersSet.isEmpty()) {
@@ -211,51 +250,96 @@ public class ReplayService {
         }
 
         long startTime = System.currentTimeMillis();
-        boolean success = false;
-        int retryCount = 0;
-        final int maxRetries = 3;
 
-        // Bulk processing with retry logic
-        while (!success && retryCount < maxRetries)
-        {
-            try {
-                // Bulk save players
-                // Bulk save new player names
-                Set<PastPlayerNames> newPlayerNames = updatedPlayersSet.stream()
-                        .flatMap(player -> player.getPlayerNames().stream())
-                        .collect(Collectors.toSet());
+        String sql = "INSERT INTO players (user_id, name, polaris_id, tekken_power,latest_battle) " +
+                "VALUES (?, ?, ?, ? ,?) " +
+                "ON CONFLICT (user_id) DO UPDATE SET " +
+                "tekken_power = EXCLUDED.tekken_power, " +
+                "latest_battle = EXCLUDED.latest_battle";
 
-                playerRepository.saveAll(updatedPlayersSet);
+        List<Object[]> batchArgs = new ArrayList<>();
 
-                success = true;
-            } catch (OptimisticLockException e) {
-                retryCount++;
-                logger.warn("Optimistic lock exception: Retrying bulk operation (Attempt {}/{})", retryCount, maxRetries);
+        for (Player updatedPlayer : updatedPlayersSet) {
 
-                if (retryCount >= maxRetries) {
-                    logger.error("Max retry limit reached. Aborting bulk operation.");
-                    throw e;
-                }
+            Object[] args = new Object[]{
+                    updatedPlayer.getPlayerId(),
+                    updatedPlayer.getName(),
+                    updatedPlayer.getPolarisId(),
+                    updatedPlayer.getTekkenPower(),
+                    updatedPlayer.getLatestBattle()
+            };
 
-                // Optionally refresh the entities from the database
-                updatedPlayersSet = refreshPlayersFromDatabase(updatedPlayersSet);
-            }
+            batchArgs.add(args);
+
         }
+
+        // Execute batch update
+        jdbcTemplate.batchUpdate(sql, batchArgs);
 
         long endTime = System.currentTimeMillis();
         logger.info("Player Bulk Upsert: {} ms, Processed Players: {}",
                 (endTime - startTime), updatedPlayersSet.size());
     }
 
-    private Set<Player> refreshPlayersFromDatabase(Set<Player> updatedPlayersSet)
-    {
-        Set<Player> refreshedPlayers = new HashSet<>();
-        for (Player player : updatedPlayersSet)
-        {
-            Player refreshedPlayer = playerRepository.findById(player.getPlayerId()).orElseThrow();
-            refreshedPlayers.add(refreshedPlayer);
+    public void executeCharacterStatsBulkOperations(
+            Set<Player> updatedPlayersSet) {
+
+        if (updatedPlayersSet.isEmpty()) {
+            logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
+            return;
         }
-        return refreshedPlayers;
+
+        long startTime = System.currentTimeMillis();
+
+        String sql = "INSERT INTO character_stats (player_id, character_id, dan_rank, latest_battle, wins, losses) " +
+                "VALUES (?, ?, ?, ?, ?, ?) " +
+                "ON CONFLICT (player_id, character_id) DO UPDATE SET " +
+                "dan_rank = EXCLUDED.dan_rank, " +
+                "latest_battle = EXCLUDED.latest_battle, " +
+                "wins = character_stats.wins + EXCLUDED.wins, " +
+                "losses = character_stats.losses + EXCLUDED.losses";
+
+        List<Object[]> batchArgs = new ArrayList<>();
+
+        for (Player updatedPlayer : updatedPlayersSet)
+        {
+            String userId = updatedPlayer.getPlayerId();
+
+            Map<String, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
+            if (updatedCharacterStats != null)
+            {
+                for (Map.Entry<String, CharacterStats> entry : updatedCharacterStats.entrySet())
+                {
+                    String characterName = entry.getKey();
+                    CharacterStats updatedStats = entry.getValue();
+
+                    int winsIncrement = updatedStats.getWinsIncrement();
+                    int lossesIncrement = updatedStats.getLossIncrement();
+
+                    Object[] args = new Object[]{
+                            userId,
+                            characterName,
+                            updatedStats.getDanRank(),
+                            updatedStats.getLatestBattle(),
+                            winsIncrement,
+                            lossesIncrement
+                    };
+
+                    batchArgs.add(args);
+
+                    // Reset increments after processing
+                    updatedStats.setWinsIncrement(0);
+                    updatedStats.setLossIncrement(0);
+                }
+            }
+        }
+
+        // Execute batch update
+        jdbcTemplate.batchUpdate(sql, batchArgs);
+
+        long endTime = System.currentTimeMillis();
+        logger.info("CharacterStats Bulk Upsert: {} ms, Processed CharacterStats: {}",
+                (endTime - startTime), batchArgs.size());
     }
 
 
@@ -301,7 +385,6 @@ public class ReplayService {
             // Initialize a new CharacterStats object if none exists for the character
             stats = new CharacterStats();
             stats.setDanRank(getPlayerDanRank(battle, playerNumber));
-            stats.setRating(calculatePlayerRating(battle, playerNumber));
             player.getCharacterStats().put(characterId, stats);
         }
 
@@ -336,7 +419,6 @@ public class ReplayService {
         // Create a new CharacterStats object for the player's character
         CharacterStats characterStats = new CharacterStats();
         characterStats.setDanRank(getPlayerDanRank(battle, playerNumber));
-        characterStats.setRating(calculatePlayerRating(battle, playerNumber));
         characterStats.setLatestBattle(battle.getBattleAt());
 
         // Add the new character stats to the player's map, keyed by character ID

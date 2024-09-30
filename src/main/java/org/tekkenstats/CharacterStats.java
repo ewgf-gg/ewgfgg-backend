@@ -3,12 +3,21 @@ package org.tekkenstats;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@Embeddable
+@Entity
+@Table(name = "character_stats")
 @Data
 public class CharacterStats {
 
+    @EmbeddedId
+    private CharacterStatsId id;
+
     @Column(name = "latest_battle")
     private long latestBattle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("playerId")
+    @JoinColumn(name = "player_id")
+    private Player player;
 
     @Column(name = "wins")
     private int wins;
@@ -18,9 +27,6 @@ public class CharacterStats {
 
     @Column(name = "dan_rank")
     private int danRank;
-
-    @Column(name = "rating")
-    private int rating;
 
     @Transient
     private int winsIncrement = 0;
@@ -35,15 +41,13 @@ public class CharacterStats {
         this.wins = 0;
         this.losses = 0;
         this.danRank = 0;
-        this.rating = 0;
         this.latestBattle = 0;
     }
 
-    public CharacterStats(int wins, int losses, int danRank, int rating, long latestBattle) {
+    public CharacterStats(int wins, int losses, int danRank, long latestBattle) {
         this.wins = wins;
         this.losses = losses;
         this.danRank = danRank;
-        this.rating = rating;
         this.latestBattle = latestBattle;
     }
 }

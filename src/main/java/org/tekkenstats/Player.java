@@ -38,9 +38,8 @@ public class Player {
     private Set<PastPlayerNames> playerNames = new HashSet<>();
 
     // A map to store character stats for each character by character ID
-    @ElementCollection
-    @CollectionTable(name = "character_stats", joinColumns = @JoinColumn(name = "player_id"))
-    @MapKeyColumn(name = "character_id")
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @MapKey(name = "id.characterId")
     private Map<String, CharacterStats> characterStats = new HashMap<>();
 
     public Player() {
