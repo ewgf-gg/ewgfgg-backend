@@ -1,81 +1,85 @@
 package org.tekkenstats;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.*;
 
-@JsonPropertyOrder({"userId","polarisId", "name","tekkenPower","tekkenPower", "danRank","rating","wins","losses","winRate","playerNames"})
-@Document(collection = "player-data")
+@Entity
+@Table(name = "players")
 @Data
 public class Player {
 
-    @Id @JsonProperty("userID")
-    private String userId; // Corresponds to player1UserID or player2UserID in Battle
-    @JsonProperty("name")
-    private String name;
-    @JsonProperty("polarisID")
-    private String polarisId;
-    @JsonProperty("tekkenPower")
-    private long tekkenPower;
-    @JsonProperty("playerNames")
-    private List<String> playerNames;
-    @JsonProperty("characterStats")
-    private Map<String, CharacterStats> characterStats;
+    @Id
+    @Column(name = "user_id", unique = true, nullable = false)
+    private String playerId;
 
-    public Player()
-    {
-        this.userId = "0";
+    @Column(name = "latest_battle")
+    private long latestBattle;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "polaris_id")
+    private String polarisId;
+
+    @Column(name = "tekken_power")
+    private long tekkenPower;
+
+    @Version
+    @Column(name = "version")
+    private int version;  // Optimistic locking version field
+
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<PastPlayerNames> playerNames = new HashSet<>();
+
+    // A map to store character stats for each character by character ID
+    @ElementCollection
+    @CollectionTable(name = "character_stats", joinColumns = @JoinColumn(name = "player_id"))
+    @MapKeyColumn(name = "character_id")
+    private Map<String, CharacterStats> characterStats = new HashMap<>();
+
+    public Player() {
+        this.playerId = "0";
         this.name = "undefined";
         this.polarisId = "0";
         this.tekkenPower = 0;
-        this.playerNames = new ArrayList<>();
-        this.characterStats = new HashMap<>();
     }
 
-    // Inner class representing character-specific stats
-    @Data
-    public static class CharacterStats
+    // Logic for setting/updating tekkenPower based on the latest battle
+    public void updateTekkenPower(long newPower, long battleTime) {
+        if (battleTime >= getLatestBattle())
+        {
+            this.tekkenPower = newPower;
+        }
+    }
+
+    public void setLatestBattle()
     {
-        @JsonProperty("latestBattle")
-        private long latestBattle;
-        @JsonProperty("wins")
-        private int wins;
-        @JsonProperty("losses")
-        private int losses;
-        @JsonProperty("danRank")
-        private int danRank;
-        @JsonProperty("rating")
-        private int rating;
-
-        @Transient
-        private int winsIncrement = 0;
-        @Transient
-        private int lossIncrement = 0;
-        @Transient
-        private int ratingChange = 0;
-
-        public CharacterStats()
-        {
-            this.wins = 0;
-            this.losses = 0;
-            this.danRank = 0;
-            this.rating = 0;
-            this.latestBattle = 0;
-        }
-
-        public CharacterStats(int wins, int losses, int danRank, int rating,long latestBattle)
-        {
-            this.wins = wins;
-            this.losses = losses;
-            this.danRank = danRank;
-            this.rating = rating;
-            this.latestBattle = latestBattle;
-        }
-
+        this.latestBattle = characterStats.values().stream()
+                .mapToLong(CharacterStats::getLatestBattle)
+                .max().orElse(0);
     }
+
+    public boolean hasPlayerName(String name) {
+        return playerNames.stream().anyMatch(pn -> pn.getName().equals(name));
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof Player player)) return false;
+        return Objects.equals(playerId, player.playerId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(playerId);
+    }
+
 }

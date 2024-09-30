@@ -30,9 +30,9 @@ public class APIService {
     private final int TIME_STEP = 700;
 
     private String API_URL = "https://wank.wavu.wiki/api/replays";
-    private static final ZoneId zoneId = ZoneId.systemDefault();
+    private static final ZoneId zoneId = ZoneId.of("UTC");
 
-    long unixTimestamp = 1714616200L;
+    long unixTimestamp = 1727688362L;
 
     @Scheduled(fixedRate = 1200)
     public void fetchReplays() {
@@ -53,7 +53,7 @@ public class APIService {
                 .atZone(zoneId)
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
 
-        logger.info("Sending query to API endpoint for battle time before: {}, Unix: {}", dateFromUnix, unixTimestamp);
+        logger.info("Sending query to API endpoint for battle time before: {} UTC, Unix: {}", dateFromUnix, unixTimestamp);
 
 
         try
@@ -65,7 +65,7 @@ public class APIService {
             assert jsonResponse != null;
 
             long startTime = System.currentTimeMillis();
-            sendToRabbitMQ(jsonResponse, dateFromUnix);
+            sendToRabbitMQ(jsonResponse, dateFromUnix + " UTC");
             long endTime = System.currentTimeMillis();
 
             logger.info("Sending data to RabbitMQ took {} ms", (endTime - startTime));

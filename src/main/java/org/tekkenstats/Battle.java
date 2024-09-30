@@ -1,12 +1,14 @@
 package org.tekkenstats;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
 
-@Document(collection = "replay-data")
+@Entity
+@Table(name = "battles")
 @Data
 public class Battle {
 
