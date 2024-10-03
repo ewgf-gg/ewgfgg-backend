@@ -28,9 +28,7 @@ public class Player {
     @Column(name = "tekken_power")
     private long tekkenPower;
 
-    @Version
-    @Column(name = "version")
-    private int version;  // Optimistic locking version field
+
 
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude

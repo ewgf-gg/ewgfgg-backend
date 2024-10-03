@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DdlMappings">
+    <mapping uuid="6ca138c1-99d1-4b5b-b079-9b87c6f6db0c" name="Tekken-Database@localhost Mapping">
+      <data-sources db="e71df42a-773a-4b16-80ef-aa572cf703e8" />
+      <scope>
+        <node negative="1">
+          <node kind="database" negative="1" />
+          <node kind="database" qname="Tekken-Database">
+            <node kind="schema" negative="1" />
+          </node>
+        </node>
+      </scope>
+    </mapping>
+  </component>
+</project>

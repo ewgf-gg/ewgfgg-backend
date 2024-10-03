@@ -32,7 +32,7 @@ public class APIService {
     private String API_URL = "https://wank.wavu.wiki/api/replays";
     private static final ZoneId zoneId = ZoneId.of("UTC");
 
-    long unixTimestamp = 1727732026L;
+    long unixTimestamp = 1720641420L;
 
     @Scheduled(fixedRate = 1200)
     public void fetchReplays() {

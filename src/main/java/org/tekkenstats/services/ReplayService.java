@@ -151,8 +151,10 @@ public class ReplayService {
         long startTime = System.currentTimeMillis();
         int duplicateBattles = 0;
 
-        for (Battle battle : battles) {
-            if (!existingBattlesMap.containsKey(battle.getBattleId())) {
+        for (Battle battle : battles)
+        {
+            if (!existingBattlesMap.containsKey(battle.getBattleId()))
+            {
                 battle.setDate(getReadableDateInUTC(battle));
 
                 Player player1 = getOrCreatePlayer(existingPlayersMap, battle, 1);
@@ -166,7 +168,8 @@ public class ReplayService {
 
                 // Queue insert operation for battle
                 battleSet.add(battle);
-            } else {
+            } else
+            {
                 duplicateBattles++;
             }
         }
@@ -299,15 +302,12 @@ public class ReplayService {
 
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersSet)
-        {
+        for (Player updatedPlayer : updatedPlayersSet) {
             String userId = updatedPlayer.getPlayerId();
 
             Map<String, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
-            if (updatedCharacterStats != null)
-            {
-                for (Map.Entry<String, CharacterStats> entry : updatedCharacterStats.entrySet())
-                {
+            if (updatedCharacterStats != null) {
+                for (Map.Entry<String, CharacterStats> entry : updatedCharacterStats.entrySet()) {
                     String characterName = entry.getKey();
                     CharacterStats updatedStats = entry.getValue();
 
@@ -332,11 +332,23 @@ public class ReplayService {
             }
         }
 
-        // Execute batch update
-        jdbcTemplate.batchUpdate(sql, batchArgs);
+        // Define batch size
+        int batchSize = 1000; // Adjust based on your system's capacity and performance
+        int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
+
+        // Execute batch updates in smaller chunks
+        for (int i = 0; i < totalBatches; i++) {
+            int start = i * batchSize;
+            int end = Math.min(start + batchSize, batchArgs.size());
+
+            List<Object[]> batch = batchArgs.subList(start, end);
+            jdbcTemplate.batchUpdate(sql, batch);
+
+            logger.info("Processed batch {} of {} ({} records)", i + 1, totalBatches, batch.size());
+        }
 
         long endTime = System.currentTimeMillis();
-        logger.info("CharacterStats Bulk Upsert: {} ms, Processed CharacterStats: {}",
+        logger.info("CharacterStats Bulk Upsert: {} ms, Total Processed CharacterStats: {}",
                 (endTime - startTime), batchArgs.size());
     }
 
