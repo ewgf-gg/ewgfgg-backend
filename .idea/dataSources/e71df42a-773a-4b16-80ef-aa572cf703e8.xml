@@ -3,15 +3,7 @@
   <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
     <root id="1">
       <DateStyle>mdy</DateStyle>
-      <Grants>1||-9223372036854775808|c|G
-1||10|c|G
-1||10|C|G
-1||10|T|G
-4||-9223372036854775808|c|G
-4||10|c|G
-4||10|C|G
-4||10|T|G</Grants>
-      <IntrospectionStateNumber>1461</IntrospectionStateNumber>
+      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
       <ServerVersion>17.0</ServerVersion>
       <StartupTime>1727458251</StartupTime>
       <TimeZones>true ACDT
@@ -266,7 +258,7 @@ true America/Yellowknife
 false Antarctica/Casey
 false Antarctica/Davis
 false Antarctica/DumontDUrville
-false Antarctica/Macquarie
+true Antarctica/Macquarie
 false Antarctica/Mawson
 true Antarctica/McMurdo
 false Antarctica/Palmer
@@ -387,29 +379,29 @@ false Atlantic/Reykjavik
 false Atlantic/South_Georgia
 false Atlantic/St_Helena
 false Atlantic/Stanley
-false Australia/ACT
-false Australia/Adelaide
+true Australia/ACT
+true Australia/Adelaide
 false Australia/Brisbane
-false Australia/Broken_Hill
-false Australia/Canberra
-false Australia/Currie
+true Australia/Broken_Hill
+true Australia/Canberra
+true Australia/Currie
 false Australia/Darwin
 false Australia/Eucla
-false Australia/Hobart
-false Australia/LHI
+true Australia/Hobart
+true Australia/LHI
 false Australia/Lindeman
-false Australia/Lord_Howe
-false Australia/Melbourne
-false Australia/NSW
+true Australia/Lord_Howe
+true Australia/Melbourne
+true Australia/NSW
 false Australia/North
 false Australia/Perth
 false Australia/Queensland
-false Australia/South
-false Australia/Sydney
-false Australia/Tasmania
-false Australia/Victoria
+true Australia/South
+true Australia/Sydney
+true Australia/Tasmania
+true Australia/Victoria
 false Australia/West
-false Australia/Yancowinna
+true Australia/Yancowinna
 true BDST
 false BDT
 false BNT
@@ -624,7 +616,7 @@ false KRAST
 false KRAT
 false KST
 false Kwajalein
-false LHDT
+true LHDT
 false LHST
 false LIGT
 false LINT
@@ -712,7 +704,7 @@ false Pacific/Marquesas
 false Pacific/Midway
 false Pacific/Nauru
 false Pacific/Niue
-false Pacific/Norfolk
+true Pacific/Norfolk
 false Pacific/Noumea
 false Pacific/Pago_Pago
 false Pacific/Palau
@@ -808,7 +800,7 @@ false Zulu
 14704||10|C|G
 14704||-9223372036854775808|U|G
 14704||10|U|G</Grants>
-      <IntrospectionStateNumber>1461</IntrospectionStateNumber>
+      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
       <ObjectId>16388</ObjectId>
       <OwnerName>postgres</OwnerName>
     </database>
@@ -4235,8 +4227,8 @@ false Zulu
     <schema id="265" parent="2" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>1461</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2024-09-30.18:13:58</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2024-10-05.20:45:29</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>532</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
@@ -4258,14 +4250,14 @@ false Zulu
       <OwnerName>postgres</OwnerName>
     </sequence>
     <table id="268" parent="265" name="battles">
-      <ObjectId>24576</ObjectId>
-      <StateNumber>786</StateNumber>
+      <ObjectId>25187</ObjectId>
+      <StateNumber>24582</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <table id="269" parent="265" name="character_stats">
       <ObjectId>24648</ObjectId>
-      <StateNumber>797</StateNumber>
+      <StateNumber>1597</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
@@ -4283,368 +4275,249 @@ false Zulu
     </table>
     <table id="272" parent="265" name="players">
       <ObjectId>24585</ObjectId>
-      <StateNumber>896</StateNumber>
+      <StateNumber>1531</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <column id="273" parent="268" name="battle_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
-      <StateNumber>766</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
     <column id="274" parent="268" name="date">
       <Position>2</Position>
-      <StateNumber>767</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
     <column id="275" parent="268" name="battle_at">
       <Position>3</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
     <column id="276" parent="268" name="battle_type">
       <Position>4</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
     <column id="277" parent="268" name="game_version">
+      <NotNull>1</NotNull>
       <Position>5</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="278" parent="268" name="player1_chara_id">
+    <column id="278" parent="268" name="version">
+      <DefaultExpression>0</DefaultExpression>
       <Position>6</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
     <column id="279" parent="268" name="player1_name">
       <Position>7</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(30)|0s</StoredType>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="280" parent="268" name="player1_polaris_id">
+    <column id="280" parent="268" name="player1_character_id">
+      <NotNull>1</NotNull>
       <Position>8</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(40)|0s</StoredType>
-      <TypeId>1043</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
     </column>
-    <column id="281" parent="268" name="player1_power">
+    <column id="281" parent="268" name="player1_dan_rank">
+      <NotNull>1</NotNull>
       <Position>9</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>bigint|0s</StoredType>
-      <TypeId>20</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
     </column>
-    <column id="282" parent="268" name="player1_rank">
+    <column id="282" parent="268" name="player1_userid">
       <Position>10</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
+      <TypeId>1043</TypeId>
     </column>
-    <column id="283" parent="268" name="player1_rounds_won">
+    <column id="283" parent="268" name="player1_polaris_id">
       <Position>11</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
+      <TypeId>1043</TypeId>
     </column>
-    <column id="284" parent="268" name="player1_user_id">
+    <column id="284" parent="268" name="player1_rating_before">
       <Position>12</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(25)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="285" parent="268" name="player2_chara_id">
-      <Position>13</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="286" parent="268" name="player2_name">
+    <column id="285" parent="268" name="player1_rating_change">
+      <Position>13</Position>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="286" parent="268" name="player1_rounds_won">
+      <NotNull>1</NotNull>
       <Position>14</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(30)|0s</StoredType>
-      <TypeId>1043</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
     </column>
-    <column id="287" parent="268" name="player2_polaris_id">
+    <column id="287" parent="268" name="player1_tekken_power">
+      <NotNull>1</NotNull>
       <Position>15</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(40)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="288" parent="268" name="player2_power">
-      <Position>16</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="289" parent="268" name="player2_rank">
-      <Position>17</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="290" parent="268" name="player2_rounds_won">
-      <Position>18</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="291" parent="268" name="player2_user_id">
-      <Position>19</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>varchar(25)|0s</StoredType>
+    <column id="288" parent="268" name="player2_name">
+      <Position>16</Position>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="292" parent="268" name="stage_id">
+    <column id="289" parent="268" name="player2_character_id">
+      <NotNull>1</NotNull>
+      <Position>17</Position>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="290" parent="268" name="player2_dan_rank">
+      <NotNull>1</NotNull>
+      <Position>18</Position>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="291" parent="268" name="player2_userid">
+      <Position>19</Position>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="292" parent="268" name="player2_polaris_id">
       <Position>20</Position>
-      <StateNumber>753</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
+      <TypeId>1043</TypeId>
     </column>
-    <column id="293" parent="268" name="winner">
+    <column id="293" parent="268" name="player2_rating_before">
       <Position>21</Position>
-      <StateNumber>753</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="294" parent="268" name="version">
-      <DefaultExpression>0</DefaultExpression>
+    <column id="294" parent="268" name="player2_rating_change">
       <Position>22</Position>
-      <StateNumber>767</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="295" parent="268" name="player1characterid">
+    <column id="295" parent="268" name="player2_rounds_won">
       <NotNull>1</NotNull>
       <Position>23</Position>
-      <StateNumber>768</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="296" parent="268" name="player1dan_rank">
+    <column id="296" parent="268" name="player2_tekken_power">
       <NotNull>1</NotNull>
       <Position>24</Position>
-      <StateNumber>769</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>bigint|0s</StoredType>
+      <TypeId>20</TypeId>
     </column>
-    <column id="297" parent="268" name="player1name">
+    <column id="297" parent="268" name="stageid">
+      <NotNull>1</NotNull>
       <Position>25</Position>
-      <StateNumber>770</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
+      <StateNumber>24582</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
     </column>
-    <column id="298" parent="268" name="player1polarisid">
+    <column id="298" parent="268" name="winner">
       <Position>26</Position>
-      <StateNumber>771</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="299" parent="268" name="player1rating_before">
-      <Position>27</Position>
-      <StateNumber>772</StateNumber>
+      <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="300" parent="268" name="player1rating_change">
-      <Position>28</Position>
-      <StateNumber>773</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="301" parent="268" name="player1rounds_won">
-      <NotNull>1</NotNull>
-      <Position>29</Position>
-      <StateNumber>774</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="302" parent="268" name="player1tekken_power">
-      <NotNull>1</NotNull>
-      <Position>30</Position>
-      <StateNumber>775</StateNumber>
-      <StoredType>bigint|0s</StoredType>
-      <TypeId>20</TypeId>
-    </column>
-    <column id="303" parent="268" name="player1userid">
-      <Position>31</Position>
-      <StateNumber>776</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="304" parent="268" name="player2characterid">
-      <NotNull>1</NotNull>
-      <Position>32</Position>
-      <StateNumber>777</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="305" parent="268" name="player2dan_rank">
-      <NotNull>1</NotNull>
-      <Position>33</Position>
-      <StateNumber>778</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="306" parent="268" name="player2name">
-      <Position>34</Position>
-      <StateNumber>779</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="307" parent="268" name="player2polarisid">
-      <Position>35</Position>
-      <StateNumber>780</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="308" parent="268" name="player2rating_before">
-      <Position>36</Position>
-      <StateNumber>781</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="309" parent="268" name="player2rating_change">
-      <Position>37</Position>
-      <StateNumber>782</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="310" parent="268" name="player2rounds_won">
-      <NotNull>1</NotNull>
-      <Position>38</Position>
-      <StateNumber>783</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="311" parent="268" name="player2tekken_power">
-      <NotNull>1</NotNull>
-      <Position>39</Position>
-      <StateNumber>784</StateNumber>
-      <StoredType>bigint|0s</StoredType>
-      <TypeId>20</TypeId>
-    </column>
-    <column id="312" parent="268" name="player2userid">
-      <Position>40</Position>
-      <StateNumber>785</StateNumber>
-      <StoredType>varchar(255)|0s</StoredType>
-      <TypeId>1043</TypeId>
-    </column>
-    <column id="313" parent="268" name="stageid">
-      <NotNull>1</NotNull>
-      <Position>41</Position>
-      <StateNumber>786</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <index id="314" parent="268" name="battles_pkey">
+    <index id="299" parent="268" name="battles_pkey">
       <ColNames>battle_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
-      <ObjectId>24634</ObjectId>
+      <ObjectId>25193</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>767</StateNumber>
+      <StateNumber>24582</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="315" parent="268" name="idx_battle_at">
-      <ColNames>battle_at</ColNames>
-      <ObjectId>24581</ObjectId>
-      <StateNumber>767</StateNumber>
-      <AccessMethodId>403</AccessMethodId>
-    </index>
-    <index id="316" parent="268" name="idx_game_version">
-      <ColNames>game_version</ColNames>
-      <ObjectId>24584</ObjectId>
-      <StateNumber>767</StateNumber>
-      <AccessMethodId>403</AccessMethodId>
-    </index>
-    <index id="317" parent="268" name="idx_player1_user_id">
-      <ColNames>player1_user_id</ColNames>
-      <ObjectId>24582</ObjectId>
-      <StateNumber>767</StateNumber>
-      <AccessMethodId>403</AccessMethodId>
-      <CollationNames>default</CollationNames>
-      <CollationIds>100</CollationIds>
-      <CollationParentNames>pg_catalog</CollationParentNames>
-    </index>
-    <index id="318" parent="268" name="idx_player2_user_id">
-      <ColNames>player2_user_id</ColNames>
-      <ObjectId>24583</ObjectId>
-      <StateNumber>767</StateNumber>
-      <AccessMethodId>403</AccessMethodId>
-      <CollationNames>default</CollationNames>
-      <CollationIds>100</CollationIds>
-      <CollationParentNames>pg_catalog</CollationParentNames>
-    </index>
-    <key id="319" parent="268" name="battles_pkey">
+    <key id="300" parent="268" name="battles_pkey">
       <NameSurrogate>1</NameSurrogate>
-      <ObjectId>24635</ObjectId>
+      <ObjectId>25194</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>766</StateNumber>
-      <UnderlyingIndexId>24634</UnderlyingIndexId>
+      <StateNumber>24582</StateNumber>
+      <UnderlyingIndexId>25193</UnderlyingIndexId>
     </key>
-    <column id="320" parent="269" name="player_id">
+    <column id="301" parent="269" name="player_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="321" parent="269" name="dan_rank">
+    <column id="302" parent="269" name="dan_rank">
       <Position>2</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="322" parent="269" name="latest_battle">
+    <column id="303" parent="269" name="latest_battle">
       <Position>3</Position>
       <StateNumber>787</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="323" parent="269" name="losses">
+    <column id="304" parent="269" name="losses">
       <Position>4</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="324" parent="269" name="rating">
-      <Position>5</Position>
-      <StateNumber>787</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="325" parent="269" name="wins">
+    <column id="305" parent="269" name="wins">
       <Position>6</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="326" parent="269" name="character_id">
+    <column id="306" parent="269" name="character_id">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <foreign-key id="327" parent="269" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
+    <column id="307" parent="269" name="rating">
+      <Position>8</Position>
+      <StateNumber>1597</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <foreign-key id="308" parent="269" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
       <ColNames>player_id</ColNames>
-      <ObjectId>24679</ObjectId>
-      <StateNumber>797</StateNumber>
+      <ObjectId>25019</ObjectId>
+      <StateNumber>1529</StateNumber>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="328" parent="269" name="character_stats_pkey">
+    <index id="309" parent="269" name="character_stats_pkey">
       <ColNames>player_id
 character_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
@@ -4660,14 +4533,14 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="329" parent="269" name="character_stats_pkey">
+    <key id="310" parent="269" name="character_stats_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24654</ObjectId>
       <Primary>1</Primary>
       <StateNumber>787</StateNumber>
       <UnderlyingIndexId>24653</UnderlyingIndexId>
     </key>
-    <column id="330" parent="270" name="id">
+    <column id="311" parent="270" name="id">
       <DefaultExpression>nextval(&apos;enums_id_seq&apos;::regclass)</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -4676,25 +4549,25 @@ pg_catalog</CollationParentNames>
       <SequenceId>24938</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="331" parent="270" name="enum_type">
+    <column id="312" parent="270" name="enum_type">
       <Position>2</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="332" parent="270" name="enum_key">
+    <column id="313" parent="270" name="enum_key">
       <Position>3</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="333" parent="270" name="enum_value">
+    <column id="314" parent="270" name="enum_value">
       <Position>4</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <index id="334" parent="270" name="enums_pkey">
+    <index id="315" parent="270" name="enums_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24943</ObjectId>
@@ -4703,26 +4576,26 @@ pg_catalog</CollationParentNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="335" parent="270" name="enums_pkey">
+    <key id="316" parent="270" name="enums_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24944</ObjectId>
       <Primary>1</Primary>
       <StateNumber>1435</StateNumber>
       <UnderlyingIndexId>24943</UnderlyingIndexId>
     </key>
-    <column id="336" parent="271" name="user_id">
+    <column id="317" parent="271" name="user_id">
       <Position>1</Position>
       <StateNumber>790</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="337" parent="271" name="name">
+    <column id="318" parent="271" name="name">
       <Position>2</Position>
       <StateNumber>789</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="338" parent="271" name="id">
+    <column id="319" parent="271" name="id">
       <IdentityKind>by-default</IdentityKind>
       <NotNull>1</NotNull>
       <Position>3</Position>
@@ -4731,16 +4604,16 @@ pg_catalog</CollationParentNames>
       <SequenceId>24655</SequenceId>
       <TypeId>20</TypeId>
     </column>
-    <foreign-key id="339" parent="271" name="past_player_names_user_id_fkey">
+    <foreign-key id="320" parent="271" name="past_player_names_user_id_fkey">
       <ColNames>user_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
-      <ObjectId>24669</ObjectId>
+      <ObjectId>25014</ObjectId>
       <OnDelete>cascade</OnDelete>
-      <StateNumber>791</StateNumber>
+      <StateNumber>1529</StateNumber>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="340" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
+    <index id="321" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
       <ColNames>user_id
 name</ColNames>
       <ObjectId>24677</ObjectId>
@@ -4754,85 +4627,85 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="341" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
+    <key id="322" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
       <ObjectId>24678</ObjectId>
       <StateNumber>796</StateNumber>
       <UnderlyingIndexId>24677</UnderlyingIndexId>
     </key>
-    <column id="342" parent="272" name="user_id">
+    <column id="323" parent="272" name="user_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
-      <StateNumber>791</StateNumber>
+      <StateNumber>1529</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="343" parent="272" name="name">
+    <column id="324" parent="272" name="name">
       <Position>2</Position>
-      <StateNumber>793</StateNumber>
+      <StateNumber>1530</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="344" parent="272" name="polaris_id">
+    <column id="325" parent="272" name="polaris_id">
       <Position>3</Position>
-      <StateNumber>794</StateNumber>
+      <StateNumber>1531</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="345" parent="272" name="tekken_power">
+    <column id="326" parent="272" name="tekken_power">
       <Position>4</Position>
       <StateNumber>755</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="346" parent="272" name="version">
+    <column id="327" parent="272" name="version">
       <DefaultExpression>0</DefaultExpression>
       <Position>5</Position>
       <StateNumber>896</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="347" parent="272" name="latest_battle">
+    <column id="328" parent="272" name="latest_battle">
       <Position>6</Position>
       <StateNumber>792</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <index id="348" parent="272" name="players_pkey">
+    <index id="329" parent="272" name="players_pkey">
       <ColNames>user_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
-      <ObjectId>24666</ObjectId>
+      <ObjectId>25011</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>896</StateNumber>
+      <StateNumber>1531</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="349" parent="272" name="idx_user_id">
+    <index id="330" parent="272" name="idx_user_id">
       <ColNames>user_id</ColNames>
-      <ObjectId>24668</ObjectId>
-      <StateNumber>896</StateNumber>
+      <ObjectId>25013</ObjectId>
+      <StateNumber>1531</StateNumber>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="350" parent="272" name="idx_name">
+    <index id="331" parent="272" name="idx_name">
       <ColNames>name</ColNames>
-      <ObjectId>24674</ObjectId>
-      <StateNumber>896</StateNumber>
+      <ObjectId>25032</ObjectId>
+      <StateNumber>1531</StateNumber>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="351" parent="272" name="players_pkey">
+    <key id="332" parent="272" name="players_pkey">
       <NameSurrogate>1</NameSurrogate>
-      <ObjectId>24667</ObjectId>
+      <ObjectId>25012</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>791</StateNumber>
-      <UnderlyingIndexId>24666</UnderlyingIndexId>
+      <StateNumber>1529</StateNumber>
+      <UnderlyingIndexId>25011</UnderlyingIndexId>
     </key>
   </database-model>
 </dataSource>

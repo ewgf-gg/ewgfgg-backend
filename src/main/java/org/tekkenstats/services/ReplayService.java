@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -26,6 +27,7 @@ import org.tekkenstats.repositories.BattleRepository;
 import org.tekkenstats.repositories.PastPlayerNamesRepository;
 import org.tekkenstats.repositories.PlayerRepository;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -72,20 +74,20 @@ public class ReplayService {
 
         // Fetch existing battles and players
         Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battleIDs);
-        Map<String, Player> mapOfExistingPlayers = fetchExistingPlayers(playerIDs);
+        //Map<String, Player> mapOfExistingPlayers = fetchExistingPlayers(playerIDs);
 
         Set<Player> updatedPlayers = new HashSet<>();
         Set<Battle> battleSet = new HashSet<>();
 
         // Instantiate objects and update relevant information
-        processBattlesAndPlayers(battles, mapOfExistingBattles, mapOfExistingPlayers, updatedPlayers,battleSet);
+        processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers,battleSet);
 
-        // Execute battle bulk operations
-        executeBattleBatchWrite(battleSet);
-
-        // Execute player bulk operations
+        // Execute player batched writes
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
+
+        // Execute battle batched writes
+        executeBattleBatchWrite(battleSet);
     }
 
     private void extractBattleAndPlayerIDs(List<Battle> battles, Set<String> battleIDs, Set<String> playerIDs)
@@ -201,7 +203,6 @@ public class ReplayService {
     private void processBattlesAndPlayers(
             List<Battle> battles,
             Map<String, Battle> existingBattlesMap,
-            Map<String, Player> existingPlayersMap,
             Set<Player> updatedPlayers,
             Set<Battle> battleSet)
     {
@@ -215,8 +216,10 @@ public class ReplayService {
             {
                 battle.setDate(getReadableDateInUTC(battle));
 
-                Player player1 = getOrCreatePlayer(existingPlayersMap, battle, 1);
-                Player player2 = getOrCreatePlayer(existingPlayersMap, battle, 2);
+                Player player1 = new Player();
+                updateNewPlayerDetails(player1, battle, 1);
+                Player player2 = new Player();
+                updateNewPlayerDetails(player2, battle, 2);
 
                 updatePlayerWithBattle(player1, battle, 1);
                 updatePlayerWithBattle(player2, battle, 2);
@@ -239,7 +242,8 @@ public class ReplayService {
         logger.info("Updated player and battle information: {} ms", (endTime - startTime));
     }
 
-    private void executeBattleBatchWrite(Set<Battle> battleSet)
+    @Transactional
+    public void executeBattleBatchWrite(Set<Battle> battleSet)
     {
         if (battleSet == null || battleSet.isEmpty()) {
             logger.warn("No battles to insert or update.");
@@ -251,10 +255,10 @@ public class ReplayService {
 
             String sql = "INSERT INTO battles (" +
                     "battle_id, date, battle_at, battle_type, game_version, " +
-                    "player1characterid, player1_name, player1_polaris_id, player1tekken_power, player1dan_rank, " +
-                    "player1rating_before, player1rating_change, player1rounds_won, player1userid, " +
-                    "player2characterid, player2_name, player2_polaris_id, player2tekken_power, player2dan_rank, " +
-                    "player2rating_before, player2rating_change, player2rounds_won, player2userid, " +
+                    "player1_character_id, player1_name, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
+                    "player1_rating_before, player1_rating_change, player1_rounds_won, player1_userid, " +
+                    "player2_character_id, player2_name, player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
+                    "player2_rating_before, player2_rating_change, player2_rounds_won, player2_userid, " +
                     "stageid, winner" +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (battle_id) DO NOTHING";
@@ -302,6 +306,7 @@ public class ReplayService {
         }
     }
 
+    @Transactional
     public void executePlayerBulkOperations(Set<Player> updatedPlayersSet)
     {
 
@@ -341,6 +346,7 @@ public class ReplayService {
                 (endTime - startTime), updatedPlayersSet.size());
     }
 
+    @Transactional
     public void executeCharacterStatsBulkOperations(
             Set<Player> updatedPlayersSet) {
 
@@ -390,20 +396,67 @@ public class ReplayService {
                 }
             }
         }
+        // Sorting to reduce the rate of deadlocks occurring
+        batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]) // player_id
+                .thenComparing(args -> (String) args[1]));     // character_id
 
-        // Define batch size
-        int batchSize = 1000; // Adjust based on your system's capacity and performance
-        int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
+        int maxRetries = 3;
+        int retryCount = 0;
+        boolean success = false;
 
-        // Execute batch updates in smaller chunks
-        for (int i = 0; i < totalBatches; i++) {
-            int start = i * batchSize;
-            int end = Math.min(start + batchSize, batchArgs.size());
+        while (!success && retryCount <= maxRetries) {
+            try
+            {
+                int batchSize = 1000; // Adjust based on your system's capacity
+                int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
 
-            List<Object[]> batch = batchArgs.subList(start, end);
-            jdbcTemplate.batchUpdate(sql, batch);
+                for (int i = 0; i < totalBatches; i++)
+                {
+                    int start = i * batchSize;
+                    int end = Math.min(start + batchSize, batchArgs.size());
 
-            logger.info("Processed batch {} of {} ({} records)", i + 1, totalBatches, batch.size());
+                    List<Object[]> batch = batchArgs.subList(start, end);
+
+                    jdbcTemplate.batchUpdate(sql, batch);
+                }
+                success = true; // If execution reaches here, the operation succeeded
+            }
+            catch (DataAccessException e)
+            {
+                Throwable rootCause = e.getRootCause();
+                if (rootCause instanceof SQLException)
+                {
+                    SQLException sqlEx = (SQLException) rootCause;
+                    if ("40P01".equals(sqlEx.getSQLState()))
+                    {
+                        // **Deadlock detected, retrying**
+                        retryCount++;
+                        logger.warn("Deadlock detected during character_stats batch update. Retrying... attempt {}/{}", retryCount, maxRetries);
+                        try
+                        {
+                            // Exponential backoff
+                            Thread.sleep((long) Math.pow(2, retryCount) * 100);
+                        } catch (InterruptedException ie)
+                        {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException("Thread interrupted during retry sleep", ie);
+                        }
+                    } else
+                    {
+                        // Other SQL exception
+                        throw e;
+                    }
+                } else
+                {
+                    // Non-SQL exception
+                    throw e;
+                }
+            }
+        }
+
+        if (!success)
+        {
+            throw new RuntimeException("Failed to execute character_stats batch update after " + maxRetries + " attempts due to deadlocks.");
         }
 
         long endTime = System.currentTimeMillis();
