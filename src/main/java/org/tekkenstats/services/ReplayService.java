@@ -1,11 +1,15 @@
 package org.tekkenstats.services;
 
+import com.google.common.hash.BloomFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
@@ -36,16 +40,13 @@ public class ReplayService {
 
 
     @Autowired
-    private BattleRepository battleRepository;
-    @Autowired
-    private PlayerRepository playerRepository;
-
-
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private BattleService battleService;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, concurrency = "4")
-
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
         String threadName = Thread.currentThread().getName();
@@ -60,7 +61,6 @@ public class ReplayService {
         long endTime = System.currentTimeMillis();
 
         logger.info("Thread: {}, Total Operation Time: {} ms", threadName, endTime - startTime);
-
     }
 
     public void processBattlesAsync(List<Battle> battles)
@@ -97,46 +97,104 @@ public class ReplayService {
         }
     }
 
+
     private Map<String, Battle> fetchExistingBattles(Set<String> battleIDs)
     {
         long startTime = System.currentTimeMillis();
+        int battleIdSize = battleIDs.size();
+        final double THRESHOLD = 0.5; // 50%
 
-        // If battleIDs is empty, we can skip the query
         if (battleIDs.isEmpty()) {
             logger.warn("No battle IDs provided. Skipping database fetch.");
             return Collections.emptyMap();
         }
 
-        // Fetch existing battles from PostgreSQL using JPA or native queries
-        List<Battle> existingBattles = battleRepository.findAllByBattleIdIn(battleIDs);
+        // Access the Bloom Filter from BattleService
+        BloomFilter<String> bloomFilter = battleService.getBattleIdBloomFilter();
 
+
+        // Count how many battle IDs are positive matches in the Bloom Filter
+        int positiveCount = 0;
+
+        for (String battleId : battleIDs)
+        {
+            if (bloomFilter.mightContain(battleId))
+            {
+                positiveCount++;
+
+                if (((double) positiveCount /battleIdSize) >= THRESHOLD)
+                {
+                    break;
+                }
+            }
+        }
+
+        double positivePercentage = (double) positiveCount / battleIdSize;
+        logger.info("Positive matches in Bloom Filter: {}%", positivePercentage * 100);
+
+        List<Battle> existingBattles;
+
+        if (positivePercentage >= THRESHOLD)
+        {
+            // Fetch recent battles from the database
+            String sql = "SELECT * FROM battles ORDER BY battle_at DESC LIMIT 250000";
+            existingBattles = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Battle.class));
+            logger.info("Fetched {} recent battles from database.", existingBattles.size());
+
+            // Filter the battles to include only those with IDs in battleIDs
+            Set<String> battleIdSet = new HashSet<>(battleIDs);
+            existingBattles = existingBattles.stream()
+                    .filter(battle -> battleIdSet.contains(battle.getBattleId()))
+                    .collect(Collectors.toList());
+        }
+        else
+        {
+            logger.info("Battles fell below bloom filter threshold. Skipping database read.");
+            long endTime = System.currentTimeMillis();
+            logger.info("Bloom filter check and skip took {} ms", (endTime - startTime));
+
+            return Collections.emptyMap();
+        }
         long endTime = System.currentTimeMillis();
-        logger.info("Retrieved existing battles from database: {} ms", (endTime - startTime));
+        logger.info("Retrieved existing battles from database in {} ms", (endTime - startTime));
 
-        // Collect the results into a Map for easy lookup
+
         return existingBattles.stream()
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
     }
 
 
     private Map<String, Player> fetchExistingPlayers(Set<String> playerIDs) {
-
-        long startTime = System.currentTimeMillis();
-
-        // If battleIDs is empty, we can skip the query
         if (playerIDs.isEmpty()) {
             logger.warn("No player IDs provided. Skipping database fetch.");
             return Collections.emptyMap();
         }
 
-        // Fetch existing battles from PostgreSQL using JPA or native queries
-        List<Player> existingBattles = playerRepository.findAllByPlayerIdIn(playerIDs);
+        long startTime = System.currentTimeMillis();
+
+        String sql = "SELECT * FROM public.players WHERE user_id IN (:playerIDs)";
+
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("playerIDs", playerIDs);
+
+        List<Player> existingPlayers = namedParameterJdbcTemplate.query(
+                sql,
+                parameters,
+                (rs, rowNum) -> {
+                    Player player = new Player();
+                    player.setPlayerId(rs.getString("user_id"));
+                    player.setName(rs.getString("name"));
+                    player.setPolarisId(rs.getString("polaris_id"));
+                    player.setTekkenPower(rs.getLong("tekken_power"));
+                    player.setLatestBattle(rs.getLong("latest_battle"));
+                    return player;
+                }
+        );
 
         long endTime = System.currentTimeMillis();
         logger.info("Retrieved existing players from database: {} ms", (endTime - startTime));
 
-        // Collect the results into a Map for easy lookup
-        return existingBattles.stream()
+        return existingPlayers.stream()
                 .collect(Collectors.toMap(Player::getPlayerId, player -> player));
     }
 
@@ -181,7 +239,8 @@ public class ReplayService {
         logger.info("Updated player and battle information: {} ms", (endTime - startTime));
     }
 
-    private void executeBattleBatchWrite(Set<Battle> battleSet) {
+    private void executeBattleBatchWrite(Set<Battle> battleSet)
+    {
         if (battleSet == null || battleSet.isEmpty()) {
             logger.warn("No battles to insert or update.");
             return;
