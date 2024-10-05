@@ -242,7 +242,6 @@ public class ReplayService {
         logger.info("Updated player and battle information: {} ms", (endTime - startTime));
     }
 
-    @Transactional
     public void executeBattleBatchWrite(Set<Battle> battleSet)
     {
         if (battleSet == null || battleSet.isEmpty()) {
@@ -306,7 +305,6 @@ public class ReplayService {
         }
     }
 
-    @Transactional
     public void executePlayerBulkOperations(Set<Player> updatedPlayersSet)
     {
 
@@ -346,7 +344,6 @@ public class ReplayService {
                 (endTime - startTime), updatedPlayersSet.size());
     }
 
-    @Transactional
     public void executeCharacterStatsBulkOperations(
             Set<Player> updatedPlayersSet) {
 
