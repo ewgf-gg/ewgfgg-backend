@@ -7,25 +7,19 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
-import org.springframework.transaction.annotation.Transactional;
-import org.tekkenstats.Battle;
-import org.tekkenstats.CharacterStats;
-import org.tekkenstats.PastPlayerNames;
-import org.tekkenstats.Player;
+import org.tekkenstats.models.Battle;
+import org.tekkenstats.models.CharacterStats;
+import org.tekkenstats.models.PastPlayerNames;
+import org.tekkenstats.models.Player;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.tekkenstats.repositories.BattleRepository;
-import org.tekkenstats.repositories.PastPlayerNamesRepository;
-import org.tekkenstats.repositories.PlayerRepository;
+import org.tekkenstats.rowmappers.BattleRowMapper;
 
 import java.sql.SQLException;
 import java.time.Instant;
@@ -35,48 +29,43 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class ReplayService {
+public class RabbitService {
 
-    private static final Logger logger = LogManager.getLogger(ReplayService.class);
+    private static final Logger logger = LogManager.getLogger(RabbitService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-    @Autowired
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private BattleService battleService;
+    private BattleBloomFilterService battleBloomFilterService;
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, concurrency = "4")
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "4")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
         String threadName = Thread.currentThread().getName();
-        logger.info("Thread: {}, Received Battle Data from RabbitMQ, Timestamped: {}", threadName, dateAndTime);
+        logger.info("{} Received Battle Data from RabbitMQ, Timestamped: {}", threadName, dateAndTime);
 
         long startTime = System.currentTimeMillis();
 
-        List<Battle> battles = objectMapper.readValue(message, new TypeReference<List<Battle>>() {
+        List<Battle> battles = objectMapper.readValue(message, new TypeReference<>() {
         });
         processBattlesAsync(battles);
 
         long endTime = System.currentTimeMillis();
 
-        logger.info("Thread: {}, Total Operation Time: {} ms", threadName, endTime - startTime);
+        logger.info("{} Total Operation Time: {} ms", threadName, endTime - startTime);
     }
 
     public void processBattlesAsync(List<Battle> battles)
     {
         // Extract battle IDs and player IDs
         Set<String> battleIDs = new HashSet<>();
-        Set<String> playerIDs = new HashSet<>();
-        extractBattleAndPlayerIDs(battles, battleIDs, playerIDs);
+        extractBattleIDs(battles, battleIDs);
 
         // Fetch existing battles and players
         Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battleIDs);
-        //Map<String, Player> mapOfExistingPlayers = fetchExistingPlayers(playerIDs);
 
-        Set<Player> updatedPlayers = new HashSet<>();
+        HashMap<String, Player> updatedPlayers = new HashMap<>();
         Set<Battle> battleSet = new HashSet<>();
 
         // Instantiate objects and update relevant information
@@ -90,12 +79,11 @@ public class ReplayService {
         executeBattleBatchWrite(battleSet);
     }
 
-    private void extractBattleAndPlayerIDs(List<Battle> battles, Set<String> battleIDs, Set<String> playerIDs)
+    private void extractBattleIDs(List<Battle> battles, Set<String> battleIDs)
     {
-        for (Battle battle : battles) {
+        for (Battle battle : battles)
+        {
             battleIDs.add(battle.getBattleId());
-            playerIDs.add(battle.getPlayer1UserID());
-            playerIDs.add(battle.getPlayer2UserID());
         }
     }
 
@@ -104,15 +92,16 @@ public class ReplayService {
     {
         long startTime = System.currentTimeMillis();
         int battleIdSize = battleIDs.size();
-        final double THRESHOLD = 0.5; // 50%
+        final double THRESHOLD = 0.1; // 10%
 
-        if (battleIDs.isEmpty()) {
+        if (battleIDs.isEmpty())
+        {
             logger.warn("No battle IDs provided. Skipping database fetch.");
             return Collections.emptyMap();
         }
 
         // Access the Bloom Filter from BattleService
-        BloomFilter<String> bloomFilter = battleService.getBattleIdBloomFilter();
+        BloomFilter<String> bloomFilter = battleBloomFilterService.getBattleIdBloomFilter();
 
 
         // Count how many battle IDs are positive matches in the Bloom Filter
@@ -123,7 +112,6 @@ public class ReplayService {
             if (bloomFilter.mightContain(battleId))
             {
                 positiveCount++;
-
                 if (((double) positiveCount /battleIdSize) >= THRESHOLD)
                 {
                     break;
@@ -140,7 +128,7 @@ public class ReplayService {
         {
             // Fetch recent battles from the database
             String sql = "SELECT * FROM battles ORDER BY battle_at DESC LIMIT 250000";
-            existingBattles = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Battle.class));
+            existingBattles = jdbcTemplate.query(sql, new BattleRowMapper());
             logger.info("Fetched {} recent battles from database.", existingBattles.size());
 
             // Filter the battles to include only those with IDs in battleIDs
@@ -165,45 +153,10 @@ public class ReplayService {
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
     }
 
-
-    private Map<String, Player> fetchExistingPlayers(Set<String> playerIDs) {
-        if (playerIDs.isEmpty()) {
-            logger.warn("No player IDs provided. Skipping database fetch.");
-            return Collections.emptyMap();
-        }
-
-        long startTime = System.currentTimeMillis();
-
-        String sql = "SELECT * FROM public.players WHERE user_id IN (:playerIDs)";
-
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("playerIDs", playerIDs);
-
-        List<Player> existingPlayers = namedParameterJdbcTemplate.query(
-                sql,
-                parameters,
-                (rs, rowNum) -> {
-                    Player player = new Player();
-                    player.setPlayerId(rs.getString("user_id"));
-                    player.setName(rs.getString("name"));
-                    player.setPolarisId(rs.getString("polaris_id"));
-                    player.setTekkenPower(rs.getLong("tekken_power"));
-                    player.setLatestBattle(rs.getLong("latest_battle"));
-                    return player;
-                }
-        );
-
-        long endTime = System.currentTimeMillis();
-        logger.info("Retrieved existing players from database: {} ms", (endTime - startTime));
-
-        return existingPlayers.stream()
-                .collect(Collectors.toMap(Player::getPlayerId, player -> player));
-    }
-
     private void processBattlesAndPlayers(
             List<Battle> battles,
             Map<String, Battle> existingBattlesMap,
-            Set<Player> updatedPlayers,
+            HashMap<String, Player> updatedPlayers,
             Set<Battle> battleSet)
     {
 
@@ -216,18 +169,27 @@ public class ReplayService {
             {
                 battle.setDate(getReadableDateInUTC(battle));
 
-                Player player1 = new Player();
-                updateNewPlayerDetails(player1, battle, 1);
-                Player player2 = new Player();
-                updateNewPlayerDetails(player2, battle, 2);
-
+                // Process Player 1
+                String player1Id = getPlayerUserId(battle, 1);
+                Player player1 = updatedPlayers.get(player1Id);
+                if (player1 == null)
+                {
+                    player1 = new Player();
+                    updateNewPlayerDetails(player1, battle, 1);
+                    updatedPlayers.put(player1Id, player1);
+                }
                 updatePlayerWithBattle(player1, battle, 1);
+
+                // Process Player 2
+                String player2Id = getPlayerUserId(battle, 2);
+                Player player2 = updatedPlayers.get(player2Id);
+                if (player2 == null)
+                {
+                    player2 = new Player();
+                    updateNewPlayerDetails(player2, battle, 2);
+                    updatedPlayers.put(player2Id, player2);
+                }
                 updatePlayerWithBattle(player2, battle, 2);
-
-                updatedPlayers.add(player1);
-                updatedPlayers.add(player2);
-
-                // Queue insert operation for battle
                 battleSet.add(battle);
             } else
             {
@@ -281,7 +243,7 @@ public class ReplayService {
                         battle.getPlayer1RoundsWon(),
                         battle.getPlayer1UserID(),
                         battle.getPlayer2CharacterID(),
-                        battle.getPlayer1Name(),
+                        battle.getPlayer2Name(),
                         battle.getPlayer2PolarisID(),
                         battle.getPlayer2TekkenPower(),
                         battle.getPlayer2DanRank(),
@@ -305,25 +267,27 @@ public class ReplayService {
         }
     }
 
-    public void executePlayerBulkOperations(Set<Player> updatedPlayersSet)
+    public void executePlayerBulkOperations(HashMap<String, Player> updatedPlayersMap)
     {
 
-        if (updatedPlayersSet.isEmpty()) {
+        if (updatedPlayersMap.isEmpty()) {
             logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
             return;
         }
 
         long startTime = System.currentTimeMillis();
 
-        String sql = "INSERT INTO players (user_id, name, polaris_id, tekken_power,latest_battle) " +
+        String sql =
+                "INSERT INTO players (user_id, name, polaris_id, tekken_power,latest_battle) " +
                 "VALUES (?, ?, ?, ? ,?) " +
                 "ON CONFLICT (user_id) DO UPDATE SET " +
-                "tekken_power = EXCLUDED.tekken_power, " +
-                "latest_battle = EXCLUDED.latest_battle";
+                "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.tekken_power ELSE players.tekken_power END," +
+                "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.latest_battle ELSE players.latest_battle END";
 
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersSet) {
+        for (Player updatedPlayer : updatedPlayersMap.values())
+        {
 
             Object[] args = new Object[]{
                     updatedPlayer.getPlayerId(),
@@ -336,16 +300,19 @@ public class ReplayService {
             batchArgs.add(args);
 
         }
+
+        batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]));
         // Execute batch update
         jdbcTemplate.batchUpdate(sql, batchArgs);
 
         long endTime = System.currentTimeMillis();
         logger.info("Player Bulk Upsert: {} ms, Processed Players: {}",
-                (endTime - startTime), updatedPlayersSet.size());
+                (endTime - startTime), updatedPlayersMap.size());
     }
 
+
     public void executeCharacterStatsBulkOperations(
-            Set<Player> updatedPlayersSet) {
+            HashMap<String,Player> updatedPlayersSet) {
 
         if (updatedPlayersSet.isEmpty()) {
             logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
@@ -354,17 +321,18 @@ public class ReplayService {
 
         long startTime = System.currentTimeMillis();
 
-        String sql = "INSERT INTO character_stats (player_id, character_id, dan_rank, latest_battle, wins, losses) " +
+        String sql =
+                "INSERT INTO character_stats (player_id, character_id, dan_rank, latest_battle, wins, losses) " +
                 "VALUES (?, ?, ?, ?, ?, ?) " +
                 "ON CONFLICT (player_id, character_id) DO UPDATE SET " +
-                "dan_rank = EXCLUDED.dan_rank, " +
-                "latest_battle = EXCLUDED.latest_battle, " +
+                "dan_rank = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle THEN EXCLUDED.dan_rank ELSE character_stats.dan_rank END, " +
+                "latest_battle = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle THEN EXCLUDED.latest_battle ELSE character_stats.latest_battle END, " +
                 "wins = character_stats.wins + EXCLUDED.wins, " +
                 "losses = character_stats.losses + EXCLUDED.losses";
 
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersSet) {
+        for (Player updatedPlayer : updatedPlayersSet.values()) {
             String userId = updatedPlayer.getPlayerId();
 
             Map<String, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
@@ -387,9 +355,6 @@ public class ReplayService {
 
                     batchArgs.add(args);
 
-                    // Reset increments after processing
-                    updatedStats.setWinsIncrement(0);
-                    updatedStats.setLossIncrement(0);
                 }
             }
         }
@@ -459,34 +424,6 @@ public class ReplayService {
         long endTime = System.currentTimeMillis();
         logger.info("CharacterStats Bulk Upsert: {} ms, Total Processed CharacterStats: {}",
                 (endTime - startTime), batchArgs.size());
-    }
-
-    private Player getOrCreatePlayer(Map<String, Player> playerMap, Battle battle, int playerNumber) {
-        String userId = playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
-        Player player = playerMap.get(userId);
-
-        if (player != null)
-        {
-            return updateExistingPlayer(player, battle, playerNumber);
-        }
-        else
-        {
-            Player newPlayer = createNewPlayer(battle, playerNumber);
-            playerMap.put(userId, newPlayer);
-            return newPlayer;
-        }
-    }
-
-    private Player updateExistingPlayer(Player player, Battle battle, int playerNumber) {
-        addPlayerNameIfNew(player, getPlayerName(battle, playerNumber));
-        return player;
-    }
-
-    private Player createNewPlayer(Battle battle, int playerNumber)
-    {
-        Player newPlayer = new Player();
-        updateNewPlayerDetails(newPlayer, battle, playerNumber);
-        return newPlayer;
     }
 
     private void updatePlayerWithBattle(Player player, Battle battle, int playerNumber) {

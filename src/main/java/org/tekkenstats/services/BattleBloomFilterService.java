@@ -15,11 +15,11 @@ import java.util.List;
 
 @Service
 @Data
-public class BattleService
+public class BattleBloomFilterService
 {
 
-    private static final Logger logger = LoggerFactory.getLogger(BattleService.class);
-    private static final double THRESHOLD = 0.5; // 50%
+    private static final Logger logger = LoggerFactory.getLogger(BattleBloomFilterService.class);
+    private static final double THRESHOLD = 0.1; // 50%
     private static final int BLOOM_FILTER_SIZE = 10000000;
     private static final double FALSE_POSITIVE_PROBABILITY = 0.01;
 
@@ -29,7 +29,7 @@ public class BattleService
     private JdbcTemplate jdbcTemplate;
 
     // Constructor injection
-    public BattleService(JdbcTemplate jdbcTemplate)
+    public BattleBloomFilterService(JdbcTemplate jdbcTemplate)
     {
         this.jdbcTemplate = jdbcTemplate;
         refreshBattleIdBloomFilter();

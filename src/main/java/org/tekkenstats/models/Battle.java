@@ -1,4 +1,4 @@
-package org.tekkenstats;
+package org.tekkenstats.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
