@@ -19,6 +19,8 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.concurrent.Executors;
+
 @Configuration
 public class RabbitMQConfig {
 
@@ -48,7 +50,11 @@ public class RabbitMQConfig {
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
-        factory.setConcurrentConsumers(5);
+
+        // Set the task executor to use virtual threads
+        factory.setTaskExecutor(Executors.newVirtualThreadPerTaskExecutor());
+
+        // You can control other properties such as concurrency here if needed
 
         RetryTemplate retryTemplate = new RetryTemplate();
 
