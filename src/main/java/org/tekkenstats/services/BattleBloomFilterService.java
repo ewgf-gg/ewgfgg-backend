@@ -12,15 +12,13 @@ import com.google.common.hash.Funnels;
 
 import java.util.List;
 
-
 @Service
 @Data
 public class BattleBloomFilterService
 {
 
     private static final Logger logger = LoggerFactory.getLogger(BattleBloomFilterService.class);
-    private static final double THRESHOLD = 0.1; // 50%
-    private static final int BLOOM_FILTER_SIZE = 500000;
+    private static final int BLOOM_FILTER_SIZE = 1000000;
     private static final double FALSE_POSITIVE_PROBABILITY = 0.01;
 
     private volatile BloomFilter<String> battleIdBloomFilter;
@@ -40,7 +38,7 @@ public class BattleBloomFilterService
     {
         logger.info("Refreshing Battle ID Bloom Filter...");
         List<String> battleIds = jdbcTemplate.queryForList(
-                "SELECT battle_id FROM battles ORDER BY battle_at DESC LIMIT 500000", String.class);
+                "SELECT battle_id FROM battles ORDER BY battle_at DESC LIMIT 1000000", String.class);
 
         BloomFilter<String> newBloomFilter = BloomFilter.create(
                 Funnels.unencodedCharsFunnel(),
