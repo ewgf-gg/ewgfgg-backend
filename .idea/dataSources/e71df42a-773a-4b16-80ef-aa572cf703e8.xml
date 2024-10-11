@@ -3,9 +3,17 @@
   <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
     <root id="1">
       <DateStyle>mdy</DateStyle>
-      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
+      <Grants>1||-9223372036854775808|c|G
+1||10|c|G
+1||10|C|G
+1||10|T|G
+4||-9223372036854775808|c|G
+4||10|c|G
+4||10|C|G
+4||10|T|G</Grants>
+      <IntrospectionStateNumber>3650082</IntrospectionStateNumber>
       <ServerVersion>17.0</ServerVersion>
-      <StartupTime>1727458251</StartupTime>
+      <StartupTime>1728539592</StartupTime>
       <TimeZones>true ACDT
 true ACSST
 false ACST
@@ -106,7 +114,7 @@ false America/Argentina/San_Luis
 false America/Argentina/Tucuman
 false America/Argentina/Ushuaia
 false America/Aruba
-false America/Asuncion
+true America/Asuncion
 false America/Atikokan
 true America/Atka
 false America/Bahia
@@ -677,7 +685,7 @@ false PST
 true PST8PDT
 false PWT
 true PYST
-false PYT
+true PYT
 false Pacific/Apia
 true Pacific/Auckland
 false Pacific/Bougainville
@@ -800,7 +808,7 @@ false Zulu
 14704||10|C|G
 14704||-9223372036854775808|U|G
 14704||10|U|G</Grants>
-      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
+      <IntrospectionStateNumber>3650082</IntrospectionStateNumber>
       <ObjectId>16388</ObjectId>
       <OwnerName>postgres</OwnerName>
     </database>
@@ -4227,8 +4235,8 @@ false Zulu
     <schema id="265" parent="2" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>24583</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2024-10-05.20:45:29</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>3650082</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2024-10-10.21:31:00</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>532</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
@@ -4251,13 +4259,13 @@ false Zulu
     </sequence>
     <table id="268" parent="265" name="battles">
       <ObjectId>25187</ObjectId>
-      <StateNumber>24582</StateNumber>
+      <StateNumber>3650080</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <table id="269" parent="265" name="character_stats">
       <ObjectId>24648</ObjectId>
-      <StateNumber>1597</StateNumber>
+      <StateNumber>3650077</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
@@ -4269,13 +4277,13 @@ false Zulu
     </table>
     <table id="271" parent="265" name="past_player_names">
       <ObjectId>24624</ObjectId>
-      <StateNumber>790</StateNumber>
+      <StateNumber>3650078</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <table id="272" parent="265" name="players">
       <ObjectId>24585</ObjectId>
-      <StateNumber>1531</StateNumber>
+      <StateNumber>3650079</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
@@ -4338,9 +4346,9 @@ false Zulu
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="282" parent="268" name="player1_userid">
+    <column id="282" parent="268" name="player1_id">
       <Position>10</Position>
-      <StateNumber>24582</StateNumber>
+      <StateNumber>3650073</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
@@ -4396,9 +4404,9 @@ false Zulu
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="291" parent="268" name="player2_userid">
+    <column id="291" parent="268" name="player2_id">
       <Position>19</Position>
-      <StateNumber>24582</StateNumber>
+      <StateNumber>3650074</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
@@ -4452,78 +4460,84 @@ false Zulu
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25193</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>24582</StateNumber>
+      <StateNumber>3650080</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="300" parent="268" name="battles_pkey">
+    <index id="300" parent="268" name="idx_battle_at">
+      <ColNames>battle_at</ColNames>
+      <ObjectId>25694</ObjectId>
+      <StateNumber>3650080</StateNumber>
+      <AccessMethodId>403</AccessMethodId>
+    </index>
+    <key id="301" parent="268" name="battles_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25194</ObjectId>
       <Primary>1</Primary>
       <StateNumber>24582</StateNumber>
       <UnderlyingIndexId>25193</UnderlyingIndexId>
     </key>
-    <column id="301" parent="269" name="player_id">
+    <column id="302" parent="269" name="player_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="302" parent="269" name="dan_rank">
+    <column id="303" parent="269" name="dan_rank">
       <Position>2</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="303" parent="269" name="latest_battle">
+    <column id="304" parent="269" name="latest_battle">
       <Position>3</Position>
       <StateNumber>787</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="304" parent="269" name="losses">
+    <column id="305" parent="269" name="losses">
       <Position>4</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="305" parent="269" name="wins">
+    <column id="306" parent="269" name="wins">
       <Position>6</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="306" parent="269" name="character_id">
+    <column id="307" parent="269" name="character_id">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="307" parent="269" name="rating">
+    <column id="308" parent="269" name="rating">
       <Position>8</Position>
       <StateNumber>1597</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <foreign-key id="308" parent="269" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
+    <foreign-key id="309" parent="269" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
       <ColNames>player_id</ColNames>
       <ObjectId>25019</ObjectId>
       <StateNumber>1529</StateNumber>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="309" parent="269" name="character_stats_pkey">
+    <index id="310" parent="269" name="character_stats_pkey">
       <ColNames>player_id
 character_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24653</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>787</StateNumber>
+      <StateNumber>3650077</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationIds>100
@@ -4533,14 +4547,14 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="310" parent="269" name="character_stats_pkey">
+    <key id="311" parent="269" name="character_stats_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24654</ObjectId>
       <Primary>1</Primary>
       <StateNumber>787</StateNumber>
       <UnderlyingIndexId>24653</UnderlyingIndexId>
     </key>
-    <column id="311" parent="270" name="id">
+    <column id="312" parent="270" name="id">
       <DefaultExpression>nextval(&apos;enums_id_seq&apos;::regclass)</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -4549,25 +4563,25 @@ pg_catalog</CollationParentNames>
       <SequenceId>24938</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="312" parent="270" name="enum_type">
+    <column id="313" parent="270" name="enum_type">
       <Position>2</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="313" parent="270" name="enum_key">
+    <column id="314" parent="270" name="enum_key">
       <Position>3</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="314" parent="270" name="enum_value">
+    <column id="315" parent="270" name="enum_value">
       <Position>4</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <index id="315" parent="270" name="enums_pkey">
+    <index id="316" parent="270" name="enums_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24943</ObjectId>
@@ -4576,26 +4590,26 @@ pg_catalog</CollationParentNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="316" parent="270" name="enums_pkey">
+    <key id="317" parent="270" name="enums_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24944</ObjectId>
       <Primary>1</Primary>
       <StateNumber>1435</StateNumber>
       <UnderlyingIndexId>24943</UnderlyingIndexId>
     </key>
-    <column id="317" parent="271" name="user_id">
+    <column id="318" parent="271" name="player_id">
       <Position>1</Position>
-      <StateNumber>790</StateNumber>
+      <StateNumber>3650075</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="318" parent="271" name="name">
+    <column id="319" parent="271" name="name">
       <Position>2</Position>
       <StateNumber>789</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="319" parent="271" name="id">
+    <column id="320" parent="271" name="id">
       <IdentityKind>by-default</IdentityKind>
       <NotNull>1</NotNull>
       <Position>3</Position>
@@ -4604,20 +4618,19 @@ pg_catalog</CollationParentNames>
       <SequenceId>24655</SequenceId>
       <TypeId>20</TypeId>
     </column>
-    <foreign-key id="320" parent="271" name="past_player_names_user_id_fkey">
-      <ColNames>user_id</ColNames>
-      <NameSurrogate>1</NameSurrogate>
+    <foreign-key id="321" parent="271" name="past_player_names_user_id_fkey">
+      <ColNames>player_id</ColNames>
       <ObjectId>25014</ObjectId>
       <OnDelete>cascade</OnDelete>
       <StateNumber>1529</StateNumber>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="321" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
-      <ColNames>user_id
+    <index id="322" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
+      <ColNames>player_id
 name</ColNames>
       <ObjectId>24677</ObjectId>
-      <StateNumber>796</StateNumber>
+      <StateNumber>3650078</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationIds>100
@@ -4627,80 +4640,80 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="322" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
+    <key id="323" parent="271" name="uklekpsdgswq61s6r0m6i07j7d2">
       <ObjectId>24678</ObjectId>
       <StateNumber>796</StateNumber>
       <UnderlyingIndexId>24677</UnderlyingIndexId>
     </key>
-    <column id="323" parent="272" name="user_id">
+    <column id="324" parent="272" name="player_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
-      <StateNumber>1529</StateNumber>
+      <StateNumber>3650072</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="324" parent="272" name="name">
+    <column id="325" parent="272" name="name">
       <Position>2</Position>
       <StateNumber>1530</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="325" parent="272" name="polaris_id">
+    <column id="326" parent="272" name="polaris_id">
       <Position>3</Position>
       <StateNumber>1531</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="326" parent="272" name="tekken_power">
+    <column id="327" parent="272" name="tekken_power">
       <Position>4</Position>
       <StateNumber>755</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="327" parent="272" name="version">
+    <column id="328" parent="272" name="version">
       <DefaultExpression>0</DefaultExpression>
       <Position>5</Position>
       <StateNumber>896</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="328" parent="272" name="latest_battle">
+    <column id="329" parent="272" name="latest_battle">
       <Position>6</Position>
       <StateNumber>792</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <index id="329" parent="272" name="players_pkey">
-      <ColNames>user_id</ColNames>
+    <index id="330" parent="272" name="players_pkey">
+      <ColNames>player_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25011</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>1531</StateNumber>
+      <StateNumber>3650079</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="330" parent="272" name="idx_user_id">
-      <ColNames>user_id</ColNames>
+    <index id="331" parent="272" name="idx_user_id">
+      <ColNames>player_id</ColNames>
       <ObjectId>25013</ObjectId>
-      <StateNumber>1531</StateNumber>
+      <StateNumber>3650079</StateNumber>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="331" parent="272" name="idx_name">
+    <index id="332" parent="272" name="idx_name">
       <ColNames>name</ColNames>
       <ObjectId>25032</ObjectId>
-      <StateNumber>1531</StateNumber>
+      <StateNumber>3650079</StateNumber>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="332" parent="272" name="players_pkey">
+    <key id="333" parent="272" name="players_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25012</ObjectId>
       <Primary>1</Primary>

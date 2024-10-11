@@ -13,7 +13,7 @@ import java.util.*;
 public class Player {
 
     @Id
-    @Column(name = "user_id", unique = true, nullable = false)
+    @Column(name = "player_id", unique = true, nullable = false)
     private String playerId;
 
     @Column(name = "latest_battle")
@@ -27,8 +27,6 @@ public class Player {
 
     @Column(name = "tekken_power")
     private long tekkenPower;
-
-
 
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude

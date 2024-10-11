@@ -217,9 +217,9 @@ public class RabbitService {
             String sql = "INSERT INTO battles (" +
                     "battle_id, date, battle_at, battle_type, game_version, " +
                     "player1_character_id, player1_name, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
-                    "player1_rating_before, player1_rating_change, player1_rounds_won, player1_userid, " +
+                    "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
                     "player2_character_id, player2_name, player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
-                    "player2_rating_before, player2_rating_change, player2_rounds_won, player2_userid, " +
+                    "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
                     "stageid, winner" +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (battle_id) DO NOTHING";
@@ -278,9 +278,9 @@ public class RabbitService {
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "INSERT INTO players (user_id, name, polaris_id, tekken_power,latest_battle) " +
+                "INSERT INTO players (player_id, name, polaris_id, tekken_power,latest_battle) " +
                 "VALUES (?, ?, ?, ? ,?) " +
-                "ON CONFLICT (user_id) DO UPDATE SET " +
+                "ON CONFLICT (player_id) DO UPDATE SET " +
                 "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.tekken_power ELSE players.tekken_power END," +
                 "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.latest_battle ELSE players.latest_battle END";
 

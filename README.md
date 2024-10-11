@@ -34,6 +34,9 @@ This is the backend service that will supplement the frontend for the website. T
 
 ## Current Progress
 
+* **10/11/2024:** Removed the hardcoded timestamp value and let the server retrieve them dynamically. Refactored all model classes to fit new schema naming scheme.
+
+
 * **10/10/2024:** Cleaned up pom.xml, added virtual thread functionality
 
 

@@ -20,7 +20,7 @@ public class PastPlayerNames {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "player_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Player player;

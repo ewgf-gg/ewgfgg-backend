@@ -66,7 +66,7 @@ public class Battle {
     private int player1RoundsWon;
 
     @JsonProperty("p1_user_id")
-    @Column(name = "player1_userid")
+    @Column(name = "player1_id")
     private String player1UserID;
 
     @JsonProperty("p2_chara_id")
@@ -102,7 +102,7 @@ public class Battle {
     private int player2RoundsWon;
 
     @JsonProperty("p2_user_id")
-    @Column(name = "player2_userid")
+    @Column(name = "player2_id")
     private String player2UserID;
 
     @JsonProperty("stage_id")
