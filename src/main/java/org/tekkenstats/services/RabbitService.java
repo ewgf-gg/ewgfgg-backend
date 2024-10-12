@@ -38,7 +38,7 @@ public class RabbitService {
     @Autowired
     private BattleRepository battleRepository;
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "4")
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
         String threadName = Thread.currentThread().getName();

@@ -47,10 +47,11 @@ public class APIService implements InitializingBean, DisposableBean {
 
     private boolean isFetchingForward = false;
     private long currentFetchTimestamp; // renamed from unixTimestamp
-    private long currentSystemTimestamp; // renamed from currentTimestamp
+    private long lastFetchedSystemTimestamp; // renamed from currentTimestamp
     private final long oldestHistoricalBattleTimestamp = 1711548580L ; // renamed from oldestBattleTimestamp
     private long newestKnownBattleTimestamp; // renamed from newestBattleTimestamp
     private ScheduledFuture<?> scheduledTask;
+    private boolean fetchIsAheadOfCurrent = false;
 
     @Override
     public void afterPropertiesSet() {
@@ -74,7 +75,7 @@ public class APIService implements InitializingBean, DisposableBean {
             Optional<Battle> oldestBattle = battleRepository.findOldestBattle();
             Optional<Battle> newestBattle = battleRepository.findNewestBattle();
 
-            if (oldestBattle.isPresent() && oldestBattle.get().getBattleId().equals("4929FB2D23E7402E92B2C1E45D616A65"))
+            if (oldestBattle.isPresent() && oldestBattle.get().getBattleAt() == 1711548580)
             {
                 initializeForPreloadedDatabase(newestBattle);
             }
@@ -107,7 +108,7 @@ public class APIService implements InitializingBean, DisposableBean {
         {
             currentFetchTimestamp = getPresentUnixTimestamp();
         }
-        currentSystemTimestamp = getPresentUnixTimestamp();
+        lastFetchedSystemTimestamp = getPresentUnixTimestamp();
     }
 
     private void initializeForPartiallyLoadedDatabase(Battle oldestBattle)
@@ -140,25 +141,35 @@ public class APIService implements InitializingBean, DisposableBean {
         if (isFetchingForward)
         {
             fetchForward();
+            if(fetchIsAheadOfCurrent)
+            {
+                fetchIsAheadOfCurrent = false;
+                scheduleNextExecution((TIME_STEP-620) * 1000);
+                return;
+            }
         }
         else
         {
             fetchBackward();
         }
 
-        scheduleNextExecution(1200);
+        scheduleNextExecution(300);
     }
 
     private void fetchForward()
     {
-        if (currentFetchTimestamp > currentSystemTimestamp)
+        if (currentFetchTimestamp > lastFetchedSystemTimestamp)
         {
-            currentSystemTimestamp = getPresentUnixTimestamp();
-            scheduleNextExecution((TIME_STEP-1) * 1000);
-            return;
+            logger.info("Current fetch timestamp {} {} is greater than last system's " +
+                    "timestamp {} {}",
+                    currentFetchTimestamp,ReadableTimeFromUnixTimestamp(currentFetchTimestamp),
+                    lastFetchedSystemTimestamp, ReadableTimeFromUnixTimestamp(lastFetchedSystemTimestamp));
+            fetchIsAheadOfCurrent = true;
+            currentFetchTimestamp = lastFetchedSystemTimestamp;
+            lastFetchedSystemTimestamp = getPresentUnixTimestamp();
         }
 
-        String dateFromUnix = currentTimeFromUnixTimestamp(currentFetchTimestamp);
+        String dateFromUnix = ReadableTimeFromUnixTimestamp(currentFetchTimestamp);
         logger.info("Sending query to API endpoint for battle time after: {} UTC, Unix: {}", dateFromUnix, currentFetchTimestamp);
 
         try
@@ -174,7 +185,7 @@ public class APIService implements InitializingBean, DisposableBean {
     }
 
     private void fetchBackward() {
-        String dateFromUnix = currentTimeFromUnixTimestamp(currentFetchTimestamp);
+        String dateFromUnix = ReadableTimeFromUnixTimestamp(currentFetchTimestamp);
         logger.info("Sending query to API endpoint for battle time before: {} UTC, Unix: {}", dateFromUnix, currentFetchTimestamp);
 
         try {
@@ -207,7 +218,7 @@ public class APIService implements InitializingBean, DisposableBean {
         {
             currentFetchTimestamp = getPresentUnixTimestamp();
         }
-        currentSystemTimestamp = getPresentUnixTimestamp();
+        lastFetchedSystemTimestamp = getPresentUnixTimestamp();
         logger.info("Switching to forward fetching. Starting from: {}", currentFetchTimestamp);
     }
 
@@ -237,7 +248,7 @@ public class APIService implements InitializingBean, DisposableBean {
         );
     }
 
-    private String currentTimeFromUnixTimestamp(long unixTimestamp)
+    private String ReadableTimeFromUnixTimestamp(long unixTimestamp)
     {
         return Instant.ofEpochSecond(unixTimestamp)
                 .atZone(zoneId)
