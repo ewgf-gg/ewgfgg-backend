@@ -33,6 +33,8 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Progress
+* **10/12/2024:** Removed Bloom filter along with associated dependency. Returned to previous method of queueing for existence checks, but with a much more limited scope. Heavily refactored APIService class to support full dynamic loading of databases. APIService can now continue fetching historical data without the need for manual intervention. It will also switch to begin fetching forward once database preload is complete. Refactored JSON Parser, but still need to implement custom parser to not rely on Type Inference.
+
 
 * **10/11/2024:** Removed the hardcoded timestamp value and let the server retrieve them dynamically. Refactored all model classes to fit new schema naming scheme.
 

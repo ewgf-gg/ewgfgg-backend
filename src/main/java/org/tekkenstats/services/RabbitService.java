@@ -1,6 +1,6 @@
 package org.tekkenstats.services;
 
-import com.google.common.hash.BloomFilter;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,8 +17,7 @@ import org.tekkenstats.models.PastPlayerNames;
 import org.tekkenstats.models.Player;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.tekkenstats.repositories.BattleRepository;
 import org.tekkenstats.rowmappers.BattleRowMapper;
 
 import java.sql.SQLException;
@@ -32,12 +31,12 @@ import java.util.stream.Collectors;
 public class RabbitService {
 
     private static final Logger logger = LogManager.getLogger(RabbitService.class);
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final BattleRowMapper battleRowMapper = new BattleRowMapper();
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private BattleBloomFilterService battleBloomFilterService;
+    private BattleRepository battleRepository;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "4")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
@@ -47,8 +46,7 @@ public class RabbitService {
 
         long startTime = System.currentTimeMillis();
 
-        List<Battle> battles = objectMapper.readValue(message, new TypeReference<>() {
-        });
+        List<Battle> battles = battleRowMapper.mapToBattlesFromApiJson(message);
         processBattlesAsync(battles);
 
         long endTime = System.currentTimeMillis();
@@ -58,18 +56,14 @@ public class RabbitService {
 
     public void processBattlesAsync(List<Battle> battles)
     {
-        // Extract battle IDs and player IDs
-        Set<String> battleIDs = new HashSet<>();
-        extractBattleIDs(battles, battleIDs);
-
-        // Fetch existing battles and players
-        Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battleIDs);
+        // Fetch existing battles
+        Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battles);
 
         HashMap<String, Player> updatedPlayers = new HashMap<>();
         Set<Battle> battleSet = new HashSet<>();
 
         // Instantiate objects and update relevant information
-        processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers,battleSet);
+        processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
 
         // Execute player batched writes
         executePlayerBulkOperations(updatedPlayers);
@@ -88,69 +82,31 @@ public class RabbitService {
     }
 
 
-    private Map<String, Battle> fetchExistingBattles(Set<String> battleIDs)
+    private Map<String, Battle> fetchExistingBattles(List<Battle> battles)
     {
+        if (battles.isEmpty())
+        {
+            logger.warn("No battles provided. Skipping database fetch.");
+            return Collections.emptyMap();
+        }
+
         long startTime = System.currentTimeMillis();
-        int battleIdSize = battleIDs.size();
-        final double THRESHOLD = 0.1; // 10%
 
-        if (battleIDs.isEmpty())
-        {
-            logger.warn("No battle IDs provided. Skipping database fetch.");
-            return Collections.emptyMap();
-        }
+        // Get the timestamp of the middle battle in the list
+        long middleTimestamp = battles.get(battles.size() / 2).getBattleAt();
 
-        // Access the Bloom Filter from BattleService
-        BloomFilter<String> bloomFilter = battleBloomFilterService.getBattleIdBloomFilter();
+        // Fetch surrounding battle IDs directly as a Set
+        Set<String> surroundingBattleIdSet = new HashSet<>(battleRepository.findSurroundingBattleIds(middleTimestamp));
 
-
-        // Count how many battle IDs are positive matches in the Bloom Filter
-        int positiveCount = 0;
-
-        for (String battleId : battleIDs)
-        {
-            if (bloomFilter.mightContain(battleId))
-            {
-                positiveCount++;
-                if (((double) positiveCount /battleIdSize) >= THRESHOLD)
-                {
-                    break;
-                }
-            }
-        }
-
-        double positivePercentage = (double) positiveCount / battleIdSize;
-        logger.info("Positive matches in Bloom Filter: {}%", positivePercentage * 100);
-
-        List<Battle> existingBattles;
-
-        if (positivePercentage >= THRESHOLD)
-        {
-            // Fetch recent battles from the database
-            String sql = "SELECT * FROM battles ORDER BY battle_at DESC LIMIT 250000";
-            existingBattles = jdbcTemplate.query(sql, new BattleRowMapper());
-            logger.info("Fetched {} recent battles from database.", existingBattles.size());
-
-            // Filter the battles to include only those with IDs in battleIDs
-            Set<String> battleIdSet = new HashSet<>(battleIDs);
-            existingBattles = existingBattles.stream()
-                    .filter(battle -> battleIdSet.contains(battle.getBattleId()))
-                    .collect(Collectors.toList());
-        }
-        else
-        {
-            logger.info("Battles fell below bloom filter threshold. Skipping database read.");
-            long endTime = System.currentTimeMillis();
-            logger.info("Bloom filter check and skip took {} ms", (endTime - startTime));
-
-            return Collections.emptyMap();
-        }
-        long endTime = System.currentTimeMillis();
-        logger.info("Retrieved existing battles from database in {} ms", (endTime - startTime));
-
-
-        return existingBattles.stream()
+        // Create a map of existing battles
+        Map<String, Battle> existingBattles = battles.stream()
+                .filter(battle -> surroundingBattleIdSet.contains(battle.getBattleId()))
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
+
+        long endTime = System.currentTimeMillis();
+        logger.info("Identified {} existing battles in {} ms", existingBattles.size(), (endTime - startTime));
+
+        return existingBattles;
     }
 
     private void processBattlesAndPlayers(

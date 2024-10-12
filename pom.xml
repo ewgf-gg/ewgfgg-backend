@@ -36,13 +36,6 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Google Guava -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>33.3.1-jre</version>
-		</dependency>
-
 		<!-- Spring Boot AMQP (RabbitMQ) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -111,8 +104,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
 
+		<!-- Spring Boot Actuator -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
