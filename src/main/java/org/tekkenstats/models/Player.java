@@ -33,10 +33,13 @@ public class Player {
     @EqualsAndHashCode.Exclude
     private Set<PastPlayerNames> playerNames = new HashSet<>();
 
-    // A map to store character stats for each character by character ID
+    // Update the map to use a composite key of character ID and game version
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @MapKey(name = "id.characterId")
-    private Map<String, CharacterStats> characterStats = new HashMap<>();
+    @MapKeyJoinColumns({
+            @MapKeyJoinColumn(name = "character_id"),
+            @MapKeyJoinColumn(name = "game_version")
+    })
+    private Map<CharacterStatsId, CharacterStats> characterStats = new HashMap<>();
 
     public Player() {
         this.playerId = "0";

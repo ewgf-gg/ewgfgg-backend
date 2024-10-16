@@ -48,22 +48,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory)
+    {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
 
         // Set the task executor to use virtual threads
         factory.setTaskExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
-        // You can control other properties such as concurrency here if needed
-
         RetryTemplate retryTemplate = new RetryTemplate();
-
-        // Configure retry policy (e.g., max 3 attempts)
         SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
         retryPolicy.setMaxAttempts(3);
 
-        // Configure backoff policy (e.g., 2-second delay between retries)
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
         backOffPolicy.setBackOffPeriod(2000);
 
@@ -85,15 +81,13 @@ public class RabbitMQConfig {
         return new SimpleMessageConverter();
     }
 
-
         @Bean
-        public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory)
+        {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
             return new RabbitAdmin(connectionFactory);
 
         }
-
-
 
     }
 

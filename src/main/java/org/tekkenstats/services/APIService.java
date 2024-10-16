@@ -48,7 +48,7 @@ public class APIService implements InitializingBean, DisposableBean {
     private boolean isFetchingForward = false;
     private long currentFetchTimestamp; // renamed from unixTimestamp
     private long lastFetchedSystemTimestamp; // renamed from currentTimestamp
-    private final long oldestHistoricalBattleTimestamp = 1711548580L ; // renamed from oldestBattleTimestamp
+    private final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L ; // renamed from oldestBattleTimestamp
     private long newestKnownBattleTimestamp; // renamed from newestBattleTimestamp
     private ScheduledFuture<?> scheduledTask;
     private boolean fetchIsAheadOfCurrent = false;
@@ -164,6 +164,7 @@ public class APIService implements InitializingBean, DisposableBean {
                     "timestamp {} {}",
                     currentFetchTimestamp,ReadableTimeFromUnixTimestamp(currentFetchTimestamp),
                     lastFetchedSystemTimestamp, ReadableTimeFromUnixTimestamp(lastFetchedSystemTimestamp));
+
             fetchIsAheadOfCurrent = true;
             currentFetchTimestamp = lastFetchedSystemTimestamp;
             lastFetchedSystemTimestamp = getPresentUnixTimestamp();
@@ -184,19 +185,21 @@ public class APIService implements InitializingBean, DisposableBean {
         }
     }
 
-    private void fetchBackward() {
+    private void fetchBackward()
+    {
         String dateFromUnix = ReadableTimeFromUnixTimestamp(currentFetchTimestamp);
         logger.info("Sending query to API endpoint for battle time before: {} UTC, Unix: {}", dateFromUnix, currentFetchTimestamp);
 
-        try {
+        try
+        {
             String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + currentFetchTimestamp, String.class);
             processApiResponse(jsonResponse, dateFromUnix);
             currentFetchTimestamp -= TIME_STEP;
 
-            if (currentFetchTimestamp < oldestHistoricalBattleTimestamp)
+            if (currentFetchTimestamp < OLDEST_HISTORICAL_TIMESTAMP)
             {
                 logger.info("Current timestamp of {} is now below the oldest historical timestamp {}. " +
-                        "Switching to forward fetching", currentFetchTimestamp, oldestHistoricalBattleTimestamp);
+                        "Switching to forward fetching", currentFetchTimestamp, OLDEST_HISTORICAL_TIMESTAMP);
                 switchToForwardFetching();
             }
         } catch (Exception e)

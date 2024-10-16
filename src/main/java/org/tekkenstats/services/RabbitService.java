@@ -11,10 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
-import org.tekkenstats.models.Battle;
-import org.tekkenstats.models.CharacterStats;
-import org.tekkenstats.models.PastPlayerNames;
-import org.tekkenstats.models.Player;
+import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
 import org.tekkenstats.repositories.BattleRepository;
@@ -237,8 +234,12 @@ public class RabbitService {
                 "INSERT INTO players (player_id, name, polaris_id, tekken_power,latest_battle) " +
                 "VALUES (?, ?, ?, ? ,?) " +
                 "ON CONFLICT (player_id) DO UPDATE SET " +
-                "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.tekken_power ELSE players.tekken_power END," +
-                "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.latest_battle ELSE players.latest_battle END";
+                "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
+                        "THEN EXCLUDED.tekken_power " +
+                        "ELSE players.tekken_power END," +
+                "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
+                        "THEN EXCLUDED.latest_battle " +
+                        "ELSE players.latest_battle END";
 
         List<Object[]> batchArgs = new ArrayList<>();
 
@@ -267,10 +268,10 @@ public class RabbitService {
     }
 
 
-    public void executeCharacterStatsBulkOperations(
-            HashMap<String,Player> updatedPlayersSet) {
-
-        if (updatedPlayersSet.isEmpty()) {
+    public void executeCharacterStatsBulkOperations(HashMap<String, Player> updatedPlayersSet)
+    {
+        if (updatedPlayersSet.isEmpty())
+        {
             logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
             return;
         }
@@ -278,23 +279,27 @@ public class RabbitService {
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "INSERT INTO character_stats (player_id, character_id, dan_rank, latest_battle, wins, losses) " +
-                "VALUES (?, ?, ?, ?, ?, ?) " +
-                "ON CONFLICT (player_id, character_id) DO UPDATE SET " +
-                "dan_rank = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle THEN EXCLUDED.dan_rank ELSE character_stats.dan_rank END, " +
-                "latest_battle = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle THEN EXCLUDED.latest_battle ELSE character_stats.latest_battle END, " +
-                "wins = character_stats.wins + EXCLUDED.wins, " +
-                "losses = character_stats.losses + EXCLUDED.losses";
+                "INSERT INTO character_stats (player_id, character_id, game_version, dan_rank, latest_battle, wins, losses) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                        "ON CONFLICT (player_id, character_id, game_version) DO UPDATE SET " +
+                        "dan_rank = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle " +
+                        "THEN EXCLUDED.dan_rank " +
+                        "ELSE character_stats.dan_rank END, " +
+                        "latest_battle = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle " +
+                        "THEN EXCLUDED.latest_battle " +
+                        "ELSE character_stats.latest_battle END, " +
+                        "wins = character_stats.wins + EXCLUDED.wins, " +
+                        "losses = character_stats.losses + EXCLUDED.losses";
 
         List<Object[]> batchArgs = new ArrayList<>();
 
         for (Player updatedPlayer : updatedPlayersSet.values()) {
             String userId = updatedPlayer.getPlayerId();
 
-            Map<String, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
+            Map<CharacterStatsId, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
             if (updatedCharacterStats != null) {
-                for (Map.Entry<String, CharacterStats> entry : updatedCharacterStats.entrySet()) {
-                    String characterName = entry.getKey();
+                for (Map.Entry<CharacterStatsId, CharacterStats> entry : updatedCharacterStats.entrySet()) {
+                    CharacterStatsId statsId = entry.getKey();
                     CharacterStats updatedStats = entry.getValue();
 
                     int winsIncrement = updatedStats.getWinsIncrement();
@@ -302,7 +307,8 @@ public class RabbitService {
 
                     Object[] args = new Object[]{
                             userId,
-                            characterName,
+                            statsId.getCharacterId(),
+                            statsId.getGameVersion(),
                             updatedStats.getDanRank(),
                             updatedStats.getLatestBattle(),
                             winsIncrement,
@@ -310,71 +316,29 @@ public class RabbitService {
                     };
 
                     batchArgs.add(args);
-
                 }
             }
         }
+
         // Sorting to reduce the rate of deadlocks occurring
         batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]) // player_id
-                .thenComparing(args -> (String) args[1]));     // character_id
+                .thenComparing(args -> (String) args[1])  // character_id
+                .thenComparing(args -> (String) args[2])); // game_version
 
-        int maxRetries = 3;
-        int retryCount = 0;
-        boolean success = false;
+        int batchSize = 1000; // Adjust based on your system's capacity
+        int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
 
-        while (!success && retryCount <= maxRetries) {
-            try
-            {
-                int batchSize = 1000; // Adjust based on your system's capacity
-                int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
+        try {
+            for (int i = 0; i < totalBatches; i++) {
+                int start = i * batchSize;
+                int end = Math.min(start + batchSize, batchArgs.size());
 
-                for (int i = 0; i < totalBatches; i++)
-                {
-                    int start = i * batchSize;
-                    int end = Math.min(start + batchSize, batchArgs.size());
+                List<Object[]> batch = batchArgs.subList(start, end);
 
-                    List<Object[]> batch = batchArgs.subList(start, end);
-
-                    jdbcTemplate.batchUpdate(sql, batch);
-                }
-                success = true; // If execution reaches here, the operation succeeded
+                jdbcTemplate.batchUpdate(sql, batch);
             }
-            catch (DataAccessException e)
-            {
-                Throwable rootCause = e.getRootCause();
-                if (rootCause instanceof SQLException)
-                {
-                    SQLException sqlEx = (SQLException) rootCause;
-                    if ("40P01".equals(sqlEx.getSQLState()))
-                    {
-                        // **Deadlock detected, retrying**
-                        retryCount++;
-                        logger.warn("Deadlock detected during character_stats batch update. Retrying... attempt {}/{}", retryCount, maxRetries);
-                        try
-                        {
-                            // Exponential backoff
-                            Thread.sleep((long) Math.pow(2, retryCount) * 100);
-                        } catch (InterruptedException ie)
-                        {
-                            Thread.currentThread().interrupt();
-                            throw new RuntimeException("Thread interrupted during retry sleep", ie);
-                        }
-                    } else
-                    {
-                        // Other SQL exception
-                        throw e;
-                    }
-                } else
-                {
-                    // Non-SQL exception
-                    throw e;
-                }
-            }
-        }
-
-        if (!success)
-        {
-            throw new RuntimeException("Failed to execute character_stats batch update after " + maxRetries + " attempts due to deadlocks.");
+        } catch(Exception e) {
+            logger.error("Error occurred while inserting character stats: {}", e.getMessage());
         }
 
         long endTime = System.currentTimeMillis();
@@ -382,19 +346,27 @@ public class RabbitService {
                 (endTime - startTime), batchArgs.size());
     }
 
-    private void updatePlayerWithBattle(Player player, Battle battle, int playerNumber) {
-        // Get the character ID associated with the player for this battle
+    private void updatePlayerWithBattle(Player player, Battle battle, int playerNumber)
+    {
         String characterId = getPlayerCharacter(battle, playerNumber);
+        int gameVersion = battle.getGameVersion();
 
-        // Fetch or initialize CharacterStats for this character
-        CharacterStats stats = player.getCharacterStats().get(characterId);
+        // Create a CharacterStatsId for lookup
+        CharacterStatsId statsId = new CharacterStatsId();
+        statsId.setPlayerId(player.getPlayerId());
+        statsId.setCharacterId(characterId);
+        statsId.setGameVersion(gameVersion);
+
+        // Fetch or initialize CharacterStats for this character and game version
+        CharacterStats stats = player.getCharacterStats().get(statsId);
 
         if (stats == null)
         {
-            // Initialize a new CharacterStats object if none exists for the character
+            // Initialize a new CharacterStats object if none exists
             stats = new CharacterStats();
+            stats.setId(statsId);
             stats.setDanRank(getPlayerDanRank(battle, playerNumber));
-            player.getCharacterStats().put(characterId, stats);
+            player.getCharacterStats().put(statsId, stats);
         }
 
         // Update wins or losses based on the battle result
@@ -412,14 +384,18 @@ public class RabbitService {
         if (battle.getBattleAt() > stats.getLatestBattle())
         {
             stats.setLatestBattle(battle.getBattleAt());
-            player.setLatestBattle();
-            player.updateTekkenPower((getPlayerCharacter(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()), battle.getBattleAt());
+            player.setLatestBattle(battle.getBattleAt());
+            player.updateTekkenPower(
+                    (getPlayerCharacter(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()),
+                    battle.getBattleAt()
+            );
             stats.setDanRank(getPlayerDanRank(battle, playerNumber));  // Update dan rank only if the battle is the latest
         }
     }
 
 
-    private void updateNewPlayerDetails(Player player, Battle battle, int playerNumber) {
+    private void updateNewPlayerDetails(Player player, Battle battle, int playerNumber)
+    {
         // Set player-level details
         player.setPlayerId(getPlayerUserId(battle, playerNumber));
         player.setName(getPlayerName(battle, playerNumber));
@@ -428,17 +404,25 @@ public class RabbitService {
 
         // Create a new CharacterStats object for the player's character
         CharacterStats characterStats = new CharacterStats();
+
+        // Create and set the CharacterStatsId
+        CharacterStatsId statsId = new CharacterStatsId();
+        statsId.setPlayerId(player.getPlayerId());
+        statsId.setCharacterId(getPlayerCharacter(battle, playerNumber));
+        statsId.setGameVersion(battle.getGameVersion());
+        characterStats.setId(statsId);
+
         characterStats.setDanRank(getPlayerDanRank(battle, playerNumber));
         characterStats.setLatestBattle(battle.getBattleAt());
 
-        // Add the new character stats to the player's map, keyed by character ID
-        String characterId = getPlayerCharacter(battle, playerNumber);
-        player.getCharacterStats().put(characterId, characterStats);
-        player.setLatestBattle();
+        // Add the new character stats to the player's map
+        player.getCharacterStats().put(statsId, characterStats);
+        player.setLatestBattle(battle.getBattleAt());
 
         // Add the player's name to the name history if it's new
         addPlayerNameIfNew(player, player.getName());
     }
+
 
 
     private void addPlayerNameIfNew(Player player, String name)

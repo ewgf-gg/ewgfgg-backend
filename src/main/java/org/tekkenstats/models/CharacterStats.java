@@ -15,8 +15,7 @@ public class CharacterStats {
     private long latestBattle;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("playerId")
-    @JoinColumn(name = "player_id")
+    @JoinColumn(name = "player_id", insertable = false, updatable = false)
     private Player player;
 
     @Column(name = "wins")
