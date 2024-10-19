@@ -1,5 +1,5 @@
 {
-    "stage_dict": {
+    "stages": {
         "100": "Arena",
         "101": "Arena Underground",
         "200": "Urban Square",
@@ -17,7 +17,7 @@
         "1500": "Elegant Palace",
         "1600": "Midnight Siege"
     },
-    "char_dict": {
+    "characters": {
         "0": "Paul",
         "1": "Law",
         "2": "King",
@@ -54,18 +54,18 @@
         "39": "Lidia",
         "40": "Heihachi"
     },
-    "battle_type_dict": {
+    "battle_type": {
         "1": "quick match",
         "2": "ranked match",
         "3": "group match",
         "4": "player match"
     },
-    "platform_dict": {
+    "platform": {
         "3": "pc",
         "8": "console/PS?",
         "9": "console/XBOX?"
     },
-    "dan_names_dict": {
+    "dan_names": {
         "0": "Beginner",
         "1": "1st Dan",
         "2": "2nd Dan",

@@ -4,7 +4,7 @@
 This is the backend service that will supplement the frontend for the website. The purpose of this monolith is to aggregate replay data, create player profiles based on said data, and then perform statistics analysis using the freshly made player profiles as data points.
 
 ## Technologies used
-
+* **
 * **Java (21)**
 * **Spring Boot (3.3.4)**
 * **PostgreSQL (17)**
@@ -14,7 +14,7 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Lessons Learned (so far)
-
+* **
 * **Concurrency & Multithreading:** Lots and lots of race conditions and deadlocks. Figuring out how to mitigate them, and how to handle them gracefully without incurring data or performance losses.
 
 
@@ -33,6 +33,13 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Progress
+* **
+* **10/19/2024:** REST API endpoints have been created and are functioning perfectly! Average response times seem to be anywhere between 50-100ms which is amazing. Can't wait to see what it's like when everything is deployed.
+
+
+* **10/15/2024:** Character Stats are now separated by game version. This hopefully will provide a more accurate look at characters after they have been adjus
+
+
 * **10/12/2024:** Removed Bloom filter along with associated dependency. Returned to previous method of queueing for existence checks, but with a much more limited scope. Heavily refactored APIService class to support full dynamic loading of databases. APIService can now continue fetching historical data without the need for manual intervention. It will also switch to begin fetching forward once database preload is complete. Refactored JSON Parser, but still need to implement custom parser to not rely on Type Inference.
 
 

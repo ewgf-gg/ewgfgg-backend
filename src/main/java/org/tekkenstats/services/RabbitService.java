@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
@@ -15,9 +14,8 @@ import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
 import org.tekkenstats.repositories.BattleRepository;
-import org.tekkenstats.rowmappers.BattleRowMapper;
+import org.tekkenstats.mappers.BattleRowMapper;
 
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -323,7 +321,7 @@ public class RabbitService {
         // Sorting to reduce the rate of deadlocks occurring
         batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]) // player_id
                 .thenComparing(args -> (String) args[1])  // character_id
-                .thenComparing(args -> (String) args[2])); // game_version
+                .thenComparing(args -> (Integer) args[2])); // game_version
 
         int batchSize = 1000; // Adjust based on your system's capacity
         int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
