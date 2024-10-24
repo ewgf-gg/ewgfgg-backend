@@ -3,9 +3,9 @@
   <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
     <root id="1">
       <DateStyle>mdy</DateStyle>
-      <IntrospectionStateNumber>7368670</IntrospectionStateNumber>
+      <IntrospectionStateNumber>11284960</IntrospectionStateNumber>
       <ServerVersion>17.0</ServerVersion>
-      <StartupTime>1728539592</StartupTime>
+      <StartupTime>1729065715</StartupTime>
       <TimeZones>true ACDT
 true ACSST
 false ACST
@@ -800,7 +800,7 @@ false Zulu
 14704||10|C|G
 14704||-9223372036854775808|U|G
 14704||10|U|G</Grants>
-      <IntrospectionStateNumber>7368670</IntrospectionStateNumber>
+      <IntrospectionStateNumber>11284960</IntrospectionStateNumber>
       <ObjectId>16388</ObjectId>
       <OwnerName>postgres</OwnerName>
     </database>
@@ -4268,8 +4268,8 @@ false Zulu
 33780||33771|X|G
 33781||10|X|G
 33781||33771|X|G</Grants>
-      <IntrospectionStateNumber>7368670</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2024-10-16.02:56:59</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>11284960</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2024-10-24.00:53:43</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>532</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
@@ -4370,800 +4370,931 @@ false Zulu
       <StoredType>bigint|0s</StoredType>
       <OwnerName>postgres</OwnerName>
     </sequence>
-    <table id="280" parent="267" name="battles">
+    <table id="280" parent="267" name="aggregated_statistics">
+      <ObjectId>34683</ObjectId>
+      <StateNumber>11284625</StateNumber>
+      <AccessMethodId>2</AccessMethodId>
+      <OwnerName>postgres</OwnerName>
+    </table>
+    <table id="281" parent="267" name="battles">
       <ObjectId>25187</ObjectId>
-      <StateNumber>7368159</StateNumber>
+      <StateNumber>9228436</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
-    <table id="281" parent="267" name="character_stats">
+    <table id="282" parent="267" name="character_stats">
       <ObjectId>24648</ObjectId>
-      <StateNumber>7368165</StateNumber>
+      <StateNumber>9228289</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
-    <table id="282" parent="267" name="enums">
+    <table id="283" parent="267" name="db_info">
+      <ObjectId>34695</ObjectId>
+      <StateNumber>11284955</StateNumber>
+      <AccessMethodId>2</AccessMethodId>
+      <OwnerName>postgres</OwnerName>
+    </table>
+    <table id="284" parent="267" name="enums">
       <ObjectId>24939</ObjectId>
       <StateNumber>1435</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
-    <table id="283" parent="267" name="past_player_names">
+    <table id="285" parent="267" name="past_player_names">
       <ObjectId>24624</ObjectId>
       <StateNumber>7368163</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
-    <table id="284" parent="267" name="players">
+    <table id="286" parent="267" name="players">
       <ObjectId>24585</ObjectId>
-      <StateNumber>7368162</StateNumber>
+      <StateNumber>9228288</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
-    <argument id="285" parent="268">
+    <table id="287" parent="267" name="tekken_stats_summary">
+      <ObjectId>34701</ObjectId>
+      <StateNumber>11284958</StateNumber>
+      <AccessMethodId>2</AccessMethodId>
+      <OwnerName>postgres</OwnerName>
+    </table>
+    <argument id="288" parent="268">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="286" parent="268" name="vendor">
+    <argument id="289" parent="268" name="vendor">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="287" parent="268" name="description">
+    <argument id="290" parent="268" name="description">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="288" parent="268" name="model_name">
+    <argument id="291" parent="268" name="model_name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="289" parent="268" name="processor_type">
+    <argument id="292" parent="268" name="processor_type">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="290" parent="268" name="logical_processor">
+    <argument id="293" parent="268" name="logical_processor">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="291" parent="268" name="physical_processor">
+    <argument id="294" parent="268" name="physical_processor">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="292" parent="268" name="no_of_cores">
+    <argument id="295" parent="268" name="no_of_cores">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="293" parent="268" name="architecture">
+    <argument id="296" parent="268" name="architecture">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="294" parent="268" name="clock_speed_hz">
+    <argument id="297" parent="268" name="clock_speed_hz">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="295" parent="268" name="cpu_type">
+    <argument id="298" parent="268" name="cpu_type">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="296" parent="268" name="cpu_family">
+    <argument id="299" parent="268" name="cpu_family">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>11</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="297" parent="268" name="byte_order">
+    <argument id="300" parent="268" name="byte_order">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>12</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="298" parent="268" name="l1dcache_size">
+    <argument id="301" parent="268" name="l1dcache_size">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>13</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="299" parent="268" name="l1icache_size">
+    <argument id="302" parent="268" name="l1icache_size">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>14</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="300" parent="268" name="l2cache_size">
+    <argument id="303" parent="268" name="l2cache_size">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>15</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="301" parent="268" name="l3cache_size">
+    <argument id="304" parent="268" name="l3cache_size">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>16</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="302" parent="269">
+    <argument id="305" parent="269">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="303" parent="269" name="pid">
+    <argument id="306" parent="269" name="pid">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="304" parent="269" name="name">
+    <argument id="307" parent="269" name="name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="305" parent="269" name="running_since_seconds">
+    <argument id="308" parent="269" name="running_since_seconds">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="306" parent="269" name="cpu_usage">
+    <argument id="309" parent="269" name="cpu_usage">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="307" parent="269" name="memory_usage">
+    <argument id="310" parent="269" name="memory_usage">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="308" parent="269" name="memory_bytes">
+    <argument id="311" parent="269" name="memory_bytes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="309" parent="270">
+    <argument id="312" parent="270">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="310" parent="270" name="usermode_normal_process_percent">
+    <argument id="313" parent="270" name="usermode_normal_process_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="311" parent="270" name="usermode_niced_process_percent">
+    <argument id="314" parent="270" name="usermode_niced_process_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="312" parent="270" name="kernelmode_process_percent">
+    <argument id="315" parent="270" name="kernelmode_process_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="313" parent="270" name="idle_mode_percent">
+    <argument id="316" parent="270" name="idle_mode_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="314" parent="270" name="io_completion_percent">
+    <argument id="317" parent="270" name="io_completion_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="315" parent="270" name="servicing_irq_percent">
+    <argument id="318" parent="270" name="servicing_irq_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="316" parent="270" name="servicing_softirq_percent">
+    <argument id="319" parent="270" name="servicing_softirq_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="317" parent="270" name="user_time_percent">
+    <argument id="320" parent="270" name="user_time_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="318" parent="270" name="processor_time_percent">
+    <argument id="321" parent="270" name="processor_time_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="319" parent="270" name="privileged_time_percent">
+    <argument id="322" parent="270" name="privileged_time_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="320" parent="270" name="interrupt_time_percent">
+    <argument id="323" parent="270" name="interrupt_time_percent">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>11</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="321" parent="271">
+    <argument id="324" parent="271">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="322" parent="271" name="mount_point">
+    <argument id="325" parent="271" name="mount_point">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="323" parent="271" name="file_system">
+    <argument id="326" parent="271" name="file_system">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="324" parent="271" name="drive_letter">
+    <argument id="327" parent="271" name="drive_letter">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="325" parent="271" name="drive_type">
+    <argument id="328" parent="271" name="drive_type">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="326" parent="271" name="file_system_type">
+    <argument id="329" parent="271" name="file_system_type">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="327" parent="271" name="total_space">
+    <argument id="330" parent="271" name="total_space">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="328" parent="271" name="used_space">
+    <argument id="331" parent="271" name="used_space">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="329" parent="271" name="free_space">
+    <argument id="332" parent="271" name="free_space">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="330" parent="271" name="total_inodes">
+    <argument id="333" parent="271" name="total_inodes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="331" parent="271" name="used_inodes">
+    <argument id="334" parent="271" name="used_inodes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="332" parent="271" name="free_inodes">
+    <argument id="335" parent="271" name="free_inodes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>11</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="333" parent="272">
+    <argument id="336" parent="272">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="334" parent="272" name="device_name">
+    <argument id="337" parent="272" name="device_name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="335" parent="272" name="total_reads">
+    <argument id="338" parent="272" name="total_reads">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="336" parent="272" name="total_writes">
+    <argument id="339" parent="272" name="total_writes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="337" parent="272" name="read_bytes">
+    <argument id="340" parent="272" name="read_bytes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="338" parent="272" name="write_bytes">
+    <argument id="341" parent="272" name="write_bytes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="339" parent="272" name="read_time_ms">
+    <argument id="342" parent="272" name="read_time_ms">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="340" parent="272" name="write_time_ms">
+    <argument id="343" parent="272" name="write_time_ms">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="341" parent="273">
+    <argument id="344" parent="273">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="342" parent="273" name="load_avg_one_minute">
+    <argument id="345" parent="273" name="load_avg_one_minute">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="343" parent="273" name="load_avg_five_minutes">
+    <argument id="346" parent="273" name="load_avg_five_minutes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="344" parent="273" name="load_avg_ten_minutes">
+    <argument id="347" parent="273" name="load_avg_ten_minutes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="345" parent="273" name="load_avg_fifteen_minutes">
+    <argument id="348" parent="273" name="load_avg_fifteen_minutes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>real|0s</StoredType>
     </argument>
-    <argument id="346" parent="274">
+    <argument id="349" parent="274">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="347" parent="274" name="total_memory">
+    <argument id="350" parent="274" name="total_memory">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="348" parent="274" name="used_memory">
+    <argument id="351" parent="274" name="used_memory">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="349" parent="274" name="free_memory">
+    <argument id="352" parent="274" name="free_memory">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="350" parent="274" name="swap_total">
+    <argument id="353" parent="274" name="swap_total">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="351" parent="274" name="swap_used">
+    <argument id="354" parent="274" name="swap_used">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="352" parent="274" name="swap_free">
+    <argument id="355" parent="274" name="swap_free">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="353" parent="274" name="cache_total">
+    <argument id="356" parent="274" name="cache_total">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="354" parent="274" name="kernel_total">
+    <argument id="357" parent="274" name="kernel_total">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="355" parent="274" name="kernel_paged">
+    <argument id="358" parent="274" name="kernel_paged">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="356" parent="274" name="kernel_non_paged">
+    <argument id="359" parent="274" name="kernel_non_paged">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="357" parent="274" name="total_page_file">
+    <argument id="360" parent="274" name="total_page_file">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>11</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="358" parent="274" name="avail_page_file">
+    <argument id="361" parent="274" name="avail_page_file">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>12</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="359" parent="275">
+    <argument id="362" parent="275">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="360" parent="275" name="interface_name">
+    <argument id="363" parent="275" name="interface_name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="361" parent="275" name="ip_address">
+    <argument id="364" parent="275" name="ip_address">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="362" parent="275" name="tx_bytes">
+    <argument id="365" parent="275" name="tx_bytes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="363" parent="275" name="tx_packets">
+    <argument id="366" parent="275" name="tx_packets">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="364" parent="275" name="tx_errors">
+    <argument id="367" parent="275" name="tx_errors">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="365" parent="275" name="tx_dropped">
+    <argument id="368" parent="275" name="tx_dropped">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="366" parent="275" name="rx_bytes">
+    <argument id="369" parent="275" name="rx_bytes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="367" parent="275" name="rx_packets">
+    <argument id="370" parent="275" name="rx_packets">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="368" parent="275" name="rx_errors">
+    <argument id="371" parent="275" name="rx_errors">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="369" parent="275" name="rx_dropped">
+    <argument id="372" parent="275" name="rx_dropped">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>bigint|0s</StoredType>
     </argument>
-    <argument id="370" parent="275" name="link_speed_mbps">
+    <argument id="373" parent="275" name="link_speed_mbps">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>11</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="371" parent="276">
+    <argument id="374" parent="276">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="372" parent="276" name="name">
+    <argument id="375" parent="276" name="name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="373" parent="276" name="version">
+    <argument id="376" parent="276" name="version">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="374" parent="276" name="host_name">
+    <argument id="377" parent="276" name="host_name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="375" parent="276" name="domain_name">
+    <argument id="378" parent="276" name="domain_name">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="376" parent="276" name="handle_count">
+    <argument id="379" parent="276" name="handle_count">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="377" parent="276" name="process_count">
+    <argument id="380" parent="276" name="process_count">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>6</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="378" parent="276" name="thread_count">
+    <argument id="381" parent="276" name="thread_count">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>7</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="379" parent="276" name="architecture">
+    <argument id="382" parent="276" name="architecture">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>8</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="380" parent="276" name="last_bootup_time">
+    <argument id="383" parent="276" name="last_bootup_time">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>9</Position>
       <StoredType>text|0s</StoredType>
     </argument>
-    <argument id="381" parent="276" name="os_up_since_seconds">
+    <argument id="384" parent="276" name="os_up_since_seconds">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>10</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="382" parent="277">
+    <argument id="385" parent="277">
       <ArgumentDirection>R</ArgumentDirection>
       <StoredType>setof() record|0s</StoredType>
     </argument>
-    <argument id="383" parent="277" name="total_processes">
+    <argument id="386" parent="277" name="total_processes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>1</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="384" parent="277" name="running_processes">
+    <argument id="387" parent="277" name="running_processes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>2</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="385" parent="277" name="sleeping_processes">
+    <argument id="388" parent="277" name="sleeping_processes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>3</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="386" parent="277" name="stopped_processes">
+    <argument id="389" parent="277" name="stopped_processes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>4</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <argument id="387" parent="277" name="zombie_processes">
+    <argument id="390" parent="277" name="zombie_processes">
       <ArgumentDirection>O</ArgumentDirection>
       <Position>5</Position>
       <StoredType>integer|0s</StoredType>
     </argument>
-    <column id="388" parent="280" name="battle_id">
+    <column id="391" parent="280" name="game_version">
+      <NotNull>1</NotNull>
+      <Position>1</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="392" parent="280" name="character_id">
+      <NotNull>1</NotNull>
+      <Position>2</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>varchar(255)|0s</StoredType>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="393" parent="280" name="dan_rank">
+      <NotNull>1</NotNull>
+      <Position>3</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="394" parent="280" name="category">
+      <NotNull>1</NotNull>
+      <Position>4</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>varchar(50)|0s</StoredType>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="395" parent="280" name="total_wins">
+      <NotNull>1</NotNull>
+      <Position>5</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="396" parent="280" name="total_losses">
+      <NotNull>1</NotNull>
+      <Position>6</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="397" parent="280" name="total_players">
+      <NotNull>1</NotNull>
+      <Position>7</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="398" parent="280" name="total_replays">
+      <DefaultExpression>0</DefaultExpression>
+      <NotNull>1</NotNull>
+      <Position>8</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>integer|0s</StoredType>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="399" parent="280" name="computed_at">
+      <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
+      <NotNull>1</NotNull>
+      <Position>9</Position>
+      <StateNumber>11284625</StateNumber>
+      <StoredType>timestamp|0s</StoredType>
+      <TypeId>1114</TypeId>
+    </column>
+    <index id="400" parent="280" name="aggregated_statistics_pkey">
+      <ColNames>game_version
+character_id
+dan_rank
+category</ColNames>
+      <NameSurrogate>1</NameSurrogate>
+      <ObjectId>34688</ObjectId>
+      <Primary>1</Primary>
+      <StateNumber>11284625</StateNumber>
+      <Unique>1</Unique>
+      <AccessMethodId>403</AccessMethodId>
+      <CollationNames>
+default
+
+default</CollationNames>
+      <CollationParentNames>
+pg_catalog
+
+pg_catalog</CollationParentNames>
+      <CollationIds>
+100
+
+100</CollationIds>
+    </index>
+    <index id="401" parent="280" name="idx_aggregated_statistics_computed_at">
+      <ColNames>computed_at</ColNames>
+      <ObjectId>34690</ObjectId>
+      <StateNumber>11284625</StateNumber>
+      <AccessMethodId>403</AccessMethodId>
+    </index>
+    <key id="402" parent="280" name="aggregated_statistics_pkey">
+      <NameSurrogate>1</NameSurrogate>
+      <ObjectId>34689</ObjectId>
+      <Primary>1</Primary>
+      <StateNumber>11284625</StateNumber>
+      <UnderlyingIndexId>34688</UnderlyingIndexId>
+    </key>
+    <column id="403" parent="281" name="battle_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="389" parent="280" name="date">
+    <column id="404" parent="281" name="date">
       <Position>2</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="390" parent="280" name="battle_at">
+    <column id="405" parent="281" name="battle_at">
       <Position>3</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="391" parent="280" name="battle_type">
+    <column id="406" parent="281" name="battle_type">
       <Position>4</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="392" parent="280" name="game_version">
+    <column id="407" parent="281" name="game_version">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="393" parent="280" name="version">
-      <DefaultExpression>0</DefaultExpression>
-      <Position>6</Position>
-      <StateNumber>24582</StateNumber>
-      <StoredType>integer|0s</StoredType>
-      <TypeId>23</TypeId>
-    </column>
-    <column id="394" parent="280" name="player1_name">
+    <column id="408" parent="281" name="player1_name">
       <Position>7</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="395" parent="280" name="player1_character_id">
+    <column id="409" parent="281" name="player1_character_id">
       <NotNull>1</NotNull>
       <Position>8</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="396" parent="280" name="player1_dan_rank">
+    <column id="410" parent="281" name="player1_dan_rank">
       <NotNull>1</NotNull>
       <Position>9</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="397" parent="280" name="player1_id">
+    <column id="411" parent="281" name="player1_id">
       <Position>10</Position>
       <StateNumber>3650073</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="398" parent="280" name="player1_polaris_id">
+    <column id="412" parent="281" name="player1_polaris_id">
       <Position>11</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="399" parent="280" name="player1_rating_before">
+    <column id="413" parent="281" name="player1_rating_before">
       <Position>12</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="400" parent="280" name="player1_rating_change">
+    <column id="414" parent="281" name="player1_rating_change">
       <Position>13</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="401" parent="280" name="player1_rounds_won">
+    <column id="415" parent="281" name="player1_rounds_won">
       <NotNull>1</NotNull>
       <Position>14</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="402" parent="280" name="player1_tekken_power">
+    <column id="416" parent="281" name="player1_tekken_power">
       <NotNull>1</NotNull>
       <Position>15</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="403" parent="280" name="player2_name">
+    <column id="417" parent="281" name="player2_name">
       <Position>16</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="404" parent="280" name="player2_character_id">
+    <column id="418" parent="281" name="player2_character_id">
       <NotNull>1</NotNull>
       <Position>17</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="405" parent="280" name="player2_dan_rank">
+    <column id="419" parent="281" name="player2_dan_rank">
       <NotNull>1</NotNull>
       <Position>18</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="406" parent="280" name="player2_id">
+    <column id="420" parent="281" name="player2_id">
       <Position>19</Position>
       <StateNumber>3650074</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="407" parent="280" name="player2_polaris_id">
+    <column id="421" parent="281" name="player2_polaris_id">
       <Position>20</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="408" parent="280" name="player2_rating_before">
+    <column id="422" parent="281" name="player2_rating_before">
       <Position>21</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="409" parent="280" name="player2_rating_change">
+    <column id="423" parent="281" name="player2_rating_change">
       <Position>22</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="410" parent="280" name="player2_rounds_won">
+    <column id="424" parent="281" name="player2_rounds_won">
       <NotNull>1</NotNull>
       <Position>23</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="411" parent="280" name="player2_tekken_power">
+    <column id="425" parent="281" name="player2_tekken_power">
       <NotNull>1</NotNull>
       <Position>24</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="412" parent="280" name="stageid">
+    <column id="426" parent="281" name="stageid">
       <NotNull>1</NotNull>
       <Position>25</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="413" parent="280" name="winner">
+    <column id="427" parent="281" name="winner">
       <Position>26</Position>
       <StateNumber>24582</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <index id="414" parent="280" name="battles_pkey">
+    <index id="428" parent="281" name="battles_pkey">
       <ColNames>battle_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25193</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>7368159</StateNumber>
+      <StateNumber>9228436</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="415" parent="280" name="idx_battle_at">
+    <index id="429" parent="281" name="idx_battle_at">
       <ColNames>battle_at</ColNames>
       <ObjectId>25694</ObjectId>
-      <StateNumber>7368159</StateNumber>
+      <StateNumber>9228436</StateNumber>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="416" parent="280" name="battles_pkey">
+    <index id="430" parent="281" name="idx_player1_id">
+      <ColNames>player1_id</ColNames>
+      <ObjectId>34693</ObjectId>
+      <StateNumber>11284953</StateNumber>
+      <AccessMethodId>403</AccessMethodId>
+      <CollationNames>default</CollationNames>
+      <CollationIds>100</CollationIds>
+      <CollationParentNames>pg_catalog</CollationParentNames>
+    </index>
+    <index id="431" parent="281" name="idx_player2_id">
+      <ColNames>player2_id</ColNames>
+      <ObjectId>34694</ObjectId>
+      <StateNumber>11284953</StateNumber>
+      <AccessMethodId>403</AccessMethodId>
+      <CollationNames>default</CollationNames>
+      <CollationIds>100</CollationIds>
+      <CollationParentNames>pg_catalog</CollationParentNames>
+    </index>
+    <key id="432" parent="281" name="battles_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25194</ObjectId>
       <Primary>1</Primary>
       <StateNumber>24582</StateNumber>
       <UnderlyingIndexId>25193</UnderlyingIndexId>
     </key>
-    <column id="417" parent="281" name="player_id">
+    <column id="433" parent="282" name="player_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="418" parent="281" name="dan_rank">
+    <column id="434" parent="282" name="dan_rank">
       <Position>2</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="419" parent="281" name="latest_battle">
+    <column id="435" parent="282" name="latest_battle">
       <Position>3</Position>
       <StateNumber>787</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="420" parent="281" name="losses">
+    <column id="436" parent="282" name="losses">
       <Position>4</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="421" parent="281" name="wins">
+    <column id="437" parent="282" name="wins">
       <Position>6</Position>
       <StateNumber>787</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="422" parent="281" name="character_id">
+    <column id="438" parent="282" name="character_id">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StateNumber>787</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="423" parent="281" name="rating">
+    <column id="439" parent="282" name="rating">
       <Position>8</Position>
       <StateNumber>1597</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="424" parent="281" name="game_version">
+    <column id="440" parent="282" name="game_version">
       <NotNull>1</NotNull>
       <Position>9</Position>
       <StateNumber>7368165</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <foreign-key id="425" parent="281" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
+    <foreign-key id="441" parent="282" name="fk2c8yx0ywcy1t3dmi0pae3vdwc">
       <ColNames>player_id</ColNames>
       <ObjectId>25019</ObjectId>
       <StateNumber>1529</StateNumber>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="426" parent="281" name="character_stats_pkey">
+    <index id="442" parent="282" name="character_stats_pkey">
       <ColNames>player_id
 character_id
 game_version</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>33842</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>7368669</StateNumber>
+      <StateNumber>9228289</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationIds>100
@@ -5173,14 +5304,20 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="427" parent="281" name="character_stats_pkey">
+    <key id="443" parent="282" name="character_stats_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>33843</ObjectId>
       <Primary>1</Primary>
       <StateNumber>7368669</StateNumber>
       <UnderlyingIndexId>33842</UnderlyingIndexId>
     </key>
-    <column id="428" parent="282" name="id">
+    <column id="444" parent="283" name="replays">
+      <Position>1</Position>
+      <StateNumber>11284955</StateNumber>
+      <StoredType>bigint|0s</StoredType>
+      <TypeId>20</TypeId>
+    </column>
+    <column id="445" parent="284" name="id">
       <DefaultExpression>nextval(&apos;enums_id_seq&apos;::regclass)</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -5189,25 +5326,25 @@ pg_catalog</CollationParentNames>
       <SequenceId>24938</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="429" parent="282" name="enum_type">
+    <column id="446" parent="284" name="enum_type">
       <Position>2</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="430" parent="282" name="enum_key">
+    <column id="447" parent="284" name="enum_key">
       <Position>3</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="431" parent="282" name="enum_value">
+    <column id="448" parent="284" name="enum_value">
       <Position>4</Position>
       <StateNumber>1435</StateNumber>
       <StoredType>varchar(40)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <index id="432" parent="282" name="enums_pkey">
+    <index id="449" parent="284" name="enums_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24943</ObjectId>
@@ -5216,26 +5353,26 @@ pg_catalog</CollationParentNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="433" parent="282" name="enums_pkey">
+    <key id="450" parent="284" name="enums_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>24944</ObjectId>
       <Primary>1</Primary>
       <StateNumber>1435</StateNumber>
       <UnderlyingIndexId>24943</UnderlyingIndexId>
     </key>
-    <column id="434" parent="283" name="player_id">
+    <column id="451" parent="285" name="player_id">
       <Position>1</Position>
       <StateNumber>3650075</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="435" parent="283" name="name">
+    <column id="452" parent="285" name="name">
       <Position>2</Position>
       <StateNumber>789</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="436" parent="283" name="id">
+    <column id="453" parent="285" name="id">
       <IdentityKind>by-default</IdentityKind>
       <NotNull>1</NotNull>
       <Position>3</Position>
@@ -5244,7 +5381,7 @@ pg_catalog</CollationParentNames>
       <SequenceId>24655</SequenceId>
       <TypeId>20</TypeId>
     </column>
-    <foreign-key id="437" parent="283" name="past_player_names_user_id_fkey">
+    <foreign-key id="454" parent="285" name="past_player_names_user_id_fkey">
       <ColNames>player_id</ColNames>
       <ObjectId>25014</ObjectId>
       <OnDelete>cascade</OnDelete>
@@ -5252,7 +5389,7 @@ pg_catalog</CollationParentNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>24585</RefTableId>
     </foreign-key>
-    <index id="438" parent="283" name="uklekpsdgswq61s6r0m6i07j7d2">
+    <index id="455" parent="285" name="uklekpsdgswq61s6r0m6i07j7d2">
       <ColNames>player_id
 name</ColNames>
       <ObjectId>24677</ObjectId>
@@ -5266,85 +5403,101 @@ default</CollationNames>
       <CollationParentNames>pg_catalog
 pg_catalog</CollationParentNames>
     </index>
-    <key id="439" parent="283" name="uklekpsdgswq61s6r0m6i07j7d2">
+    <key id="456" parent="285" name="uklekpsdgswq61s6r0m6i07j7d2">
       <ObjectId>24678</ObjectId>
       <StateNumber>796</StateNumber>
       <UnderlyingIndexId>24677</UnderlyingIndexId>
     </key>
-    <column id="440" parent="284" name="player_id">
+    <column id="457" parent="286" name="player_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>3650072</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="441" parent="284" name="name">
+    <column id="458" parent="286" name="name">
       <Position>2</Position>
       <StateNumber>1530</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="442" parent="284" name="polaris_id">
+    <column id="459" parent="286" name="polaris_id">
       <Position>3</Position>
       <StateNumber>1531</StateNumber>
       <StoredType>varchar(255)|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="443" parent="284" name="tekken_power">
+    <column id="460" parent="286" name="tekken_power">
       <Position>4</Position>
       <StateNumber>755</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <column id="444" parent="284" name="version">
+    <column id="461" parent="286" name="version">
       <DefaultExpression>0</DefaultExpression>
       <Position>5</Position>
       <StateNumber>896</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="445" parent="284" name="latest_battle">
+    <column id="462" parent="286" name="latest_battle">
       <Position>6</Position>
       <StateNumber>792</StateNumber>
       <StoredType>bigint|0s</StoredType>
       <TypeId>20</TypeId>
     </column>
-    <index id="446" parent="284" name="players_pkey">
+    <index id="463" parent="286" name="players_pkey">
       <ColNames>player_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25011</ObjectId>
       <Primary>1</Primary>
-      <StateNumber>7368162</StateNumber>
+      <StateNumber>9228288</StateNumber>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="447" parent="284" name="idx_user_id">
-      <ColNames>player_id</ColNames>
-      <ObjectId>25013</ObjectId>
-      <StateNumber>7368162</StateNumber>
-      <AccessMethodId>403</AccessMethodId>
-      <CollationNames>default</CollationNames>
-      <CollationIds>100</CollationIds>
-      <CollationParentNames>pg_catalog</CollationParentNames>
-    </index>
-    <index id="448" parent="284" name="idx_name">
+    <index id="464" parent="286" name="idx_name">
       <ColNames>name</ColNames>
       <ObjectId>25032</ObjectId>
-      <StateNumber>7368162</StateNumber>
+      <StateNumber>9228288</StateNumber>
       <AccessMethodId>403</AccessMethodId>
       <CollationNames>default</CollationNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="449" parent="284" name="players_pkey">
+    <index id="465" parent="286" name="idx_polaris_id">
+      <ColNames>polaris_id</ColNames>
+      <ObjectId>34691</ObjectId>
+      <StateNumber>11284951</StateNumber>
+      <AccessMethodId>403</AccessMethodId>
+      <CollationNames>default</CollationNames>
+      <CollationIds>100</CollationIds>
+      <CollationParentNames>pg_catalog</CollationParentNames>
+    </index>
+    <key id="466" parent="286" name="players_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>25012</ObjectId>
       <Primary>1</Primary>
       <StateNumber>1529</StateNumber>
       <UnderlyingIndexId>25011</UnderlyingIndexId>
     </key>
+    <column id="467" parent="287" name="total_players">
+      <DefaultExpression>0</DefaultExpression>
+      <NotNull>1</NotNull>
+      <Position>1</Position>
+      <StateNumber>11284958</StateNumber>
+      <StoredType>bigint|0s</StoredType>
+      <TypeId>20</TypeId>
+    </column>
+    <column id="468" parent="287" name="total_replays">
+      <DefaultExpression>0</DefaultExpression>
+      <NotNull>1</NotNull>
+      <Position>2</Position>
+      <StateNumber>11284958</StateNumber>
+      <StoredType>bigint|0s</StoredType>
+      <TypeId>20</TypeId>
+    </column>
   </database-model>
 </dataSource>

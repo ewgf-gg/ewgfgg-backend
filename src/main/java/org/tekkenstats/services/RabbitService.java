@@ -15,6 +15,7 @@ import org.tekkenstats.configuration.RabbitMQConfig;
 
 import org.tekkenstats.repositories.BattleRepository;
 import org.tekkenstats.mappers.BattleRowMapper;
+import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -32,6 +33,8 @@ public class RabbitService {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private BattleRepository battleRepository;
+    @Autowired
+    private TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
@@ -67,15 +70,6 @@ public class RabbitService {
         // Execute battle batched writes
         executeBattleBatchWrite(battleSet);
     }
-
-    private void extractBattleIDs(List<Battle> battles, Set<String> battleIDs)
-    {
-        for (Battle battle : battles)
-        {
-            battleIDs.add(battle.getBattleId());
-        }
-    }
-
 
     private Map<String, Battle> fetchExistingBattles(List<Battle> battles)
     {
@@ -155,6 +149,7 @@ public class RabbitService {
         logger.info("Updated player and battle information: {} ms", (endTime - startTime));
     }
 
+
     public void executeBattleBatchWrite(Set<Battle> battleSet)
     {
         if (battleSet == null || battleSet.isEmpty()) {
@@ -165,7 +160,9 @@ public class RabbitService {
         try {
             long startTime = System.currentTimeMillis();
 
-            String sql = "INSERT INTO battles (" +
+            //insert battle and increment replay count, else do nothing
+            String sql = "WITH battle_insert AS (" +
+                    "INSERT INTO battles (" +
                     "battle_id, date, battle_at, battle_type, game_version, " +
                     "player1_character_id, player1_name, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
                     "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
@@ -173,7 +170,11 @@ public class RabbitService {
                     "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
                     "stageid, winner" +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                    "ON CONFLICT (battle_id) DO NOTHING";
+                    "ON CONFLICT (battle_id) DO NOTHING " +
+                    "RETURNING true as inserted" +
+                    ") " +
+                    "UPDATE tekken_stats_summary SET " +
+                    "total_replays = total_replays + CASE WHEN EXISTS (SELECT 1 FROM battle_insert WHERE inserted) THEN 1 ELSE 0 END";
 
             List<Object[]> batchArgs = new ArrayList<>();
 
@@ -229,15 +230,20 @@ public class RabbitService {
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "INSERT INTO players (player_id, name, polaris_id, tekken_power,latest_battle) " +
-                "VALUES (?, ?, ?, ? ,?) " +
-                "ON CONFLICT (player_id) DO UPDATE SET " +
-                "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
+                "WITH player_insert AS ( " +
+                        "INSERT INTO players (player_id, name, polaris_id, tekken_power, latest_battle) " +
+                        "VALUES (?, ?, ?, ?, ?) " +
+                        "ON CONFLICT (player_id) DO UPDATE SET " +
+                        "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.tekken_power " +
-                        "ELSE players.tekken_power END," +
-                "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
+                        "ELSE players.tekken_power END, " +
+                        "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.latest_battle " +
-                        "ELSE players.latest_battle END";
+                        "ELSE players.latest_battle END " +
+                        "RETURNING (xmax = 0) as is_insert " +
+                        ") " +
+                        "UPDATE tekken_stats_summary SET " +
+                        "total_players = total_players + CASE WHEN (SELECT is_insert FROM player_insert) THEN 1 ELSE 0 END";
 
         List<Object[]> batchArgs = new ArrayList<>();
 

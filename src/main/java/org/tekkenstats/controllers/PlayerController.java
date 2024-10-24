@@ -15,33 +15,34 @@ import org.tekkenstats.mappers.enumsMapper;
 import org.tekkenstats.models.CharacterStats;
 import org.tekkenstats.models.CharacterStatsId;
 import org.tekkenstats.models.Player;
-import org.tekkenstats.services.PlayerService;
+import org.tekkenstats.repositories.PlayerRepository;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 @RestController
-@RequestMapping("/api/player-stats")
+@RequestMapping("/player-stats")
 public class PlayerController
 {
     @Autowired
-    private PlayerService playerService;
-    @Autowired
     private enumsMapper enumsMapper;
+    @Autowired
+    private PlayerRepository playerRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(PlayerController.class);
 
-    @GetMapping("/{playerId}")
-    public ResponseEntity<PlayerStatsDTO> getPlayerStats(@PathVariable String playerId, HttpServletRequest request)
+    @GetMapping("/{player}")
+    public ResponseEntity<PlayerStatsDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request) throws InterruptedException
     {
         String clientIp = request.getRemoteAddr();
-        logger.info("Received request for Player: {} from IP: {}", playerId, clientIp);
-        return playerService.getPlayerWithStats(playerId)
+        logger.info("Received request for Player: {} from IP: {}", player, clientIp);
+        return playerRepository.findByIdOrNameOrPolarisIdIgnoreCase(player)
                 .map(this::convertToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
 
     private PlayerStatsDTO convertToDTO(Player player)
     {

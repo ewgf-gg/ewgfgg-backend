@@ -194,7 +194,7 @@ public class APIService implements InitializingBean, DisposableBean {
         {
             String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + currentFetchTimestamp, String.class);
             processApiResponse(jsonResponse, dateFromUnix);
-            currentFetchTimestamp -= TIME_STEP;
+            currentFetchTimestamp -= (TIME_STEP-60); //acting as a buffer incase any battles are inbetween timestamps
 
             if (currentFetchTimestamp < OLDEST_HISTORICAL_TIMESTAMP)
             {
