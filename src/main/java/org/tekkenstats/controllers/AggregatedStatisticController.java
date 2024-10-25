@@ -46,7 +46,7 @@ public class AggregatedStatisticController
 
     }
 
-    @GetMapping("/gameVerions")
+    @GetMapping("/gameVersions")
     public ResponseEntity<List<Integer>> getGameVersions(HttpServletRequest request) throws InterruptedException
     {
         logger.info("Received request for gameVerions");
