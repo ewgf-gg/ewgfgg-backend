@@ -34,6 +34,9 @@ This is the backend service that will supplement the frontend for the website. T
 
 ## Current Progress
 * **
+* **11/05/2024:** Added support for region and areas for statistics aggregation, added region, area, and language as part of battle and player models. Added class that manages configuration for virtual threads. Deleted Custom row mapper class (will return to this in the future) Added status checking for responses from API. Switched from field to constructor injection in RabbitService, APIService, and StatisticService classes. Started work on adding region and area for statistics aggregation.
+
+  
 * **10/19/2024:** REST API endpoints have been created and are functioning perfectly! Average response times seem to be anywhere between 50-100ms which is amazing. Can't wait to see what it's like when everything is deployed.
 
 
