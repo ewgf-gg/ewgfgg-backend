@@ -8,10 +8,14 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import org.springframework.web.util.UriComponentsBuilder;
 import org.tekkenstats.configuration.BackpressureManager;
 import org.tekkenstats.configuration.RabbitMQConfig;
 import org.tekkenstats.models.Battle;
@@ -27,20 +31,30 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class APIService implements InitializingBean, DisposableBean {
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
-    @Autowired
-    private BackpressureManager backpressureManager;
-    @Autowired
-    private RestTemplate restTemplate;
-    @Autowired
-    private BattleRepository battleRepository;
-    @Autowired
-    private TaskScheduler taskScheduler;
+    private final RabbitTemplate rabbitTemplate;
+    private final BackpressureManager backpressureManager;
+    private final RestTemplate restTemplate;
+    private final BattleRepository battleRepository;
+    private final TaskScheduler taskScheduler;
+
+    public APIService(
+            RabbitTemplate rabbitTemplate,
+            BackpressureManager backpressureManager,
+            RestTemplate restTemplate,
+            BattleRepository battleRepository,
+            TaskScheduler taskScheduler
+    ) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.backpressureManager = backpressureManager;
+        this.restTemplate = restTemplate;
+        this.battleRepository = battleRepository;
+        this.taskScheduler = taskScheduler;
+    }
 
     private static final Logger logger = LogManager.getLogger(APIService.class);
     private static final int TIME_STEP = 700;
     private static final ZoneId zoneId = ZoneId.of("UTC");
+
 
     @Value("${API_URL}")
     private String API_URL;
@@ -99,6 +113,7 @@ public class APIService implements InitializingBean, DisposableBean {
     {
         isFetchingForward = true;
         logger.info("Database is preloaded. Fetching new battles.");
+
         if (newestBattle.isPresent())
         {
             newestKnownBattleTimestamp = newestBattle.get().getBattleAt();
@@ -141,6 +156,7 @@ public class APIService implements InitializingBean, DisposableBean {
         if (isFetchingForward)
         {
             fetchForward();
+
             if(fetchIsAheadOfCurrent)
             {
                 fetchIsAheadOfCurrent = false;
@@ -192,9 +208,20 @@ public class APIService implements InitializingBean, DisposableBean {
 
         try
         {
-            String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + currentFetchTimestamp, String.class);
+            String url = UriComponentsBuilder.fromUriString(API_URL)
+                    .queryParam("before", currentFetchTimestamp)
+                    .toUriString();
+
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+            if (response.getStatusCode() != HttpStatus.OK)
+            {
+                throw new RuntimeException("API request failed with status: " + response.getStatusCode());
+            }
+
+            String jsonResponse = response.getBody();
             processApiResponse(jsonResponse, dateFromUnix);
-            currentFetchTimestamp -= (TIME_STEP-60); //acting as a buffer incase any battles are inbetween timestamps
+            currentFetchTimestamp -= (TIME_STEP-60); //-60 to overlap times incase any battles are inbetween timestamps
 
             if (currentFetchTimestamp < OLDEST_HISTORICAL_TIMESTAMP)
             {
@@ -202,12 +229,12 @@ public class APIService implements InitializingBean, DisposableBean {
                         "Switching to forward fetching", currentFetchTimestamp, OLDEST_HISTORICAL_TIMESTAMP);
                 switchToForwardFetching();
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             logger.error("Error fetching backward or sending data: {}", e.getMessage());
         }
     }
-
     private void switchToForwardFetching()
     {
         isFetchingForward = true;

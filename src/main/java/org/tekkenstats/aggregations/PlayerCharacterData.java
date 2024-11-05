@@ -10,14 +10,18 @@ public class PlayerCharacterData {
     private int losses;
     private int totalPlays;
     private int gameVersion;
+    private Integer regionID;
+    private Integer areaID;
 
-    public PlayerCharacterData(String characterId, int danRank, int wins, int losses, int totalPlays)
+    public PlayerCharacterData(String characterId, int danRank, int wins, int losses, int totalPlays, int regionID, int areaID)
     {
         this.characterId = characterId;
         this.danRank = danRank;
         this.wins = wins;
         this.losses = losses;
         this.totalPlays = totalPlays;
+        this.regionID = regionID;
+        this.areaID = areaID;
     }
 
     // Constructor, getters, and setters

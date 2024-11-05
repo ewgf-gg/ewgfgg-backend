@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,13 @@ public class RabbitMQConfig {
     public static final String QUEUE_NAME = "battle_queue";
     public static final String EXCHANGE_NAME = "battle_exchange";
     public static final String ROUTING_KEY = "battle.routingkey";
+
+    private final VirtualThreadConfig virtualThreadConfig;
+
+    public RabbitMQConfig(VirtualThreadConfig virtualThreadConfig)
+    {
+        this.virtualThreadConfig = virtualThreadConfig;
+    }
 
     @Bean
     public Queue queue()
@@ -54,7 +62,7 @@ public class RabbitMQConfig {
         factory.setConnectionFactory(connectionFactory);
 
         // Set the task executor to use virtual threads
-        factory.setTaskExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        factory.setTaskExecutor(virtualThreadConfig.rabbitVirtualThreadExecutor());
 
         RetryTemplate retryTemplate = new RetryTemplate();
         SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();

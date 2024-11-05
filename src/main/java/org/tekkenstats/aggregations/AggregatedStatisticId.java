@@ -2,11 +2,12 @@ package org.tekkenstats.aggregations;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Objects;
 
-
+@Data
 @Embeddable
 public class AggregatedStatisticId implements Serializable {
 
@@ -20,17 +21,25 @@ public class AggregatedStatisticId implements Serializable {
     private int danRank;
 
     @Column(name = "category")
-    private String category; // 'standard' or 'overall'
+    private String category;
+
+    @Column(name = "region_id")
+    private int regionId;
+
+    @Column(name = "area_id")
+    private int areaId;
 
     // Constructors
     public AggregatedStatisticId() {
     }
 
-    public AggregatedStatisticId(int gameVersion, String characterId, int danRank, String category) {
+    public AggregatedStatisticId(int gameVersion, String characterId, int danRank, String category, int regionId, int areaId) {
         this.gameVersion = gameVersion;
         this.characterId = characterId;
         this.danRank = danRank;
         this.category = category;
+        this.regionId = regionId;
+        this.areaId = areaId;
     }
 
     // Getters and setters

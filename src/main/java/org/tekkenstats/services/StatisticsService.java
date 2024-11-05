@@ -3,6 +3,8 @@ package org.tekkenstats.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tekkenstats.aggregations.AggregatedStatistic;
@@ -13,26 +15,33 @@ import org.tekkenstats.repositories.CharacterStatsRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class StatisticsService {
 
-    @Autowired
-    private CharacterStatsRepository characterStatsRepository;
-
-    @Autowired
-    private AggregatedStatisticsRepository aggregatedStatisticsRepository;
-
+    private final CharacterStatsRepository characterStatsRepository;
+    private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
+    private final Executor statisticsExecutor;
     private static final Logger logger = LoggerFactory.getLogger(StatisticsService.class);
 
-    @Scheduled(fixedRate = 60000)
+    public StatisticsService(
+            CharacterStatsRepository characterStatsRepository,
+            AggregatedStatisticsRepository aggregatedStatisticsRepository,
+            @Qualifier("statisticsThreadExecutor") Executor statisticsExecutor) {
+        this.characterStatsRepository = characterStatsRepository;
+        this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
+        this.statisticsExecutor = statisticsExecutor;
+    }
+
+    @Async("statisticsThreadExecutor")
     public void computeStatistics() {
         try {
             logger.info("Computing statistics");
             Optional<List<Integer>> gameVersions = fetchGameVersions();
-            if (!gameVersions.isEmpty()) {
+            if (gameVersions.isPresent()) {
                 for (int gameVersion : gameVersions.get()) {
                     processGameVersionStatistics(gameVersion);
                 }
@@ -79,11 +88,13 @@ public class StatisticsService {
             int danRank = ((Number) row[2]).intValue();
             int wins = ((Number) row[3]).intValue();
             int losses = ((Number) row[4]).intValue();
+            int regionId = ((Number) row[5]).intValue();
+            int areaId = ((Number) row[6]).intValue();    // New field
             int totalPlays = wins + losses;
 
             PlayerCharacterData currentData = playerDataMap.get(playerId);
             if (currentData == null || totalPlays > currentData.getTotalPlays()) {
-                playerDataMap.put(playerId, new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays));
+                playerDataMap.put(playerId, new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays, regionId, areaId));
             }
         }
         return playerDataMap;
@@ -91,17 +102,18 @@ public class StatisticsService {
 
     private Map<String, List<PlayerCharacterData>> getAllPlayerCharacters(List<Object[]> stats) {
         Map<String, List<PlayerCharacterData>> playerDataMap = new HashMap<>();
-        for (Object[] row : stats)
-        {
+        for (Object[] row : stats) {
             String playerId = (String) row[0];
             String characterId = (String) row[1];
             int danRank = ((Number) row[2]).intValue();
             int wins = ((Number) row[3]).intValue();
             int losses = ((Number) row[4]).intValue();
+            int regionId = ((Number) row[5]).intValue();  // New field
+            int areaId = ((Number) row[6]).intValue();    // New field
             int totalPlays = wins + losses;
 
             playerDataMap.computeIfAbsent(playerId, k -> new ArrayList<>())
-                    .add(new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays));
+                    .add(new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays, regionId, areaId));
         }
         return playerDataMap;
     }
@@ -110,27 +122,30 @@ public class StatisticsService {
             Map<String, PlayerCharacterData> playerCharacters,
             String category,
             int gameVersion,
-            Map<AggregatedStatisticId, AggregatedStatistic> existingStats)
-    {
+            Map<AggregatedStatisticId, AggregatedStatistic> existingStats) {
 
         Map<AggregatedStatisticId, AggregatedStatistic> aggregatedData = new HashMap<>();
         Map<AggregatedStatisticId, Set<String>> playersPerStat = new HashMap<>();
 
-        for (Map.Entry<String, PlayerCharacterData> entry : playerCharacters.entrySet())
-        {
+        for (Map.Entry<String, PlayerCharacterData> entry : playerCharacters.entrySet()) {
             String playerId = entry.getKey();
             PlayerCharacterData data = entry.getValue();
 
-            AggregatedStatisticId id = new AggregatedStatisticId(gameVersion, data.getCharacterId(), data.getDanRank(), category);
+            // Updated constructor call to include region and area IDs
+            AggregatedStatisticId id = new AggregatedStatisticId(
+                    gameVersion,
+                    data.getCharacterId(),
+                    data.getDanRank(),
+                    category,
+                    data.getRegionID(),  // New field
+                    data.getAreaID()      // New field
+            );
+
             AggregatedStatistic stat = existingStats.get(id);
-            if (stat == null)
-            {
+            if (stat == null) {
                 stat = new AggregatedStatistic(id);
                 stat.setComputedAt(LocalDateTime.now());
-            }
-            else
-            {
-                // Reset counts if first time processing this stat in this run
+            } else {
                 if (!aggregatedData.containsKey(id)) {
                     stat.setTotalWins(0);
                     stat.setTotalLosses(0);
@@ -140,12 +155,10 @@ public class StatisticsService {
                 }
             }
 
-            // Update statistics
             stat.setTotalWins(stat.getTotalWins() + data.getWins());
             stat.setTotalLosses(stat.getTotalLosses() + data.getLosses());
             stat.setTotalReplays(stat.getTotalReplays() + data.getTotalPlays());
 
-            // Track unique players
             playersPerStat.computeIfAbsent(id, k -> new HashSet<>()).add(playerId);
 
             aggregatedData.put(id, stat);
@@ -175,13 +188,21 @@ public class StatisticsService {
             List<PlayerCharacterData> playerCharacters = entry.getValue();
 
             for (PlayerCharacterData data : playerCharacters) {
-                AggregatedStatisticId id = new AggregatedStatisticId(gameVersion, data.getCharacterId(), data.getDanRank(), "overall");
+                // Updated constructor call to include region and area IDs
+                AggregatedStatisticId id = new AggregatedStatisticId(
+                        gameVersion,
+                        data.getCharacterId(),
+                        data.getDanRank(),
+                        "overall",
+                        data.getRegionID(),  // New field
+                        data.getAreaID()      // New field
+                );
+
                 AggregatedStatistic stat = existingStats.get(id);
                 if (stat == null) {
                     stat = new AggregatedStatistic(id);
                     stat.setComputedAt(LocalDateTime.now());
                 } else {
-                    // Reset counts if first time processing this stat in this run
                     if (!overallData.containsKey(id)) {
                         stat.setTotalWins(0);
                         stat.setTotalLosses(0);
@@ -191,12 +212,10 @@ public class StatisticsService {
                     }
                 }
 
-                // Update statistics
                 stat.setTotalWins(stat.getTotalWins() + data.getWins());
                 stat.setTotalLosses(stat.getTotalLosses() + data.getLosses());
                 stat.setTotalReplays(stat.getTotalReplays() + data.getTotalPlays());
 
-                // Track unique players
                 playersPerStat.computeIfAbsent(id, k -> new HashSet<>()).add(playerId);
 
                 overallData.put(id, stat);

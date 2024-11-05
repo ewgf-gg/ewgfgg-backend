@@ -37,6 +37,18 @@ public class Battle {
     @Column(name = "player1_character_id", nullable = false)
     private int player1CharacterID;
 
+    @JsonProperty("p1_area_id")
+    @Column(name = "player1_area")
+    private Integer player1AreaID;
+
+    @JsonProperty("p1_region_id")
+    @Column(name = "player1_region")
+    private Integer player1RegionID;
+
+    @JsonProperty("p1_lang")
+    @Column(name = "player1_language")
+    private String player1Language;
+
     @JsonProperty("p1_name")
     @Column(name = "player1_name")
     private String player1Name;
@@ -72,6 +84,18 @@ public class Battle {
     @JsonProperty("p2_chara_id")
     @Column(name = "player2_character_id", nullable = false)
     private int player2CharacterID;
+
+    @JsonProperty("p2_area_id")
+    @Column(name = "player2_area")
+    private Integer player2AreaID;
+
+    @JsonProperty("p2_region_id")
+    @Column(name = "player2_region")
+    private Integer player2RegionID;
+
+    @JsonProperty("p2_lang")
+    @Column(name = "player2_language")
+    private String player2Language;
 
     @JsonProperty("p2_name")
     @Column(name = "player2_name")

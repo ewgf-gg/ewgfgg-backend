@@ -28,6 +28,15 @@ public class Player {
     @Column(name = "tekken_power")
     private long tekkenPower;
 
+    @Column(name = "region_id")
+    private Integer regionId;
+
+    @Column(name = "area_id")
+    private Integer areaId;
+
+    @Column(name = "language")
+    private String language;
+
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

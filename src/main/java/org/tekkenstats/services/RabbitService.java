@@ -1,11 +1,12 @@
 package org.tekkenstats.services;
 
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
@@ -14,8 +15,6 @@ import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
 import org.tekkenstats.repositories.BattleRepository;
-import org.tekkenstats.mappers.BattleRowMapper;
-import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -27,14 +26,17 @@ import java.util.stream.Collectors;
 public class RabbitService {
 
     private static final Logger logger = LogManager.getLogger(RabbitService.class);
-    private final BattleRowMapper battleRowMapper = new BattleRowMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
-    private BattleRepository battleRepository;
-    @Autowired
-    private TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final BattleRepository battleRepository;
+
+
+    public RabbitService(JdbcTemplate jdbcTemplate, BattleRepository battleRepository)
+    {
+        this.jdbcTemplate = jdbcTemplate;
+        this.battleRepository = battleRepository;
+    }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
@@ -44,7 +46,7 @@ public class RabbitService {
 
         long startTime = System.currentTimeMillis();
 
-        List<Battle> battles = battleRowMapper.mapToBattlesFromApiJson(message);
+        List<Battle> battles = objectMapper.readValue(message, new TypeReference<>() {});
         processBattlesAsync(battles);
 
         long endTime = System.currentTimeMillis();
@@ -54,7 +56,6 @@ public class RabbitService {
 
     public void processBattlesAsync(List<Battle> battles)
     {
-        // Fetch existing battles
         Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battles);
 
         HashMap<String, Player> updatedPlayers = new HashMap<>();
@@ -63,12 +64,16 @@ public class RabbitService {
         // Instantiate objects and update relevant information
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
 
-        // Execute player batched writes
-        executePlayerBulkOperations(updatedPlayers);
+        executeAllDatabaseOperations(updatedPlayers, battleSet);
+    }
+
+    private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
+    {
+        int battleCount = executeBattleBatchWrite(battleSet);
+        int playerCount = executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
 
-        // Execute battle batched writes
-        executeBattleBatchWrite(battleSet);
+        updateSummaryStatistics(battleCount, playerCount);
     }
 
     private Map<String, Battle> fetchExistingBattles(List<Battle> battles)
@@ -120,10 +125,10 @@ public class RabbitService {
                 if (player1 == null)
                 {
                     player1 = new Player();
-                    updateNewPlayerDetails(player1, battle, 1);
+                    setPlayerStatsWithBattle(player1, battle, 1);
                     updatedPlayers.put(player1Id, player1);
                 }
-                updatePlayerWithBattle(player1, battle, 1);
+                setCharacterStatsWithBattle(player1, battle, 1);
 
                 // Process Player 2
                 String player2Id = getPlayerUserId(battle, 2);
@@ -131,10 +136,10 @@ public class RabbitService {
                 if (player2 == null)
                 {
                     player2 = new Player();
-                    updateNewPlayerDetails(player2, battle, 2);
+                    setPlayerStatsWithBattle(player2, battle, 2);
                     updatedPlayers.put(player2Id, player2);
                 }
-                updatePlayerWithBattle(player2, battle, 2);
+                setCharacterStatsWithBattle(player2, battle, 2);
                 battleSet.add(battle);
             } else
             {
@@ -150,34 +155,33 @@ public class RabbitService {
     }
 
 
-    public void executeBattleBatchWrite(Set<Battle> battleSet)
+    public int executeBattleBatchWrite(Set<Battle> battleSet)
     {
         if (battleSet == null || battleSet.isEmpty()) {
             logger.warn("No battles to insert or update.");
-            return;
+            return 0;
         }
 
         try {
             long startTime = System.currentTimeMillis();
 
             //insert battle and increment replay count, else do nothing
-            String sql = "WITH battle_insert AS (" +
-                    "INSERT INTO battles (" +
+            String sql = "INSERT INTO battles (" +
                     "battle_id, date, battle_at, battle_type, game_version, " +
-                    "player1_character_id, player1_name, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
+                    "player1_character_id, player1_name, player1_region, player1_area, " +
+                    "player1_language, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
                     "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
-                    "player2_character_id, player2_name, player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
+                    "player2_character_id, player2_name, player2_region, player2_area, player2_language, " +
+                    "player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
                     "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
                     "stageid, winner" +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                    "ON CONFLICT (battle_id) DO NOTHING " +
-                    "RETURNING true as inserted" +
-                    ") " +
-                    "UPDATE tekken_stats_summary SET " +
-                    "total_replays = total_replays + CASE WHEN EXISTS (SELECT 1 FROM battle_insert WHERE inserted) THEN 1 ELSE 0 END";
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT (battle_id) DO NOTHING";
 
             List<Object[]> batchArgs = new ArrayList<>();
 
+
+            // the order of these parameters must match the SQL statement above
             for (Battle battle : battleSet) {
                 Object[] args = new Object[] {
                         battle.getBattleId(),
@@ -187,6 +191,9 @@ public class RabbitService {
                         battle.getGameVersion(),
                         battle.getPlayer1CharacterID(),
                         battle.getPlayer1Name(),
+                        battle.getPlayer1RegionID(),
+                        battle.getPlayer1AreaID(),
+                        battle.getPlayer1Language(),
                         battle.getPlayer1PolarisID(),
                         battle.getPlayer1TekkenPower(),
                         battle.getPlayer1DanRank(),
@@ -196,6 +203,9 @@ public class RabbitService {
                         battle.getPlayer1UserID(),
                         battle.getPlayer2CharacterID(),
                         battle.getPlayer2Name(),
+                        battle.getPlayer2RegionID(),
+                        battle.getPlayer2AreaID(),
+                        battle.getPlayer2Language(),
                         battle.getPlayer2PolarisID(),
                         battle.getPlayer2TekkenPower(),
                         battle.getPlayer2DanRank(),
@@ -209,41 +219,60 @@ public class RabbitService {
                 batchArgs.add(args);
             }
 
-            jdbcTemplate.batchUpdate(sql, batchArgs);
-
+            int[] results = jdbcTemplate.batchUpdate(sql, batchArgs);
             long endTime = System.currentTimeMillis();
-            logger.info("Battle Insertion: {} ms, Inserted/Updated: {}", (endTime - startTime), battleSet.size());
 
-        } catch (Exception e) {
+            int insertedCount = Arrays.stream(results).sum();
+
+            logger.info("Battle Insertion: {} ms, Inserted/Updated: {}, Inserted Count: {}", (endTime - startTime), battleSet.size(), insertedCount);
+
+            return insertedCount;
+        }
+        catch (Exception e)
+        {
             logger.error("BATTLE INSERTION FAILED: ", e);
+            return 0;
         }
     }
 
-    public void executePlayerBulkOperations(HashMap<String, Player> updatedPlayersMap)
+    public int executePlayerBulkOperations(Map<String, Player> updatedPlayersMap)
     {
 
         if (updatedPlayersMap.isEmpty()) {
             logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
-            return;
+            return 0;
         }
 
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "WITH player_insert AS ( " +
-                        "INSERT INTO players (player_id, name, polaris_id, tekken_power, latest_battle) " +
-                        "VALUES (?, ?, ?, ?, ?) " +
+                "INSERT INTO players (player_id, name, region_id, area_id, language, polaris_id, tekken_power, latest_battle) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (player_id) DO UPDATE SET " +
+
                         "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.tekken_power " +
                         "ELSE players.tekken_power END, " +
+
+                        "region_id = CASE " +
+                        "WHEN players.region_id IS NULL AND EXCLUDED.region_id IS NOT NULL THEN EXCLUDED.region_id " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.region_id " +
+                        "ELSE players.region_id END, " +
+
+                        "area_id = CASE " +
+                        "WHEN players.area_id IS NULL AND EXCLUDED.area_id IS NOT NULL THEN EXCLUDED.area_id " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.area_id " +
+                        "ELSE players.area_id END, " +
+
+                        "language = CASE " +
+                        "WHEN players.language IS NULL AND EXCLUDED.language IS NOT NULL THEN EXCLUDED.language " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.language " +
+                        "ELSE players.language END, " +
+
                         "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.latest_battle " +
                         "ELSE players.latest_battle END " +
-                        "RETURNING (xmax = 0) as is_insert " +
-                        ") " +
-                        "UPDATE tekken_stats_summary SET " +
-                        "total_players = total_players + CASE WHEN (SELECT is_insert FROM player_insert) THEN 1 ELSE 0 END";
+                        "RETURNING (xmax = 0)::int"; // 1 for inserts, 0 for updates
 
         List<Object[]> batchArgs = new ArrayList<>();
 
@@ -253,6 +282,9 @@ public class RabbitService {
             Object[] args = new Object[]{
                     updatedPlayer.getPlayerId(),
                     updatedPlayer.getName(),
+                    updatedPlayer.getRegionId(),
+                    updatedPlayer.getAreaId(),
+                    updatedPlayer.getLanguage(),
                     updatedPlayer.getPolarisId(),
                     updatedPlayer.getTekkenPower(),
                     updatedPlayer.getLatestBattle()
@@ -263,20 +295,23 @@ public class RabbitService {
         }
 
         batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]));
-        // Execute batch update
-        jdbcTemplate.batchUpdate(sql, batchArgs);
 
+        // Execute batch update
+        int[] results = jdbcTemplate.batchUpdate(sql, batchArgs);
+        int insertedCount = Arrays.stream(results).sum();
         long endTime = System.currentTimeMillis();
+
         logger.info("Player Bulk Upsert: {} ms, Processed Players: {}",
                 (endTime - startTime), updatedPlayersMap.size());
+        return insertedCount;
     }
 
 
-    public void executeCharacterStatsBulkOperations(HashMap<String, Player> updatedPlayersSet)
+    public void executeCharacterStatsBulkOperations(Map<String, Player> updatedPlayersSet)
     {
         if (updatedPlayersSet.isEmpty())
         {
-            logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
+            logger.warn("Player set is empty, character updates aborted (Battle batch already existed in database)");
             return;
         }
 
@@ -286,12 +321,15 @@ public class RabbitService {
                 "INSERT INTO character_stats (player_id, character_id, game_version, dan_rank, latest_battle, wins, losses) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (player_id, character_id, game_version) DO UPDATE SET " +
+
                         "dan_rank = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle " +
                         "THEN EXCLUDED.dan_rank " +
                         "ELSE character_stats.dan_rank END, " +
+
                         "latest_battle = CASE WHEN EXCLUDED.latest_battle > character_stats.latest_battle " +
                         "THEN EXCLUDED.latest_battle " +
                         "ELSE character_stats.latest_battle END, " +
+
                         "wins = character_stats.wins + EXCLUDED.wins, " +
                         "losses = character_stats.losses + EXCLUDED.losses";
 
@@ -329,7 +367,7 @@ public class RabbitService {
                 .thenComparing(args -> (String) args[1])  // character_id
                 .thenComparing(args -> (Integer) args[2])); // game_version
 
-        int batchSize = 1000; // Adjust based on your system's capacity
+        int batchSize = 1000;
         int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
 
         try {
@@ -350,7 +388,20 @@ public class RabbitService {
                 (endTime - startTime), batchArgs.size());
     }
 
-    private void updatePlayerWithBattle(Player player, Battle battle, int playerNumber)
+    private void updateSummaryStatistics(int newBattleCount, int newPlayerCount)
+    {
+        if (newBattleCount == 0 && newPlayerCount == 0) {
+            return;
+        }
+
+        String sql = "UPDATE tekken_stats_summary SET " +
+                "total_replays = total_replays + ?, " +
+                "total_players = total_players + ?";
+
+        jdbcTemplate.update(sql, newBattleCount, newPlayerCount);
+    }
+
+    private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
         String characterId = getPlayerCharacter(battle, playerNumber);
         int gameVersion = battle.getGameVersion();
@@ -384,7 +435,7 @@ public class RabbitService {
             stats.setLosses(stats.getLosses() + 1);
         }
 
-        // Only update the danRank and latest battle if this battle is newer than the current latest one
+        // Only update the danRank and latest battle if this battle is newer than the current latest one in the batch
         if (battle.getBattleAt() > stats.getLatestBattle())
         {
             stats.setLatestBattle(battle.getBattleAt());
@@ -393,18 +444,21 @@ public class RabbitService {
                     (getPlayerCharacter(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()),
                     battle.getBattleAt()
             );
-            stats.setDanRank(getPlayerDanRank(battle, playerNumber));  // Update dan rank only if the battle is the latest
+            stats.setDanRank(getPlayerDanRank(battle, playerNumber));
         }
     }
 
 
-    private void updateNewPlayerDetails(Player player, Battle battle, int playerNumber)
+    private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
         // Set player-level details
         player.setPlayerId(getPlayerUserId(battle, playerNumber));
         player.setName(getPlayerName(battle, playerNumber));
         player.setPolarisId(getPlayerPolarisId(battle, playerNumber));
         player.setTekkenPower(getPlayerTekkenPower(battle, playerNumber));
+        player.setLanguage(getPlayerLanguage(battle, playerNumber));
+        player.setRegionId(getPlayerRegionID(battle, playerNumber));
+        player.setAreaId(getPlayerAreaID(battle, playerNumber));
 
         // Create a new CharacterStats object for the player's character
         CharacterStats characterStats = new CharacterStats();
@@ -446,6 +500,18 @@ public class RabbitService {
 
     private String getPlayerName(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1Name() : battle.getPlayer2Name();
+    }
+
+    private String getPlayerLanguage(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1Language() : battle.getPlayer2Language();
+    }
+
+    private Integer getPlayerAreaID(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1AreaID() : battle.getPlayer2AreaID();
+    }
+
+    private Integer getPlayerRegionID(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1RegionID() : battle.getPlayer2RegionID();
     }
 
 
