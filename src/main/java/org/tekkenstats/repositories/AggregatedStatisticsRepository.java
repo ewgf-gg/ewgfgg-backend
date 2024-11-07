@@ -100,6 +100,8 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     """, nativeQuery = true)
     List<CharacterWinrateProjection> findTop5CharactersByWinrateInLowRanks();
 
+
+
     @Query(value = "SELECT DISTINCT game_version FROM aggregated_statistics", nativeQuery = true)
     Optional<List<Integer>> getGameVersions();
 

@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, String> {
 
-    @Query(value = "SELECT * FROM players p WHERE p.id = :criteria OR p.name ILIKE :criteria OR p.polaris_id ILIKE :criteria", nativeQuery = true)
+    @Query(value = "SELECT * FROM players p WHERE p.player_id = :criteria OR p.name ILIKE :criteria OR p.polaris_id ILIKE :criteria", nativeQuery = true)
     Optional<Player> findByIdOrNameOrPolarisIdIgnoreCase(@Param("criteria") String criteria);
 
     @Query(value = "SELECT COUNT (*) FROM players", nativeQuery=true)
