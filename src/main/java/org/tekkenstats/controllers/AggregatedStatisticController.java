@@ -4,9 +4,9 @@ package org.tekkenstats.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.tekkenstats.dtos.CharacterPopularityDTO;
 import org.tekkenstats.dtos.CharacterWinratesDTO;
 import org.tekkenstats.dtos.TekkenStatsSummaryDTO;
 import org.tekkenstats.dtos.rankDistributionDTO;
@@ -108,12 +108,20 @@ public class AggregatedStatisticController
         logger.info("Fetching rank distribution for version: {} and category: {}", gameVersion, category);
 
         return Optional.of(aggregatedStatisticsRepository.getRankDistribution(gameVersion, category))
-                .map(this::convertToRankDistributionDTO)
+                .map(this::convertToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    private rankDistributionDTO convertToRankDistributionDTO(List<RankDistributionProjection> projections)
+
+    public ResponseEntity<CharacterPopularityDTO> getCharacterPopularityInHighRanks()
+    {
+        logger.info("Fetching character popularity for high rank");
+    }
+
+    private CharacterPopularityDTO convertToDTO()
+
+    private rankDistributionDTO convertToDTO(List<RankDistributionProjection> projections)
     {
         rankDistributionDTO dto = new rankDistributionDTO();
         Map<Integer, Double> distribution = projections.stream()

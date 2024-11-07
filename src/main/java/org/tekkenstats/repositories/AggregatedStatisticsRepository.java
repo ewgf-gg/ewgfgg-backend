@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import org.tekkenstats.aggregations.AggregatedStatistic;
 import org.tekkenstats.aggregations.AggregatedStatisticId;
 import org.tekkenstats.interfaces.CharacterWinrateProjection;
+import org.tekkenstats.interfaces.PopularCharacterProjection;
 import org.tekkenstats.interfaces.RankDistributionProjection;
 import org.tekkenstats.mappers.enumsMapper;
 
@@ -84,7 +85,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         FROM aggregated_statistics
         WHERE dan_rank BETWEEN 0 AND 23
     )
-    SELECT 
+    SELECT
         a.character_id as characterId,
         SUM(a.total_wins) as totalWins,
         SUM(a.total_losses) as totalLosses,
@@ -100,7 +101,39 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     """, nativeQuery = true)
     List<CharacterWinrateProjection> findTop5CharactersByWinrateInLowRanks();
 
-
+    @Query(value = """
+        WITH latest_version AS (
+            SELECT MAX(game_version) as version
+            FROM aggregated_statistics
+        ),
+        max_rank AS (
+            SELECT MAX(dan_rank) as highest_rank
+            FROM aggregated_statistics a
+            INNER JOIN latest_version lv ON a.game_version = lv.version
+            WHERE a.category = 'standard'
+        ),
+        top_ranks AS (
+            SELECT DISTINCT dan_rank
+            FROM aggregated_statistics a, max_rank mr
+            WHERE dan_rank >= (mr.highest_rank - 4)
+            AND dan_rank <= mr.highest_rank
+        )
+        SELECT
+            a.character_id as characterId,
+            SUM(a.total_wins) as totalWins,
+            SUM(a.total_losses) as totalLosses,
+            SUM(a.total_wins + a.total_losses) as totalBattles,
+            ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+        FROM aggregated_statistics a
+        INNER JOIN latest_version lv ON a.game_version = lv.version
+        INNER JOIN top_ranks tr ON a.dan_rank = tr.dan_rank
+        WHERE a.category = 'standard'
+        GROUP BY a.character_id
+        HAVING SUM(a.total_wins + a.total_losses) > 0
+        ORDER BY totalBattles DESC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<PopularCharacterProjection> findPopularCharactersInHighRanks();
 
     @Query(value = "SELECT DISTINCT game_version FROM aggregated_statistics", nativeQuery = true)
     Optional<List<Integer>> getGameVersions();
