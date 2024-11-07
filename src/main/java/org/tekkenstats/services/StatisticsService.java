@@ -36,6 +36,7 @@ public class StatisticsService {
         this.statisticsExecutor = statisticsExecutor;
     }
 
+    @Scheduled(fixedRate = 60000)
     @Async("statisticsThreadExecutor")
     public void computeStatistics() {
         try {
@@ -82,19 +83,33 @@ public class StatisticsService {
 
     private Map<String, PlayerCharacterData> identifyPlayerMainCharacters(List<Object[]> stats) {
         Map<String, PlayerCharacterData> playerDataMap = new HashMap<>();
-        for (Object[] row : stats) {
-            String playerId = (String) row[0];
-            String characterId = (String) row[1];
-            int danRank = ((Number) row[2]).intValue();
-            int wins = ((Number) row[3]).intValue();
-            int losses = ((Number) row[4]).intValue();
-            int regionId = ((Number) row[5]).intValue();
-            int areaId = ((Number) row[6]).intValue();    // New field
-            int totalPlays = wins + losses;
+        for (Object[] row : stats)
+        {
+            // Skip if the row doesn't have all required elements
+            if (row[5] == null || row[6] == null)
+            {
+                continue;
+            }
 
-            PlayerCharacterData currentData = playerDataMap.get(playerId);
-            if (currentData == null || totalPlays > currentData.getTotalPlays()) {
-                playerDataMap.put(playerId, new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays, regionId, areaId));
+            try
+            {
+                String playerId = (String) row[0];
+                String characterId = (String) row[1];
+                int danRank = ((Number) row[2]).intValue();
+                int wins = ((Number) row[3]).intValue();
+                int losses = ((Number) row[4]).intValue();
+                int regionId = ((Number) row[5]).intValue();
+                int areaId = ((Number) row[6]).intValue();
+                int totalPlays = wins + losses;
+
+                PlayerCharacterData currentData = playerDataMap.get(playerId);
+                if (currentData == null || totalPlays > currentData.getTotalPlays())
+                {
+                    playerDataMap.put(playerId, new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays, regionId, areaId));
+                }
+            } catch (ClassCastException | NullPointerException e)
+            {
+                logger.error("Error computing statistics for main characters: ", e);
             }
         }
         return playerDataMap;
@@ -102,7 +117,13 @@ public class StatisticsService {
 
     private Map<String, List<PlayerCharacterData>> getAllPlayerCharacters(List<Object[]> stats) {
         Map<String, List<PlayerCharacterData>> playerDataMap = new HashMap<>();
-        for (Object[] row : stats) {
+        for (Object[] row : stats)
+        {
+            if (row[5] == null || row[6] == null)
+            {
+                continue;
+            }
+
             String playerId = (String) row[0];
             String characterId = (String) row[1];
             int danRank = ((Number) row[2]).intValue();

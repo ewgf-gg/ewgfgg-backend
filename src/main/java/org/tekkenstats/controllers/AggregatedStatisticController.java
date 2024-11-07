@@ -6,13 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.tekkenstats.dtos.CharacterWinratesDTO;
 import org.tekkenstats.dtos.TekkenStatsSummaryDTO;
 import org.tekkenstats.dtos.rankDistributionDTO;
+import org.tekkenstats.interfaces.CharacterWinrateProjection;
 import org.tekkenstats.interfaces.RankDistributionProjection;
+import org.tekkenstats.mappers.enumsMapper;
 import org.tekkenstats.models.TekkenStatsSummary;
 import org.tekkenstats.repositories.AggregatedStatisticsRepository;
 import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
@@ -27,15 +27,24 @@ import java.util.stream.Collectors;
 public class AggregatedStatisticController
 {
 
-    @Autowired
-    private TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
+    private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
+    private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
+    private final enumsMapper enumsMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(AggregatedStatisticController.class);
-    @Autowired
-    private AggregatedStatisticsRepository aggregatedStatisticsRepository;
 
+    public AggregatedStatisticController(
+            TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
+            AggregatedStatisticsRepository aggregatedStatisticsRepository,
+            enumsMapper enumsMapper)
+    {
+        this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
+        this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
+        this.enumsMapper = enumsMapper;
+    }
 
     @GetMapping("/stats-summary")
+    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<TekkenStatsSummaryDTO> getPlayerCount(HttpServletRequest request) throws InterruptedException
     {
         logger.info("Received request for stats summary");
@@ -46,7 +55,41 @@ public class AggregatedStatisticController
 
     }
 
+    @GetMapping("/top-winrates")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public ResponseEntity<CharacterWinratesDTO> getTopWinrates() {
+        logger.info("Fetching top 5 character winrates for both high and low ranks");
+
+        try {
+            // Get high rank winrates
+            Map<String, Double> highRankWinrates = aggregatedStatisticsRepository
+                    .findTop5CharactersByWinrateInStandard()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            CharacterWinrateProjection::getWinratePercentage
+                    ));
+
+            // Get low rank winrates
+            Map<String, Double> lowRankWinrates = aggregatedStatisticsRepository
+                    .findTop5CharactersByWinrateInLowRanks()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            CharacterWinrateProjection::getWinratePercentage
+                    ));
+
+            CharacterWinratesDTO response = new CharacterWinratesDTO(highRankWinrates, lowRankWinrates);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching character winrates", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/gameVersions")
+    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<List<Integer>> getGameVersions(HttpServletRequest request) throws InterruptedException
     {
         logger.info("Received request for gameVerions");
@@ -56,6 +99,7 @@ public class AggregatedStatisticController
     }
 
     @GetMapping("/rankDistribution/{gameVersion}/{category}")
+    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<rankDistributionDTO> getRankDistribution(
             @PathVariable int gameVersion,
             @PathVariable String category)
