@@ -65,8 +65,6 @@ public class RabbitService {
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
 
         executeAllDatabaseOperations(updatedPlayers, battleSet);
-
-
     }
 
     private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)

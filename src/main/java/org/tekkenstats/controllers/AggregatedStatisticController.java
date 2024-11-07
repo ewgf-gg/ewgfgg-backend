@@ -11,6 +11,7 @@ import org.tekkenstats.dtos.CharacterWinratesDTO;
 import org.tekkenstats.dtos.TekkenStatsSummaryDTO;
 import org.tekkenstats.dtos.rankDistributionDTO;
 import org.tekkenstats.interfaces.CharacterWinrateProjection;
+import org.tekkenstats.interfaces.PopularCharacterProjection;
 import org.tekkenstats.interfaces.RankDistributionProjection;
 import org.tekkenstats.mappers.enumsMapper;
 import org.tekkenstats.models.TekkenStatsSummary;
@@ -57,13 +58,21 @@ public class AggregatedStatisticController
 
     @GetMapping("/top-winrates")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<CharacterWinratesDTO> getTopWinrates() {
-        logger.info("Fetching top 5 character winrates for both high and low ranks");
+    public ResponseEntity<CharacterWinratesDTO> getTop5Winrates() {
+        logger.info("Fetching top 5 character winrates");
 
         try {
             // Get high rank winrates
             Map<String, Double> highRankWinrates = aggregatedStatisticsRepository
-                    .findTop5CharactersByWinrateInStandard()
+                    .findTop5CharactersByWinrateInHighRank()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            CharacterWinrateProjection::getWinratePercentage
+                    ));
+
+            Map<String, Double> mediumRankWinrates = aggregatedStatisticsRepository
+                    .findTop5CharactersByWinrateInMediumRanks()
                     .stream()
                     .collect(Collectors.toMap(
                             projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
@@ -79,11 +88,52 @@ public class AggregatedStatisticController
                             CharacterWinrateProjection::getWinratePercentage
                     ));
 
-            CharacterWinratesDTO response = new CharacterWinratesDTO(highRankWinrates, lowRankWinrates);
+            CharacterWinratesDTO response = new CharacterWinratesDTO(highRankWinrates, mediumRankWinrates, lowRankWinrates);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             logger.error("Error fetching character winrates", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/top-popularity")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public ResponseEntity<CharacterPopularityDTO> getTop5CharacterPopularity() {
+        logger.info("Fetching top 5 character winrates");
+
+        try {
+            // Get high rank popularity
+            Map<String, Long> highRankPopularity = aggregatedStatisticsRepository
+                    .findPopularCharactersInHighRanks()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            PopularCharacterProjection::getTotalWins
+                    ));
+
+            Map<String, Long> mediumRankPopularity = aggregatedStatisticsRepository
+                    .findPopularCharactersInMediumRanks()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            PopularCharacterProjection::getTotalWins
+                    ));
+
+            // Get low rank winrates
+            Map<String, Long> lowRankPopularity = aggregatedStatisticsRepository
+                    .findPopularCharactersInLowRanks()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            projection -> enumsMapper.getCharacterName(projection.getCharacterId()),
+                            PopularCharacterProjection::getTotalWins
+                    ));
+
+            CharacterPopularityDTO response = new CharacterPopularityDTO(highRankPopularity, mediumRankPopularity, lowRankPopularity);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching character popularity statistics", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -114,12 +164,12 @@ public class AggregatedStatisticController
     }
 
 
-    public ResponseEntity<CharacterPopularityDTO> getCharacterPopularityInHighRanks()
-    {
-        logger.info("Fetching character popularity for high rank");
-    }
-
-    private CharacterPopularityDTO convertToDTO()
+//    public ResponseEntity<CharacterPopularityDTO> getCharacterPopularityInHighRanks()
+//    {
+//        logger.info("Fetching character popularity for high rank");
+//    }
+//
+//    private CharacterPopularityDTO convertToDTO()
 
     private rankDistributionDTO convertToDTO(List<RankDistributionProjection> projections)
     {

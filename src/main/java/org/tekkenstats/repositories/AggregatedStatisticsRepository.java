@@ -9,7 +9,6 @@ import org.tekkenstats.aggregations.AggregatedStatisticId;
 import org.tekkenstats.interfaces.CharacterWinrateProjection;
 import org.tekkenstats.interfaces.PopularCharacterProjection;
 import org.tekkenstats.interfaces.RankDistributionProjection;
-import org.tekkenstats.mappers.enumsMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,59 +40,58 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
 
 
     @Query(value = """
-
-        WITH latest_version AS (
-        SELECT MAX(game_version) as version
-        FROM aggregated_statistics
-    ),
-    max_rank AS (
-        SELECT MAX(dan_rank) as highest_rank
-        FROM aggregated_statistics a
-        INNER JOIN latest_version lv ON a.game_version = lv.version
-        WHERE a.category = 'standard'
-    ),
-    top_ranks AS (
-        SELECT DISTINCT dan_rank
-        FROM aggregated_statistics a, max_rank mr
-        WHERE dan_rank >= (mr.highest_rank - 4)
-        AND dan_rank <= mr.highest_rank
-    )
-    SELECT\s
-        a.character_id as characterId,
-        SUM(a.total_wins) as totalWins,
-        SUM(a.total_losses) as totalLosses,
-        ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+    SELECT
+    a.character_id as characterId,
+    SUM(a.total_wins) as totalWins,
+    SUM(a.total_losses) as totalLosses,
+    ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
     FROM aggregated_statistics a
-    INNER JOIN latest_version lv ON a.game_version = lv.version
-    INNER JOIN top_ranks tr ON a.dan_rank = tr.dan_rank
+    INNER JOIN (
+    SELECT MAX(game_version) as version
+    FROM aggregated_statistics
+    ) lv ON a.game_version = lv.version
     WHERE a.category = 'standard'
+    AND a.dan_rank BETWEEN 25 AND 29 --Tekken God and above
     GROUP BY a.character_id
     HAVING SUM(a.total_wins + a.total_losses) > 0
     ORDER BY winratePercentage DESC
     LIMIT 5
     """, nativeQuery = true)
-    List<CharacterWinrateProjection> findTop5CharactersByWinrateInStandard();
-
+    List<CharacterWinrateProjection> findTop5CharactersByWinrateInHighRank();
 
     @Query(value = """
-    WITH latest_version AS (
-        SELECT MAX(game_version) as version
-        FROM aggregated_statistics
-    ),
-    low_ranks AS (
-        SELECT DISTINCT dan_rank
-        FROM aggregated_statistics
-        WHERE dan_rank BETWEEN 0 AND 23
-    )
     SELECT
-        a.character_id as characterId,
-        SUM(a.total_wins) as totalWins,
-        SUM(a.total_losses) as totalLosses,
-        ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+    a.character_id as characterId,
+    SUM(a.total_wins) as totalWins,
+    SUM(a.total_losses) as totalLosses,
+    ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
     FROM aggregated_statistics a
-    INNER JOIN latest_version lv ON a.game_version = lv.version
-    INNER JOIN low_ranks lr ON a.dan_rank = lr.dan_rank
+    INNER JOIN (
+    SELECT MAX(game_version) as version
+    FROM aggregated_statistics
+    ) lv ON a.game_version = lv.version
     WHERE a.category = 'standard'
+    AND a.dan_rank BETWEEN 15 AND 24 --Between Garyu - Bushin
+    GROUP BY a.character_id
+    HAVING SUM(a.total_wins + a.total_losses) > 0
+    ORDER BY winratePercentage DESC
+    LIMIT 5
+    """, nativeQuery = true)
+    List<CharacterWinrateProjection> findTop5CharactersByWinrateInMediumRanks();
+
+    @Query(value = """
+    SELECT
+    a.character_id as characterId,
+    SUM(a.total_wins) as totalWins,
+    SUM(a.total_losses) as totalLosses,
+    ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+    FROM aggregated_statistics a
+    INNER JOIN (
+    SELECT MAX(game_version) as version
+    FROM aggregated_statistics
+    ) lv ON a.game_version = lv.version
+    WHERE a.category = 'standard'
+    AND a.dan_rank BETWEEN 0 AND 14 --Beginner to Eliminator
     GROUP BY a.character_id
     HAVING SUM(a.total_wins + a.total_losses) > 0
     ORDER BY winratePercentage DESC
@@ -101,39 +99,70 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     """, nativeQuery = true)
     List<CharacterWinrateProjection> findTop5CharactersByWinrateInLowRanks();
 
+
     @Query(value = """
-        WITH latest_version AS (
-            SELECT MAX(game_version) as version
-            FROM aggregated_statistics
-        ),
-        max_rank AS (
-            SELECT MAX(dan_rank) as highest_rank
-            FROM aggregated_statistics a
-            INNER JOIN latest_version lv ON a.game_version = lv.version
-            WHERE a.category = 'standard'
-        ),
-        top_ranks AS (
-            SELECT DISTINCT dan_rank
-            FROM aggregated_statistics a, max_rank mr
-            WHERE dan_rank >= (mr.highest_rank - 4)
-            AND dan_rank <= mr.highest_rank
-        )
-        SELECT
-            a.character_id as characterId,
-            SUM(a.total_wins) as totalWins,
-            SUM(a.total_losses) as totalLosses,
-            SUM(a.total_wins + a.total_losses) as totalBattles,
-            ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
-        FROM aggregated_statistics a
-        INNER JOIN latest_version lv ON a.game_version = lv.version
-        INNER JOIN top_ranks tr ON a.dan_rank = tr.dan_rank
-        WHERE a.category = 'standard'
-        GROUP BY a.character_id
-        HAVING SUM(a.total_wins + a.total_losses) > 0
-        ORDER BY totalBattles DESC
-        LIMIT 5
-        """, nativeQuery = true)
+    SELECT
+        a.character_id as characterId,
+        SUM(a.total_wins) as totalWins,
+        SUM(a.total_losses) as totalLosses,
+        SUM(a.total_wins + a.total_losses) as totalBattles,
+        ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+    FROM aggregated_statistics a
+    INNER JOIN (
+        SELECT MAX(game_version) as version
+        FROM aggregated_statistics
+    ) lv ON a.game_version = lv.version
+    WHERE a.category = 'standard'
+    AND a.dan_rank BETWEEN 25 AND 29
+    GROUP BY a.character_id
+    HAVING SUM(a.total_wins + a.total_losses) > 0
+    ORDER BY totalBattles DESC
+    LIMIT 5
+    """, nativeQuery = true)
     List<PopularCharacterProjection> findPopularCharactersInHighRanks();
+
+
+    @Query(value = """
+SELECT
+    a.character_id as characterId,
+    SUM(a.total_wins) as totalWins,
+    SUM(a.total_losses) as totalLosses,
+    SUM(a.total_wins + a.total_losses) as totalBattles,
+    ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+FROM aggregated_statistics a
+INNER JOIN (
+    SELECT MAX(game_version) as version
+    FROM aggregated_statistics
+) lv ON a.game_version = lv.version
+WHERE a.category = 'standard'
+AND a.dan_rank BETWEEN 15 AND 24
+GROUP BY a.character_id
+HAVING SUM(a.total_wins + a.total_losses) > 0
+ORDER BY totalBattles DESC
+LIMIT 5
+""", nativeQuery = true)
+    List<PopularCharacterProjection> findPopularCharactersInMediumRanks();
+
+    @Query(value = """
+SELECT
+    a.character_id as characterId,
+    SUM(a.total_wins) as totalWins,
+    SUM(a.total_losses) as totalLosses,
+    SUM(a.total_wins + a.total_losses) as totalBattles,
+    ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage
+FROM aggregated_statistics a
+INNER JOIN (
+    SELECT MAX(game_version) as version
+    FROM aggregated_statistics
+) lv ON a.game_version = lv.version
+WHERE a.category = 'standard'
+AND a.dan_rank BETWEEN 0 AND 14
+GROUP BY a.character_id
+HAVING SUM(a.total_wins + a.total_losses) > 0
+ORDER BY totalBattles DESC
+LIMIT 5
+""", nativeQuery = true)
+    List<PopularCharacterProjection> findPopularCharactersInLowRanks();
 
     @Query(value = "SELECT DISTINCT game_version FROM aggregated_statistics", nativeQuery = true)
     Optional<List<Integer>> getGameVersions();
