@@ -55,7 +55,6 @@ public class APIService implements InitializingBean, DisposableBean {
     private static final int TIME_STEP = 700;
     private static final ZoneId zoneId = ZoneId.of("UTC");
 
-
     @Value("${API_URL}")
     private String API_URL;
 
@@ -191,7 +190,7 @@ public class APIService implements InitializingBean, DisposableBean {
 
         try
         {
-            String jsonResponse = restTemplate.getForObject(API_URL + "?after=" + currentFetchTimestamp, String.class);
+            String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + currentFetchTimestamp, String.class);
             processApiResponse(jsonResponse, dateFromUnix);
             currentFetchTimestamp += TIME_STEP;
         }

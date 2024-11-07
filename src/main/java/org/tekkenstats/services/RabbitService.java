@@ -65,6 +65,8 @@ public class RabbitService {
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
 
         executeAllDatabaseOperations(updatedPlayers, battleSet);
+
+
     }
 
     private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
@@ -495,7 +497,7 @@ public class RabbitService {
     private String getReadableDateInUTC(Battle battle) {
         return Instant.ofEpochSecond(battle.getBattleAt())
                 .atZone(ZoneId.of("UTC"))
-                .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm 'UTC'"));
+                .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss 'UTC'"));
     }
 
     private String getPlayerName(Battle battle, int playerNumber) {
