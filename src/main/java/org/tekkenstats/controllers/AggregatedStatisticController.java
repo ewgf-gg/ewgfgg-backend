@@ -100,7 +100,7 @@ public class AggregatedStatisticController
     @GetMapping("/top-popularity")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<CharacterPopularityDTO> getTop5CharacterPopularity() {
-        logger.info("Fetching top 5 character winrates");
+        logger.info("Fetching top 5 popular characters");
 
         try {
             // Get high rank popularity

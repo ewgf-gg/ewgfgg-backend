@@ -4,18 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tekkenstats.aggregations.AggregatedStatistic;
 import org.tekkenstats.aggregations.AggregatedStatisticId;
 import org.tekkenstats.aggregations.PlayerCharacterData;
+import org.tekkenstats.events.ReplayProcessingCompletedEvent;
 import org.tekkenstats.repositories.AggregatedStatisticsRepository;
 import org.tekkenstats.repositories.CharacterStatsRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,7 @@ public class StatisticsService {
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
     private final Executor statisticsExecutor;
     private static final Logger logger = LoggerFactory.getLogger(StatisticsService.class);
+    private final AtomicBoolean isProcessing = new AtomicBoolean(false);
 
     public StatisticsService(
             CharacterStatsRepository characterStatsRepository,
@@ -36,21 +40,36 @@ public class StatisticsService {
         this.statisticsExecutor = statisticsExecutor;
     }
 
-    @Scheduled(fixedRate = 60000)
+    @EventListener
     @Async("statisticsThreadExecutor")
-    public void computeStatistics() {
-        try {
+    public void onReplayDataProcessed(ReplayProcessingCompletedEvent event)
+    {
+        if (!isProcessing.compareAndSet(false, true))
+        {
+            logger.info("Statistics computation already in progress");
+            return;
+        }
+g
+        try
+        {
             logger.info("Computing statistics");
             Optional<List<Integer>> gameVersions = fetchGameVersions();
-            if (gameVersions.isPresent()) {
-                for (int gameVersion : gameVersions.get()) {
+            if (gameVersions.isPresent())
+            {
+                for (int gameVersion : gameVersions.get())
+                {
                     processGameVersionStatistics(gameVersion);
                 }
-            } else {
+            } else
+            {
                 logger.warn("No game versions found.");
             }
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             logger.error("Error computing statistics: ", e);
+        } finally
+        {
+            isProcessing.set(false);
         }
     }
 

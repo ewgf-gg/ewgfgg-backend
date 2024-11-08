@@ -6,13 +6,11 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import org.springframework.web.util.UriComponentsBuilder;
@@ -271,7 +269,8 @@ public class APIService implements InitializingBean, DisposableBean {
                 RabbitMQConfig.ROUTING_KEY,
                 message,
                 msg -> {
-                    msg.getMessageProperties().setHeader("unixTimestamp", dateAndTime);
+                    msg.getMessageProperties()
+                            .setHeader("unixTimestamp", dateAndTime);
                     return msg;
                 }
         );

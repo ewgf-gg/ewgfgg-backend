@@ -7,10 +7,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import org.tekkenstats.events.ReplayProcessingCompletedEvent;
 import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
 
@@ -20,6 +22,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,13 +35,24 @@ public class RabbitService {
 
     private final JdbcTemplate jdbcTemplate;
     private final BattleRepository battleRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private static final long COOLDOWN_PERIOD = TimeUnit.MINUTES.toMillis(5); // 5 minute cooldown
+    private final AtomicLong lastEventPublishTime = new AtomicLong(0);
+    private final AtomicBoolean isPublishing = new AtomicBoolean(false);
 
 
-    public RabbitService(JdbcTemplate jdbcTemplate, BattleRepository battleRepository)
+
+    public RabbitService(
+            JdbcTemplate jdbcTemplate,
+            BattleRepository battleRepository,
+            ApplicationEventPublisher eventPublisher)
     {
         this.jdbcTemplate = jdbcTemplate;
         this.battleRepository = battleRepository;
+        this.eventPublisher = eventPublisher;
     }
+
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
@@ -63,8 +79,9 @@ public class RabbitService {
 
         // Instantiate objects and update relevant information
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
-
         executeAllDatabaseOperations(updatedPlayers, battleSet);
+
+        tryPublishEvent();
     }
 
     private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
@@ -481,7 +498,38 @@ public class RabbitService {
         addPlayerNameIfNew(player, player.getName());
     }
 
+    private void tryPublishEvent()
+    {
+        long currentTime = System.currentTimeMillis();
+        long lastPublishTime = lastEventPublishTime.get();
 
+        // check if enough time has passed since last publish
+        if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD) {
+            logger.debug("Skipping statistics computation due to cooldown period");
+            return;
+        }
+
+        // Try to acquire the publishing lock
+        if (!isPublishing.compareAndSet(false, true)) {
+            logger.debug("Another thread is currently publishing an event");
+            return;
+        }
+
+        try {
+            // Double-check the time again now that we have the lock
+            // This prevents multiple events being published if multiple threads
+            // pass the first time check simultaneously
+            if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD) {
+                eventPublisher.publishEvent(new ReplayProcessingCompletedEvent());
+                lastEventPublishTime.set(currentTime);
+                logger.info("Published statistics computation event");
+            }
+        }
+        finally
+        {
+            isPublishing.set(false);
+        }
+    }
 
     private void addPlayerNameIfNew(Player player, String name)
     {
