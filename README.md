@@ -33,7 +33,15 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Progress
-* **
+* **11/08/2024:** Statistics analysis is now completely event driven. Server also now retrieves top 5 statistics for high, medium and low ranks.
+
+
+* **11/07/2024:** Began work on making statistics analysis trigger on event basis instead of being done on a scheduled/cron job basis. 
+
+
+* **11/06/2024:** Added support for calculating winrates and popularity for top 5 ranks.
+
+
 * **11/05/2024:** Added support for region and areas for statistics aggregation, added region, area, and language as part of battle and player models. Added class that manages configuration for virtual threads. Deleted Custom row mapper class (will return to this in the future) Added status checking for responses from API. Switched from field to constructor injection in RabbitService, APIService, and StatisticService classes. Started work on adding region and area for statistics aggregation.
 
   

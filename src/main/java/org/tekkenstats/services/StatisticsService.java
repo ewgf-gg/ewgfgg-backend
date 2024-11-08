@@ -49,7 +49,7 @@ public class StatisticsService {
             logger.info("Statistics computation already in progress");
             return;
         }
-g
+
         try
         {
             logger.info("Computing statistics");
