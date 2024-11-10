@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tekkenstats.models.Player;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -16,6 +17,22 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
 
     @Query(value = "SELECT * FROM players p WHERE p.player_id = :criteria OR p.name ILIKE :criteria OR p.polaris_id ILIKE :criteria", nativeQuery = true)
     Optional<Player> findByIdOrNameOrPolarisIdIgnoreCase(@Param("criteria") String criteria);
+
+
+    @Query(value = """
+    SELECT * FROM players
+    WHERE LOWER(name) LIKE LOWER(CONCAT('%', :query, '%'))
+    OR LOWER(polaris_id) LIKE LOWER(CONCAT('%', :query, '%'))
+    ORDER BY
+        CASE
+            WHEN LOWER(name) = LOWER(:query) THEN 0
+            WHEN LOWER(name) LIKE LOWER(CONCAT(:query, '%')) THEN 1
+            ELSE 2
+        END,
+        length(name)
+    LIMIT 10
+    """, nativeQuery = true)
+    List<Player> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
 
     @Query(value = "SELECT COUNT (*) FROM players", nativeQuery=true)
     Optional<Long> getPlayerCount();

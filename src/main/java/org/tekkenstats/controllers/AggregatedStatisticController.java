@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.tekkenstats.dtos.CharacterPopularityDTO;
-import org.tekkenstats.dtos.CharacterWinratesDTO;
-import org.tekkenstats.dtos.TekkenStatsSummaryDTO;
-import org.tekkenstats.dtos.rankDistributionDTO;
+import org.tekkenstats.dtos.*;
 import org.tekkenstats.interfaces.CharacterWinrateProjection;
 import org.tekkenstats.interfaces.PopularCharacterProjection;
 import org.tekkenstats.interfaces.RankDistributionProjection;
@@ -18,6 +15,7 @@ import org.tekkenstats.models.TekkenStatsSummary;
 import org.tekkenstats.repositories.AggregatedStatisticsRepository;
 import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -164,12 +162,37 @@ public class AggregatedStatisticController
     }
 
 
-//    public ResponseEntity<CharacterPopularityDTO> getCharacterPopularityInHighRanks()
-//    {
-//        logger.info("Fetching character popularity for high rank");
-//    }
-//
-//    private CharacterPopularityDTO convertToDTO()
+    @GetMapping("/winrate-changes")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getWinrateChanges() {
+        logger.info("Fetching character winrate changes");
+
+        try {
+            List<Object[]> results = aggregatedStatisticsRepository.getWinrateChanges();
+
+            List<RankWinrateChangesDTO> changes = results.stream()
+                    .map(result -> {
+                        RankWinrateChangesDTO dto = new RankWinrateChangesDTO();
+                        dto.setCharacterId(enumsMapper.getCharacterName((String) result[0]));
+                        dto.setRankCategory((String) result[1]);
+                        dto.setChange((Double) result[2]);
+                        dto.setTrend((String) result[3]);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, List<RankWinrateChangesDTO>> groupedChanges =
+                    RankWinrateChangesDTO.groupByRankCategory(changes);
+
+            return ResponseEntity.ok(groupedChanges);
+
+        } catch (Exception e) {
+            logger.error("Error fetching character winrate changes", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+
 
     private rankDistributionDTO convertToDTO(List<RankDistributionProjection> projections)
     {

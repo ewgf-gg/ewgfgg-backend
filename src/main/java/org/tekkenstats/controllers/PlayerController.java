@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tekkenstats.dtos.CharacterStatsDTO;
+import org.tekkenstats.dtos.PlayerSearchDTO;
 import org.tekkenstats.dtos.PlayerStatsDTO;
 import org.tekkenstats.mappers.enumsMapper;
 import org.tekkenstats.models.CharacterStats;
@@ -14,9 +15,8 @@ import org.tekkenstats.models.CharacterStatsId;
 import org.tekkenstats.models.Player;
 import org.tekkenstats.repositories.PlayerRepository;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/player-stats")
@@ -40,6 +40,32 @@ public class PlayerController
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/search")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
+        if (query.length() < 2) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        List<Player> players = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
+        List<PlayerSearchDTO> results = players.stream()
+                .map(this::convertToSearchDTO)
+                .limit(10) // Limit results to prevent overwhelming the UI
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(results);
+    }
+
+    private PlayerSearchDTO convertToSearchDTO(Player player)
+    {
+        PlayerSearchDTO dto = new PlayerSearchDTO();
+        dto.setId(player.getPlayerId());
+        dto.setName(player.getName());
+        dto.setTekkenId(player.getPolarisId());
+        return dto;
+    }
+
 
 
     private PlayerStatsDTO convertToDTO(Player player)
