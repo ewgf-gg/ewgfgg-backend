@@ -3,7 +3,6 @@ package org.tekkenstats.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tekkenstats.dtos.CharacterStatsDTO;
@@ -22,10 +21,14 @@ import java.util.stream.Collectors;
 @RequestMapping("/player-stats")
 public class PlayerController
 {
-    @Autowired
-    private enumsMapper enumsMapper;
-    @Autowired
-    private PlayerRepository playerRepository;
+    private final enumsMapper enumsMapper;
+    private final PlayerRepository playerRepository;
+
+    public PlayerController(enumsMapper enumsMapper, PlayerRepository playerRepository)
+    {
+        this.enumsMapper = enumsMapper;
+        this.playerRepository = playerRepository;
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(PlayerController.class);
 
@@ -73,6 +76,7 @@ public class PlayerController
         PlayerStatsDTO dto = new PlayerStatsDTO();
         dto.setPlayerId(player.getPlayerId());
         dto.setName(player.getName());
+        dto.setRegion(player.getRegionId());
         dto.setTekkenPower(player.getTekkenPower());
         dto.setLatestBattle(player.getLatestBattle());
 
