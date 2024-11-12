@@ -31,6 +31,9 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 
+## Current Architecture
+![Untitled(4)](https://github.com/user-attachments/assets/1dd769c8-d835-4e63-a40b-926bad49a066)
+
 
 ## Current Progress
 * **11/08/2024:** Statistics analysis is now completely event driven. Server also now retrieves top 5 statistics for high, medium and low ranks.
