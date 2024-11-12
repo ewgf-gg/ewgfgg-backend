@@ -12,7 +12,7 @@ This is the backend service that will supplement the frontend for the website. T
 * **Docker**
 
 
-## Current Architecture
+## Current Architecture (as of 11/11/2024)
 ![Untitled(4)](https://github.com/user-attachments/assets/1dd769c8-d835-4e63-a40b-926bad49a066)
 
 
