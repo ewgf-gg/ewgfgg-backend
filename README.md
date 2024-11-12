@@ -12,6 +12,9 @@ This is the backend service that will supplement the frontend for the website. T
 * **Docker**
 
 
+## Current Architecture
+![Untitled(4)](https://github.com/user-attachments/assets/1dd769c8-d835-4e63-a40b-926bad49a066)
+
 
 ## Lessons Learned (so far)
 * **
@@ -28,11 +31,6 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 * **Database interfacing:** I had never worked with Postgres yet, nor have I built any personal projects (Java or otherwise) that used any sort of database. Understanding how java classes interopped with the database was fun, and I must say I am eternally grateful for the mighty Jdbc Template.
-
-
-
-## Current Architecture
-![Untitled(4)](https://github.com/user-attachments/assets/1dd769c8-d835-4e63-a40b-926bad49a066)
 
 
 ## Current Progress
