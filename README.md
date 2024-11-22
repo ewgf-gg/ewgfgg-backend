@@ -34,6 +34,10 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Progress
+
+* **11/22/2024:** Beginning work on retrieving player match history when a player is queried. Statistics events now contain game versions, so that only relevant game version statistics are re-calculated. 
+
+
 * **11/08/2024:** Statistics analysis is now completely event driven. Server also now retrieves top 5 statistics for high, medium and low ranks.
 
 
