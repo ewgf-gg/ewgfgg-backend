@@ -72,6 +72,8 @@ public class RabbitService {
 
     public void processBattlesAsync(List<Battle> battles)
     {
+        Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
+
         Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battles);
 
         HashMap<String, Player> updatedPlayers = new HashMap<>();
@@ -81,7 +83,7 @@ public class RabbitService {
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
         executeAllDatabaseOperations(updatedPlayers, battleSet);
 
-        tryPublishEvent();
+        tryPublishEvent(gameVersionsToProcess);
     }
 
     private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
@@ -498,7 +500,7 @@ public class RabbitService {
         addPlayerNameIfNew(player, player.getName());
     }
 
-    private void tryPublishEvent()
+    private void tryPublishEvent(Set<Integer> gameVersions)
     {
         long currentTime = System.currentTimeMillis();
         long lastPublishTime = lastEventPublishTime.get();
@@ -520,7 +522,7 @@ public class RabbitService {
             // This prevents multiple events being published if multiple threads
             // pass the first time check simultaneously
             if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD) {
-                eventPublisher.publishEvent(new ReplayProcessingCompletedEvent());
+                eventPublisher.publishEvent(new ReplayProcessingCompletedEvent(gameVersions));
                 lastEventPublishTime.set(currentTime);
                 logger.info("Published statistics computation event");
             }
@@ -529,6 +531,16 @@ public class RabbitService {
         {
             isPublishing.set(false);
         }
+    }
+
+    private Set<Integer> extractGameVersions(List<Battle> battles)
+    {
+        HashSet<Integer> gameVersions = new HashSet<>();
+        for (Battle battle : battles)
+        {
+            gameVersions.add(battle.getGameVersion());
+        }
+        return gameVersions;
     }
 
     private void addPlayerNameIfNew(Player player, String name)

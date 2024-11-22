@@ -53,17 +53,12 @@ public class StatisticsService {
         try
         {
             logger.info("Computing statistics");
-            Optional<List<Integer>> gameVersions = fetchGameVersions();
-            if (gameVersions.isPresent())
+
+            for (int gameVersion : event.getGameVersions())
             {
-                for (int gameVersion : gameVersions.get())
-                {
-                    processGameVersionStatistics(gameVersion);
-                }
-            } else
-            {
-                logger.warn("No game versions found.");
+                processGameVersionStatistics(gameVersion);
             }
+
         } catch (Exception e)
         {
             logger.error("Error computing statistics: ", e);

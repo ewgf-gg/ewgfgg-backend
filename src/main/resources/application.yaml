@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: Tekken-SpringBoot
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Tekken-Database
+    username: postgres
+    password: guest
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 1000
+        order_inserts: true
+        order_updates: true
+  output:
+    ansi:
+      enabled: ALWAYS
+
+rabbitmq:
+  queue:
+    name: battle_queue
+  management:
+    api:
+      url: http://localhost:15672/api
+    username: guest
+    password: guest
+    vhost: /
+
+backpressure:
+  threshold: 50
+  slowdown:
+    factor: 10
+
+logging:
+  level:
+    org:
+      tekkenstats:
+        services:
+          APIService: INFO
+          RabbitService: INFO
+        configuration:
+          BackpressureManager: INFO

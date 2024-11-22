@@ -25,4 +25,6 @@ public interface BattleRepository extends JpaRepository<Battle, String> {
             ") AS combined_battles", nativeQuery = true)
     Set<String> findSurroundingBattleIds(@Param("timestamp") long timestamp);
 
+
+
 }
