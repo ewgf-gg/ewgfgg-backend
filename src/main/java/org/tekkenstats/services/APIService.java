@@ -18,6 +18,7 @@ import org.tekkenstats.configuration.BackpressureManager;
 import org.tekkenstats.configuration.RabbitMQConfig;
 import org.tekkenstats.models.Battle;
 import org.tekkenstats.repositories.BattleRepository;
+import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -34,19 +35,22 @@ public class APIService implements InitializingBean, DisposableBean {
     private final RestTemplate restTemplate;
     private final BattleRepository battleRepository;
     private final TaskScheduler taskScheduler;
+    private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
 
     public APIService(
             RabbitTemplate rabbitTemplate,
             BackpressureManager backpressureManager,
             RestTemplate restTemplate,
             BattleRepository battleRepository,
-            TaskScheduler taskScheduler
+            TaskScheduler taskScheduler,
+            TekkenStatsSummaryRepository tekkenStatsSummaryRepository
     ) {
         this.rabbitTemplate = rabbitTemplate;
         this.backpressureManager = backpressureManager;
         this.restTemplate = restTemplate;
         this.battleRepository = battleRepository;
         this.taskScheduler = taskScheduler;
+        this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
     }
 
     private static final Logger logger = LogManager.getLogger(APIService.class);
@@ -65,7 +69,8 @@ public class APIService implements InitializingBean, DisposableBean {
     private boolean fetchIsAheadOfCurrent = false;
 
     @Override
-    public void afterPropertiesSet() {
+    public void afterPropertiesSet()
+    {
         init();
         scheduleNextExecution(0);
     }
@@ -101,7 +106,7 @@ public class APIService implements InitializingBean, DisposableBean {
         }
         catch (Exception e)
         {
-            logger.error("Error initializing unixTimestamp: {}", e.getMessage());
+            logger.error("Error initializing server: {}", e.getMessage());
             System.exit(-1);
         }
     }
@@ -131,6 +136,7 @@ public class APIService implements InitializingBean, DisposableBean {
 
     private void initializeForEmptyDatabase()
     {
+        tekkenStatsSummaryRepository.initializeStatsSummaryTable();
         currentFetchTimestamp = getPresentUnixTimestamp();
         logger.info("No battles found in database, using current timestamp: {}", currentFetchTimestamp);
     }

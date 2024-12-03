@@ -46,13 +46,13 @@ public class StatisticsService {
     {
         if (!isProcessing.compareAndSet(false, true))
         {
-            logger.info("Statistics computation already in progress");
+            logger.info("Statistics computation already in progress.");
             return;
         }
 
         try
         {
-            logger.info("Computing statistics");
+            logger.info("Computing statistics.");
 
             for (int gameVersion : event.getGameVersions())
             {
@@ -65,11 +65,8 @@ public class StatisticsService {
         } finally
         {
             isProcessing.set(false);
+            logger.info("Statistics computation done.");
         }
-    }
-
-    private Optional<List<Integer>> fetchGameVersions() {
-        return characterStatsRepository.findAllGameVersions();
     }
 
     private void processGameVersionStatistics(int gameVersion) {
@@ -100,6 +97,7 @@ public class StatisticsService {
         for (Object[] row : stats)
         {
             // Skip if the row doesn't have all required elements
+            // players who do not have a defined region or area are excluded from analysis
             if (row[5] == null || row[6] == null)
             {
                 continue;

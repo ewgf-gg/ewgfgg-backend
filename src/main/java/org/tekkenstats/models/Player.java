@@ -3,13 +3,16 @@ package org.tekkenstats.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.tekkenstats.mappers.enumsMapper;
 
 import java.util.*;
 
 @Entity
 @Table(name = "players")
 @Data
+@NoArgsConstructor
 public class Player {
 
     @Id
@@ -17,7 +20,7 @@ public class Player {
     private String playerId;
 
     @Column(name = "latest_battle")
-    private long latestBattle;
+    private Long latestBattle;
 
     @Column(name = "name")
     private String name;
@@ -26,7 +29,7 @@ public class Player {
     private String polarisId;
 
     @Column(name = "tekken_power")
-    private long tekkenPower;
+    private Long tekkenPower;
 
     @Column(name = "region_id")
     private Integer regionId;
@@ -50,19 +53,99 @@ public class Player {
     })
     private Map<CharacterStatsId, CharacterStats> characterStats = new HashMap<>();
 
-    public Player() {
-        this.playerId = "0";
-        this.name = "undefined";
-        this.polarisId = "0";
-        this.tekkenPower = 0;
+
+    //this constructor is for the dto conversion within the Player Controller class
+    public Player(
+            String playerId,
+            String name,
+            String polarisId,
+            Long tekkenPower,
+            Integer regionId,
+            Integer areaId,
+            String language,
+            Long latestBattle)
+    {
+        this.playerId = playerId;
+        this.name = name;
+        this.polarisId = polarisId;
+        this.tekkenPower = tekkenPower;
+        this.regionId = regionId;
+        this.areaId = areaId;
+        this.language = language;
+        this.latestBattle = latestBattle;
     }
 
+
     // Logic for setting/updating tekkenPower based on the latest battle
-    public void updateTekkenPower(long newPower, long battleTime) {
+    public void updateTekkenPower(long newPower, long battleTime)
+    {
         if (battleTime >= getLatestBattle())
         {
             this.tekkenPower = newPower;
         }
+    }
+
+    private Map<String, String> getMostPlayedCharacterInLatestVersion()
+    {
+        Map<String, String> result = new HashMap<>();
+
+        if (characterStats == null || characterStats.isEmpty()) {
+            result.put("characterId", "No Character Data");
+            result.put("danRank", "0");
+            return result;
+        }
+
+        // Find the latest version
+        int latestVersion = characterStats.keySet().stream()
+                .mapToInt(CharacterStatsId::getGameVersion)
+                .max()
+                .orElse(0);
+
+        // If no valid version found
+        if (latestVersion == 0) {
+            result.put("characterId", "No Character Data");
+            result.put("danRank", "0");
+            return result;
+        }
+
+        // Find the most played character in the latest version
+        return characterStats.entrySet().stream()
+                .filter(entry -> entry.getKey().getGameVersion() == latestVersion)
+                .max(Comparator.comparingInt(entry -> {
+                    CharacterStats stats = entry.getValue();
+                    return stats.getWins() + stats.getLosses();
+                }))
+                .map(entry -> {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("characterId", entry.getKey().getCharacterId());
+                    map.put("danRank", String.valueOf(entry.getValue().getDanRank()));
+                    return map;
+                })
+                .orElseGet(() -> {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("characterId", "No Character Data");
+                    map.put("danRank", "0");
+                    return map;
+                });
+    }
+
+    public Map<String, String> getMostPlayedCharacterInfo(enumsMapper mapper)
+    {
+        Map<String, String> stats = getMostPlayedCharacterInLatestVersion();
+        Map<String, String> result = new HashMap<>();
+
+        if (stats.get("characterId").equals("No Character Data"))
+        {
+            result.put("characterName", "No Character Data");
+            result.put("danRank", "N/A");
+        }
+        else
+        {
+            result.put("characterName", mapper.getCharacterName(stats.get("characterId")));
+            result.put("danRank", mapper.getDanName(stats.get("danRank")));
+        }
+
+        return result;
     }
 
     public void setLatestBattle()

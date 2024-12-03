@@ -35,15 +35,15 @@ public class Battle {
 
     @JsonProperty("p1_chara_id")
     @Column(name = "player1_character_id", nullable = false)
-    private int player1CharacterID;
+    private int player1CharacterId;
 
     @JsonProperty("p1_area_id")
     @Column(name = "player1_area")
-    private Integer player1AreaID;
+    private Integer player1AreaId;
 
     @JsonProperty("p1_region_id")
     @Column(name = "player1_region")
-    private Integer player1RegionID;
+    private Integer player1RegionId;
 
     @JsonProperty("p1_lang")
     @Column(name = "player1_language")
@@ -55,7 +55,7 @@ public class Battle {
 
     @JsonProperty("p1_polaris_id")
     @Column(name = "player1_polaris_id")
-    private String player1PolarisID;
+    private String player1PolarisId;
 
     @JsonProperty("p1_power")
     @Column(name = "player1_tekken_power", nullable = false)
@@ -79,19 +79,19 @@ public class Battle {
 
     @JsonProperty("p1_user_id")
     @Column(name = "player1_id")
-    private String player1UserID;
+    private String player1UserId;
 
     @JsonProperty("p2_chara_id")
     @Column(name = "player2_character_id", nullable = false)
-    private int player2CharacterID;
+    private int player2CharacterId;
 
     @JsonProperty("p2_area_id")
     @Column(name = "player2_area")
-    private Integer player2AreaID;
+    private Integer player2AreaId;
 
     @JsonProperty("p2_region_id")
     @Column(name = "player2_region")
-    private Integer player2RegionID;
+    private Integer player2RegionId;
 
     @JsonProperty("p2_lang")
     @Column(name = "player2_language")
@@ -103,7 +103,7 @@ public class Battle {
 
     @JsonProperty("p2_polaris_id")
     @Column(name = "player2_polaris_id")
-    private String player2PolarisID;
+    private String player2PolarisId;
 
     @JsonProperty("p2_power")
     @Column(name = "player2_tekken_power", nullable = false)
@@ -127,11 +127,11 @@ public class Battle {
 
     @JsonProperty("p2_user_id")
     @Column(name = "player2_id")
-    private String player2UserID;
+    private String player2UserId;
 
     @JsonProperty("stage_id")
     @Column(name = "stageid", nullable = false)
-    private int stageID;
+    private int stageId;
 
     @JsonProperty("winner")
     @Column(name = "winner")

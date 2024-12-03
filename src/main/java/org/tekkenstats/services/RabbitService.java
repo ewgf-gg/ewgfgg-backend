@@ -1,6 +1,5 @@
 package org.tekkenstats.services;
 
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.tekkenstats.events.ReplayProcessingCompletedEvent;
 import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
-
 import org.tekkenstats.repositories.BattleRepository;
 
 import java.time.Instant;
@@ -42,7 +40,6 @@ public class RabbitService {
     private final AtomicBoolean isPublishing = new AtomicBoolean(false);
 
 
-
     public RabbitService(
             JdbcTemplate jdbcTemplate,
             BattleRepository battleRepository,
@@ -52,7 +49,6 @@ public class RabbitService {
         this.battleRepository = battleRepository;
         this.eventPublisher = eventPublisher;
     }
-
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
@@ -139,7 +135,7 @@ public class RabbitService {
                 battle.setDate(getReadableDateInUTC(battle));
 
                 // Process Player 1
-                String player1Id = getPlayerUserId(battle, 1);
+                String player1Id = getPlayerUserIdFromBattle(battle, 1);
                 Player player1 = updatedPlayers.get(player1Id);
                 if (player1 == null)
                 {
@@ -150,7 +146,7 @@ public class RabbitService {
                 setCharacterStatsWithBattle(player1, battle, 1);
 
                 // Process Player 2
-                String player2Id = getPlayerUserId(battle, 2);
+                String player2Id = getPlayerUserIdFromBattle(battle, 2);
                 Player player2 = updatedPlayers.get(player2Id);
                 if (player2 == null)
                 {
@@ -184,8 +180,9 @@ public class RabbitService {
         try {
             long startTime = System.currentTimeMillis();
 
-            //insert battle and increment replay count, else do nothing
-            String sql = "INSERT INTO battles (" +
+            // insert battle and increment replay count, else do nothing
+            String sql =
+                    "INSERT INTO battles (" +
                     "battle_id, date, battle_at, battle_type, game_version, " +
                     "player1_character_id, player1_name, player1_region, player1_area, " +
                     "player1_language, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
@@ -208,31 +205,31 @@ public class RabbitService {
                         battle.getBattleAt(),
                         battle.getBattleType(),
                         battle.getGameVersion(),
-                        battle.getPlayer1CharacterID(),
+                        battle.getPlayer1CharacterId(),
                         battle.getPlayer1Name(),
-                        battle.getPlayer1RegionID(),
-                        battle.getPlayer1AreaID(),
+                        battle.getPlayer1RegionId(),
+                        battle.getPlayer1AreaId(),
                         battle.getPlayer1Language(),
-                        battle.getPlayer1PolarisID(),
+                        battle.getPlayer1PolarisId(),
                         battle.getPlayer1TekkenPower(),
                         battle.getPlayer1DanRank(),
                         battle.getPlayer1RatingBefore(),
                         battle.getPlayer1RatingChange(),
                         battle.getPlayer1RoundsWon(),
-                        battle.getPlayer1UserID(),
-                        battle.getPlayer2CharacterID(),
+                        battle.getPlayer1UserId(),
+                        battle.getPlayer2CharacterId(),
                         battle.getPlayer2Name(),
-                        battle.getPlayer2RegionID(),
-                        battle.getPlayer2AreaID(),
+                        battle.getPlayer2RegionId(),
+                        battle.getPlayer2AreaId(),
                         battle.getPlayer2Language(),
-                        battle.getPlayer2PolarisID(),
+                        battle.getPlayer2PolarisId(),
                         battle.getPlayer2TekkenPower(),
                         battle.getPlayer2DanRank(),
                         battle.getPlayer2RatingBefore(),
                         battle.getPlayer2RatingChange(),
                         battle.getPlayer2RoundsWon(),
-                        battle.getPlayer2UserID(),
-                        battle.getStageID(),
+                        battle.getPlayer2UserId(),
+                        battle.getStageId(),
                         battle.getWinner()
                 };
                 batchArgs.add(args);
@@ -354,7 +351,8 @@ public class RabbitService {
 
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersSet.values()) {
+        for (Player updatedPlayer : updatedPlayersSet.values())
+        {
             String userId = updatedPlayer.getPlayerId();
 
             Map<CharacterStatsId, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
@@ -389,8 +387,11 @@ public class RabbitService {
         int batchSize = 1000;
         int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
 
-        try {
-            for (int i = 0; i < totalBatches; i++) {
+        //upsert in batches of batchSize
+        try
+        {
+            for (int i = 0; i < totalBatches; i++)
+            {
                 int start = i * batchSize;
                 int end = Math.min(start + batchSize, batchArgs.size());
 
@@ -398,7 +399,8 @@ public class RabbitService {
 
                 jdbcTemplate.batchUpdate(sql, batch);
             }
-        } catch(Exception e) {
+        } catch(Exception e)
+        {
             logger.error("Error occurred while inserting character stats: {}", e.getMessage());
         }
 
@@ -409,7 +411,8 @@ public class RabbitService {
 
     private void updateSummaryStatistics(int newBattleCount, int newPlayerCount)
     {
-        if (newBattleCount == 0 && newPlayerCount == 0) {
+        if (newBattleCount == 0 && newPlayerCount == 0)
+        {
             return;
         }
 
@@ -422,7 +425,7 @@ public class RabbitService {
 
     private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
-        String characterId = getPlayerCharacter(battle, playerNumber);
+        String characterId = getPlayerCharacterFromBattle(battle, playerNumber);
         int gameVersion = battle.getGameVersion();
 
         // Create a CharacterStatsId for lookup
@@ -439,7 +442,7 @@ public class RabbitService {
             // Initialize a new CharacterStats object if none exists
             stats = new CharacterStats();
             stats.setId(statsId);
-            stats.setDanRank(getPlayerDanRank(battle, playerNumber));
+            stats.setDanRank(getPlayerDanRankFromBattle(battle, playerNumber));
             player.getCharacterStats().put(statsId, stats);
         }
 
@@ -448,7 +451,8 @@ public class RabbitService {
         {
             stats.setWinsIncrement(stats.getWinsIncrement() + 1);
             stats.setWins(stats.getWins() + 1);
-        } else
+        }
+        else
         {
             stats.setLossIncrement(stats.getLossIncrement() + 1);
             stats.setLosses(stats.getLosses() + 1);
@@ -460,10 +464,10 @@ public class RabbitService {
             stats.setLatestBattle(battle.getBattleAt());
             player.setLatestBattle(battle.getBattleAt());
             player.updateTekkenPower(
-                    (getPlayerCharacter(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()),
+                    (getPlayerCharacterFromBattle(battle, playerNumber).equals("1") ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower()),
                     battle.getBattleAt()
             );
-            stats.setDanRank(getPlayerDanRank(battle, playerNumber));
+            stats.setDanRank(getPlayerDanRankFromBattle(battle, playerNumber));
         }
     }
 
@@ -471,25 +475,25 @@ public class RabbitService {
     private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
         // Set player-level details
-        player.setPlayerId(getPlayerUserId(battle, playerNumber));
-        player.setName(getPlayerName(battle, playerNumber));
-        player.setPolarisId(getPlayerPolarisId(battle, playerNumber));
-        player.setTekkenPower(getPlayerTekkenPower(battle, playerNumber));
-        player.setLanguage(getPlayerLanguage(battle, playerNumber));
-        player.setRegionId(getPlayerRegionID(battle, playerNumber));
-        player.setAreaId(getPlayerAreaID(battle, playerNumber));
+        player.setPlayerId(getPlayerUserIdFromBattle(battle, playerNumber));
+        player.setName(getPlayerNameFromBattle(battle, playerNumber));
+        player.setPolarisId(getPlayerPolarisIdFromBattle(battle, playerNumber));
+        player.setTekkenPower(getPlayerTekkenPowerFromBattle(battle, playerNumber));
+        player.setLanguage(getPlayerLanguageFromBattle(battle, playerNumber));
+        player.setRegionId(getPlayerRegionIDFromBattle(battle, playerNumber));
+        player.setAreaId(getPlayerAreaIDFromBattle(battle, playerNumber));
 
         // Create a new CharacterStats object for the player's character
         CharacterStats characterStats = new CharacterStats();
 
-        // Create and set the CharacterStatsId
+        // Create and set the composite id CharacterStatsId
         CharacterStatsId statsId = new CharacterStatsId();
         statsId.setPlayerId(player.getPlayerId());
-        statsId.setCharacterId(getPlayerCharacter(battle, playerNumber));
+        statsId.setCharacterId(getPlayerCharacterFromBattle(battle, playerNumber));
         statsId.setGameVersion(battle.getGameVersion());
         characterStats.setId(statsId);
 
-        characterStats.setDanRank(getPlayerDanRank(battle, playerNumber));
+        characterStats.setDanRank(getPlayerDanRankFromBattle(battle, playerNumber));
         characterStats.setLatestBattle(battle.getBattleAt());
 
         // Add the new character stats to the player's map
@@ -512,16 +516,19 @@ public class RabbitService {
         }
 
         // Try to acquire the publishing lock
-        if (!isPublishing.compareAndSet(false, true)) {
+        if (!isPublishing.compareAndSet(false, true))
+        {
             logger.debug("Another thread is currently publishing an event");
             return;
         }
 
-        try {
+        try
+        {
             // Double-check the time again now that we have the lock
             // This prevents multiple events being published if multiple threads
             // pass the first time check simultaneously
-            if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD) {
+            if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD)
+            {
                 eventPublisher.publishEvent(new ReplayProcessingCompletedEvent(gameVersions));
                 lastEventPublishTime.set(currentTime);
                 logger.info("Published statistics computation event");
@@ -558,41 +565,41 @@ public class RabbitService {
                 .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss 'UTC'"));
     }
 
-    private String getPlayerName(Battle battle, int playerNumber) {
+    private String getPlayerNameFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1Name() : battle.getPlayer2Name();
     }
 
-    private String getPlayerLanguage(Battle battle, int playerNumber) {
+    private String getPlayerLanguageFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1Language() : battle.getPlayer2Language();
     }
 
-    private Integer getPlayerAreaID(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1AreaID() : battle.getPlayer2AreaID();
+    private Integer getPlayerAreaIDFromBattle(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1AreaId() : battle.getPlayer2AreaId();
     }
 
-    private Integer getPlayerRegionID(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1RegionID() : battle.getPlayer2RegionID();
-    }
-
-
-    private String getPlayerCharacter(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? String.valueOf(battle.getPlayer1CharacterID()) : String.valueOf(battle.getPlayer2CharacterID());
+    private Integer getPlayerRegionIDFromBattle(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1RegionId() : battle.getPlayer2RegionId();
     }
 
 
-    private String getPlayerUserId(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1UserID() : battle.getPlayer2UserID();
+    private String getPlayerCharacterFromBattle(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? String.valueOf(battle.getPlayer1CharacterId()) : String.valueOf(battle.getPlayer2CharacterId());
     }
 
-    private String getPlayerPolarisId(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1PolarisID() : battle.getPlayer2PolarisID();
+
+    private String getPlayerUserIdFromBattle(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1UserId() : battle.getPlayer2UserId();
     }
 
-    private long getPlayerTekkenPower(Battle battle, int playerNumber) {
+    private String getPlayerPolarisIdFromBattle(Battle battle, int playerNumber) {
+        return playerNumber == 1 ? battle.getPlayer1PolarisId( ) : battle.getPlayer2PolarisId();
+    }
+
+    private long getPlayerTekkenPowerFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1TekkenPower() : battle.getPlayer2TekkenPower();
     }
 
-    private int getPlayerDanRank(Battle battle, int playerNumber) {
+    private int getPlayerDanRankFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1DanRank() : battle.getPlayer2DanRank();
     }
     private int calculatePlayerRating(Battle battle, int playerNumber) {

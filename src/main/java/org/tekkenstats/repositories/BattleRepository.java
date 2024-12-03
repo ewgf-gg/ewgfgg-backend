@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tekkenstats.models.Battle;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,5 +25,8 @@ public interface BattleRepository extends JpaRepository<Battle, String> {
             "(SELECT battle_id FROM battles WHERE battle_at > :timestamp ORDER BY battle_at ASC LIMIT 40000)" +
             ") AS combined_battles", nativeQuery = true)
     Set<String> findSurroundingBattleIds(@Param("timestamp") long timestamp);
+
+    @Query(value = "SELECT * FROM battles WHERE player1_id = :playerID OR player2_id = :playerID", nativeQuery = true)
+    Optional<List<Battle>> findAllBattlesByPlayer(@Param("playerID") String playerID);
 
 }

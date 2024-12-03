@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tekkenstats.dtos.CharacterStatsDTO;
+import org.tekkenstats.dtos.PlayerBattleDTO;
 import org.tekkenstats.dtos.PlayerSearchDTO;
 import org.tekkenstats.dtos.PlayerStatsDTO;
+import org.tekkenstats.interfaces.PlayerWithBattlesProjection;
 import org.tekkenstats.mappers.enumsMapper;
 import org.tekkenstats.models.CharacterStats;
 import org.tekkenstats.models.CharacterStatsId;
@@ -19,13 +21,11 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/player-stats")
-public class PlayerController
-{
+public class PlayerController {
     private final enumsMapper enumsMapper;
     private final PlayerRepository playerRepository;
 
-    public PlayerController(enumsMapper enumsMapper, PlayerRepository playerRepository)
-    {
+    public PlayerController(enumsMapper enumsMapper, PlayerRepository playerRepository) {
         this.enumsMapper = enumsMapper;
         this.playerRepository = playerRepository;
     }
@@ -34,72 +34,197 @@ public class PlayerController
 
     @GetMapping("/{player}")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<PlayerStatsDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request) throws InterruptedException
-    {
+    public ResponseEntity<PlayerStatsDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request) {
         String clientIp = request.getRemoteAddr();
         logger.info("Received request for Player: {} from IP: {}", player, clientIp);
-        return playerRepository.findByIdOrNameOrPolarisIdIgnoreCase(player)
-                .map(this::convertToDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+
+        List<PlayerWithBattlesProjection> results = playerRepository.findPlayerWithBattlesAndStats(player);
+
+        if (results.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        PlayerStatsDTO playerStats = convertToPlayerStatsDTO(results);
+        return ResponseEntity.ok(playerStats);
     }
 
     @GetMapping("/search")
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
-        if (query.length() < 2) {
+        if (query.isEmpty() || query.length() >= 20) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
+
+        if (playersOpt.isEmpty()) {
             return ResponseEntity.ok(Collections.emptyList());
         }
 
-        List<Player> players = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
-        List<PlayerSearchDTO> results = players.stream()
+        List<PlayerSearchDTO> projections = playersOpt.get().stream()
                 .map(this::convertToSearchDTO)
-                .limit(10) // Limit results to prevent overwhelming the UI
+                .limit(20)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(results);
+        return ResponseEntity.ok(projections);
     }
 
-    private PlayerSearchDTO convertToSearchDTO(Player player)
+    private PlayerStatsDTO convertToPlayerStatsDTO(List<PlayerWithBattlesProjection> projections)
     {
-        PlayerSearchDTO dto = new PlayerSearchDTO();
-        dto.setId(player.getPlayerId());
-        dto.setName(player.getName());
-        dto.setTekkenId(player.getPolarisId());
-        return dto;
-    }
+        PlayerWithBattlesProjection firstResult = projections.getFirst();
 
+        // Create base player data
+        Player player = createPlayerFromProjection(firstResult);
 
-
-    private PlayerStatsDTO convertToDTO(Player player)
-    {
+        // Create the DTO and set basic fields
         PlayerStatsDTO dto = new PlayerStatsDTO();
         dto.setPlayerId(player.getPlayerId());
         dto.setName(player.getName());
-        dto.setRegion(player.getRegionId());
+        dto.setRegionId(player.getRegionId());
+        dto.setAreaId(player.getAreaId());
         dto.setTekkenPower(player.getTekkenPower());
         dto.setLatestBattle(player.getLatestBattle());
 
-        Map<CharacterStatsId, CharacterStatsDTO> characterStatsMap = new TreeMap<>(
-                Comparator.comparing(CharacterStatsId::getGameVersion).reversed()
-                        .thenComparing(CharacterStatsId::getCharacterId)
-        );
+        // Add character stats and battles
+        dto.setCharacterStats(createCharacterStatsMap(projections));
+        dto.setBattles(createBattlesList(projections));
 
-        for (Map.Entry<CharacterStatsId, CharacterStats> entry : player.getCharacterStats().entrySet())
-        {
-            CharacterStatsId id = entry.getKey();
-            CharacterStats stats = entry.getValue();
-
-            CharacterStatsDTO characterStatsDTO = convertToCharacterStatsDTO(id, stats);
-            characterStatsMap.put(id, characterStatsDTO);
-        }
-        dto.setCharacterStats(characterStatsMap);
         return dto;
     }
 
+    private Player createPlayerFromProjection(PlayerWithBattlesProjection projection) {
+        return new Player(
+                projection.getPlayerId(),
+                projection.getName(),
+                projection.getPolarisId(),
+                projection.getTekkenPower(),
+                projection.getRegionId(),
+                projection.getAreaId(),
+                projection.getLanguage(),
+                projection.getLatestBattle()
+        );
+    }
 
-    private CharacterStatsDTO convertToCharacterStatsDTO(CharacterStatsId id, CharacterStats stats)
+    private Map<CharacterStatsId, CharacterStatsDTO> createCharacterStatsMap(List<PlayerWithBattlesProjection> projections) {
+        Map<CharacterStatsId, CharacterStatsDTO> statsMap = new HashMap<>();
+        String playerId = projections.getFirst().getPlayerId();
+
+        for (PlayerWithBattlesProjection proj : projections) {
+            if (proj.getCharacterId() == null) {
+                continue;
+            }
+
+            // Create ID only once per iteration
+            CharacterStatsId id = new CharacterStatsId();
+            id.setPlayerId(playerId);
+            id.setCharacterId(proj.getCharacterId());
+            id.setGameVersion(proj.getGameVersion());
+
+            // Skip if we already have this character's stats
+            if (statsMap.containsKey(id)) {
+                continue;
+            }
+
+            // Create DTO
+            CharacterStatsDTO dto = new CharacterStatsDTO();
+            dto.setCharacterName(enumsMapper.getCharacterName(proj.getCharacterId()));
+            dto.setDanName(enumsMapper.getDanName(String.valueOf(proj.getDanRank())));
+            dto.setDanRank(proj.getDanRank());
+            dto.setWins(proj.getWins());
+            dto.setLosses(proj.getLosses());
+
+            statsMap.put(id, dto);
+        }
+
+        return statsMap;
+    }
+    private CharacterStatsId createCharacterStatsId(PlayerWithBattlesProjection projection) {
+        CharacterStatsId id = new CharacterStatsId();
+        id.setPlayerId(projection.getPlayerId());
+        id.setCharacterId(projection.getCharacterId());
+        id.setGameVersion(projection.getGameVersion());
+        return id;
+    }
+
+    private CharacterStatsDTO createCharacterStatsDTO(PlayerWithBattlesProjection projection) {
+        CharacterStatsDTO dto = new CharacterStatsDTO();
+        dto.setCharacterName(enumsMapper.getCharacterName(projection.getCharacterId()));
+        dto.setDanName(enumsMapper.getDanName(String.valueOf(projection.getDanRank())));
+        dto.setDanRank(projection.getDanRank());
+        dto.setWins(projection.getWins());
+        dto.setLosses(projection.getLosses());
+        return dto;
+    }
+
+    private List<PlayerBattleDTO> createBattlesList(List<PlayerWithBattlesProjection> projections) {
+        List<PlayerBattleDTO> battles = new ArrayList<>();
+        Set<String> processedBattles = new HashSet<>();  // To handle distinct battles
+
+        for (PlayerWithBattlesProjection proj : projections) {
+
+
+            // Create a unique key for this battle to check distinctness
+            String battleKey = proj.getDate() + proj.getPlayer1Name() + proj.getPlayer2Name();
+            if (processedBattles.contains(battleKey)) {
+                continue;
+            }
+            processedBattles.add(battleKey);
+
+            PlayerBattleDTO battle = new PlayerBattleDTO();
+            battle.setDate(proj.getDate());
+            battle.setPlayer1Name(proj.getPlayer1Name());
+            battle.setPlayer1CharacterId(proj.getPlayer1CharacterId());
+            battle.setPlayer1RegionId(proj.getPlayer1RegionId());
+            battle.setPlayer1DanRank(proj.getPlayer1DanRank());
+            battle.setPlayer2Name(proj.getPlayer2Name());
+            battle.setPlayer2RegionId(proj.getPlayer2RegionId());
+            battle.setPlayer2CharacterId(proj.getPlayer2CharacterId());
+            battle.setPlayer2DanRank(proj.getPlayer2DanRank());
+            battle.setPlayer1RoundsWon(proj.getPlayer1RoundsWon());
+            battle.setPlayer2RoundsWon(proj.getPlayer2RoundsWon());
+            battle.setWinner(proj.getWinner());
+            battle.setStageId(proj.getStageId());
+
+            battles.add(battle);
+        }
+
+        return battles;
+    }
+
+    private PlayerBattleDTO createBattleDTO(PlayerWithBattlesProjection projection)
     {
+        PlayerBattleDTO battle = new PlayerBattleDTO();
+        battle.setDate(projection.getDate());
+        battle.setPlayer1Name(projection.getPlayer1Name());
+        battle.setPlayer1CharacterId(projection.getPlayer1CharacterId());
+        battle.setPlayer1RegionId(projection.getPlayer1RegionId());
+        battle.setPlayer1DanRank(projection.getPlayer1DanRank());
+        battle.setPlayer2Name(projection.getPlayer2Name());
+        battle.setPlayer2CharacterId(projection.getPlayer2CharacterId());
+        battle.setPlayer2RegionId(projection.getPlayer2RegionId());
+        battle.setPlayer2DanRank(projection.getPlayer2DanRank());
+        battle.setPlayer1RoundsWon(projection.getPlayer1RoundsWon());
+        battle.setPlayer2RoundsWon(projection.getPlayer2RoundsWon());
+        battle.setWinner(projection.getWinner());
+        battle.setStageId(projection.getStageId());
+        return battle;
+    }
+
+    private PlayerSearchDTO convertToSearchDTO(Player player) {
+        PlayerSearchDTO dto = new PlayerSearchDTO();
+        Map<String, String> characterInfo = player.getMostPlayedCharacterInfo(enumsMapper);
+
+        dto.setId(player.getPlayerId());
+        dto.setName(player.getName());
+        dto.setTekkenId(player.getPolarisId());
+        dto.setRegionId(player.getRegionId() == null ? -1 : player.getRegionId());
+        dto.setMostPlayedCharacter(characterInfo.get("characterName"));
+        dto.setDanRankName(characterInfo.get("danRank"));
+
+        return dto;
+    }
+
+    private CharacterStatsDTO convertToCharacterStatsDTO(CharacterStatsId id, CharacterStats stats) {
         CharacterStatsDTO characterStatsDTO = new CharacterStatsDTO();
         characterStatsDTO.setCharacterName(enumsMapper.getCharacterName(id.getCharacterId()));
         characterStatsDTO.setDanName(enumsMapper.getDanName(Integer.toString(stats.getDanRank())));

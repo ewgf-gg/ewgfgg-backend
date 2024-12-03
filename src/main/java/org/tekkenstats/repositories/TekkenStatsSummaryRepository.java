@@ -1,8 +1,10 @@
 package org.tekkenstats.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.tekkenstats.models.TekkenStatsSummary;
 
 import java.util.Optional;
@@ -12,4 +14,11 @@ public interface TekkenStatsSummaryRepository extends JpaRepository<TekkenStatsS
 {
     @Query(value = "SELECT * FROM tekken_stats_summary", nativeQuery = true)
     Optional<TekkenStatsSummary> getTekkenStatsSummary();
+
+    @Modifying
+    @Transactional
+    @Query(value = "INSERT INTO tekken_stats_summary (id, total_replays, total_players) " +
+            "VALUES (1, 0, 0) " +
+            "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
+    void initializeStatsSummaryTable();
 }
