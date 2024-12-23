@@ -30,7 +30,18 @@ This is the backend service that will supplement the frontend for the website. T
 
 ## Current Progress
 
-* **12/23/2024:** So many updates. 
+* **12/23/2024:** So many updates! This is pretty close to a production build, there's just a few more loose ends to clean up. Probably also should write tests at some point, too. 
+  * Moved the event publisher to its own class to avoid coupling unrelated classes together
+  * Added new endpoints to retrieve versioned + regioned statistics
+  * Deleted a lot of unused classes + methods 
+  * Created tons of new DTOs + projections for the versioned statistics
+  * Squashed hidden bug in the aggregatedstatisticId class where region and area were not being considered in `hashcode()` and `equals()` methods
+  * Enhanced the logic for determining a 'main' character of a player.
+  * Squashed bug with keeping accurate player counts. 
+  * Abstracted the calculations logic from the StatisticsController class to a new CharacterAnalyticsService class.
+  * Added support for Clive
+  * Updated application.yml file. 
+  
 
 
 * **11/22/2024:** Beginning work on retrieving player match history when a player is queried. Statistics events now contain game versions, so that only relevant game version statistics are re-calculated. 
