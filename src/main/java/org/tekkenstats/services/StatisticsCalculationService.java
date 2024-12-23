@@ -10,10 +10,8 @@ import org.tekkenstats.aggregations.AggregatedStatistic;
 import org.tekkenstats.aggregations.AggregatedStatisticId;
 import org.tekkenstats.aggregations.PlayerCharacterData;
 import org.tekkenstats.events.ReplayProcessingCompletedEvent;
-import org.tekkenstats.interfaces.PlayerAnalyticsProjection;
 import org.tekkenstats.repositories.AggregatedStatisticsRepository;
 import org.tekkenstats.repositories.CharacterStatsRepository;
-import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,7 +25,6 @@ public class StatisticsCalculationService {
 
     private final CharacterStatsRepository characterStatsRepository;
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
-    private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
     private final Executor statisticsExecutor;
     private static final Logger logger = LoggerFactory.getLogger(StatisticsCalculationService.class);
     private final AtomicBoolean isProcessing = new AtomicBoolean(false);
@@ -35,12 +32,10 @@ public class StatisticsCalculationService {
     public StatisticsCalculationService(
             CharacterStatsRepository characterStatsRepository,
             AggregatedStatisticsRepository aggregatedStatisticsRepository,
-            TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             @Qualifier("statisticsThreadExecutor") Executor statisticsExecutor) {
         this.characterStatsRepository = characterStatsRepository;
         this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
         this.statisticsExecutor = statisticsExecutor;
-        this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
     }
 
     @EventListener

@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
 @Service
-public class APIService implements InitializingBean, DisposableBean {
+public class WavuService implements InitializingBean, DisposableBean {
 
     private final RabbitTemplate rabbitTemplate;
     private final BackpressureManager backpressureManager;
@@ -44,7 +44,7 @@ public class APIService implements InitializingBean, DisposableBean {
     private final CharacterStatsRepository characterStatsRepository;
 
 
-    public APIService(
+    public WavuService(
             RabbitTemplate rabbitTemplate,
             BackpressureManager backpressureManager,
             RestTemplate restTemplate,
@@ -64,7 +64,7 @@ public class APIService implements InitializingBean, DisposableBean {
         this.characterStatsRepository = characterStatsRepository;
     }
 
-    private static final Logger logger = LogManager.getLogger(APIService.class);
+    private static final Logger logger = LogManager.getLogger(WavuService.class);
     private static final int TIME_STEP = 700;
     private static final ZoneId zoneId = ZoneId.of("UTC");
 

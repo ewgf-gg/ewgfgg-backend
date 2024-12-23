@@ -1,17 +1,17 @@
 spring:
   application:
-    name: Tekken-SpringBoot
+    name: ${SPRING_APP_NAME:Tekken-SpringBoot}
   datasource:
-    url: jdbc:postgresql://localhost:5432/Tekken-Database
-    username: postgres
-    password: guest
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/Tekken-Database}
+    username: ${DATASOURCE_USERNAME:postgres}
+    password: ${DATASOURCE_PASSWORD:guest}
   jpa:
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
         jdbc:
-          batch_size: 1000
+          batch_size: ${HIBERNATE_BATCH_SIZE:1000}
         order_inserts: true
         order_updates: true
   output:
@@ -20,31 +20,26 @@ spring:
 
 rabbitmq:
   queue:
-    name: battle_queue
+    name: ${RABBITMQ_QUEUE_NAME:battle_queue}
   management:
     api:
-      url: http://localhost:15672/api
-    username: guest
-    password: guest
-    vhost: /
+      url: ${RABBITMQ_API_URL:http://localhost:15672/api}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    vhost: ${RABBITMQ_VHOST:/}
 
 backpressure:
-  threshold: 50
+  threshold: ${BACKPRESSURE_THRESHOLD:50}
   slowdown:
-    factor: 10
+    factor: ${BACKPRESSURE_SLOWDOWN_FACTOR:10}
 
 security:
   rate-limit:
-    # Number of requests allowed per time window (default: 20)
     requests-per-window: ${RATE_LIMIT_REQUESTS:20}
-    # Time window in minutes (default: 1)
     window-minutes: ${RATE_LIMIT_WINDOW:1}
-    # Cleanup interval for rate limit buckets in milliseconds (default: 1 hour)
     cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_MS:3600000}
   cors:
-    # Allowed origin for CORS (default: localhost:3000)
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
-    # Max age for CORS preflight responses in seconds (default: 1 hour)
     max-age-seconds: ${CORS_MAX_AGE:3600}
 
 logging:
@@ -55,8 +50,7 @@ logging:
           PlayerController: INFO
           AggregatedStatisticController: INFO
         services:
-          APIService: INFO
+          WavuService: INFO
           RabbitService: INFO
         configuration:
           BackpressureManager: INFO
-          org.tekkenstats.configuration.webconfigurations.WebConfig: INFO
