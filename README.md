@@ -1,5 +1,5 @@
 
-# Tekken-Stats Backend
+# ewgf-gg Backend
 
 This is the backend service that will supplement the frontend for the website. The purpose of this monolith is to aggregate replay data, create player profiles based on said data, and then perform statistics analysis using the freshly made player profiles as data points.
 
@@ -29,6 +29,9 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Progress
+
+* **12/23/2024:** So many updates. 
+
 
 * **11/22/2024:** Beginning work on retrieving player match history when a player is queried. Statistics events now contain game versions, so that only relevant game version statistics are re-calculated. 
 

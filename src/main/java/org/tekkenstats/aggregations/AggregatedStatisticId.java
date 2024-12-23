@@ -42,10 +42,6 @@ public class AggregatedStatisticId implements Serializable {
         this.areaId = areaId;
     }
 
-    // Getters and setters
-    // ...
-
-    // equals and hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -55,12 +51,14 @@ public class AggregatedStatisticId implements Serializable {
 
         return gameVersion == that.gameVersion &&
                 danRank == that.danRank &&
+                regionId == that.regionId &&
+                areaId == that.areaId &&
                 Objects.equals(characterId, that.characterId) &&
                 Objects.equals(category, that.category);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gameVersion, characterId, danRank, category);
+        return Objects.hash(gameVersion, characterId, danRank, category, regionId, areaId);
     }
 }

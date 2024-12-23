@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
@@ -16,14 +17,17 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.tekkenstats.configuration.BackpressureManager;
 import org.tekkenstats.configuration.RabbitMQConfig;
+import org.tekkenstats.events.ReplayProcessingCompletedEvent;
 import org.tekkenstats.models.Battle;
 import org.tekkenstats.repositories.BattleRepository;
+import org.tekkenstats.repositories.CharacterStatsRepository;
 import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -36,6 +40,9 @@ public class APIService implements InitializingBean, DisposableBean {
     private final BattleRepository battleRepository;
     private final TaskScheduler taskScheduler;
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final CharacterStatsRepository characterStatsRepository;
+
 
     public APIService(
             RabbitTemplate rabbitTemplate,
@@ -43,7 +50,9 @@ public class APIService implements InitializingBean, DisposableBean {
             RestTemplate restTemplate,
             BattleRepository battleRepository,
             TaskScheduler taskScheduler,
-            TekkenStatsSummaryRepository tekkenStatsSummaryRepository
+            TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
+            ApplicationEventPublisher eventPublisher,
+            CharacterStatsRepository characterStatsRepository
     ) {
         this.rabbitTemplate = rabbitTemplate;
         this.backpressureManager = backpressureManager;
@@ -51,6 +60,8 @@ public class APIService implements InitializingBean, DisposableBean {
         this.battleRepository = battleRepository;
         this.taskScheduler = taskScheduler;
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
+        this.eventPublisher = eventPublisher;
+        this.characterStatsRepository = characterStatsRepository;
     }
 
     private static final Logger logger = LogManager.getLogger(APIService.class);
@@ -86,6 +97,11 @@ public class APIService implements InitializingBean, DisposableBean {
 
     private void init()
     {
+        eventPublisher.publishEvent(new ReplayProcessingCompletedEvent(
+                new HashSet<>(characterStatsRepository.findAllGameVersions()
+                        .get())
+        ));
+
         try
         {
             Optional<Battle> oldestBattle = battleRepository.findOldestBattle();
@@ -196,7 +212,7 @@ public class APIService implements InitializingBean, DisposableBean {
         {
             String jsonResponse = restTemplate.getForObject(API_URL + "?before=" + currentFetchTimestamp, String.class);
             processApiResponse(jsonResponse, dateFromUnix);
-            currentFetchTimestamp += TIME_STEP;
+            currentFetchTimestamp += TIME_STEP-100;
         }
         catch (Exception e)
         {
@@ -253,6 +269,7 @@ public class APIService implements InitializingBean, DisposableBean {
         }
         lastFetchedSystemTimestamp = getPresentUnixTimestamp();
         logger.info("Switching to forward fetching. Starting from: {}", currentFetchTimestamp);
+
     }
 
 

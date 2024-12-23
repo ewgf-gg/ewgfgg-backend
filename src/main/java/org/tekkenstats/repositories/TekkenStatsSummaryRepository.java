@@ -21,4 +21,10 @@ public interface TekkenStatsSummaryRepository extends JpaRepository<TekkenStatsS
             "VALUES (1, 0, 0) " +
             "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
     void initializeStatsSummaryTable();
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE tekken_stats_summary SET total_players = (SELECT COUNT(*) FROM players) WHERE id = 1", nativeQuery = true)
+    void updateTotalPlayersCount();
+
 }

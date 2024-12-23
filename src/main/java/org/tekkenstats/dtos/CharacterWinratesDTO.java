@@ -6,12 +6,14 @@ import java.util.Map;
 
 @Data
 public class CharacterWinratesDTO {
-    private Map<String, Double> highRank;
-    private Map<String, Double> mediumRank;
-    private Map<String, Double> lowRank;
+    private RegionalCharacterWinrateDTO highRank;
+    private RegionalCharacterWinrateDTO mediumRank;
+    private RegionalCharacterWinrateDTO lowRank;
 
-    public CharacterWinratesDTO(Map<String, Double> highRank, Map<String, Double> mediumRank, Map<String, Double> lowRank)
-    {
+    public CharacterWinratesDTO(
+            RegionalCharacterWinrateDTO highRank,
+            RegionalCharacterWinrateDTO mediumRank,
+            RegionalCharacterWinrateDTO lowRank) {
         this.highRank = highRank;
         this.mediumRank = mediumRank;
         this.lowRank = lowRank;

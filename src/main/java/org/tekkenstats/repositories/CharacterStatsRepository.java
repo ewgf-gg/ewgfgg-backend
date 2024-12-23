@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.tekkenstats.interfaces.PlayerAnalyticsProjection;
 import org.tekkenstats.models.CharacterStatsId;
 import org.tekkenstats.models.CharacterStats;
 
@@ -16,16 +17,21 @@ public interface CharacterStatsRepository extends JpaRepository<CharacterStats, 
     @Query("SELECT DISTINCT c.id.gameVersion FROM CharacterStats c")
     Optional<List<Integer>> findAllGameVersions();
 
-    @Query("SELECT cs.id.playerId, cs.id.characterId, cs.danRank, cs.wins, cs.losses, " +
-            "p.regionId, p.areaId " +
-            "FROM CharacterStats cs " +
-            "JOIN Player p ON cs.id.playerId = p.playerId " +
-            "WHERE cs.id.gameVersion = :gameVersion")
+    @Query(value = """
+        SELECT
+            cs.player_id as playerId,
+            cs.character_id as characterId,
+            cs.dan_rank as danRank,
+            cs.wins as wins,
+            cs.losses as losses,
+            p.region_id as regionId,
+            p.area_id as areaId
+        FROM character_stats cs
+        JOIN players p ON cs.player_id = p.player_id
+        WHERE cs.game_version = :gameVersion
+        AND p.region_id IS NOT NULL
+        AND p.area_id IS NOT NULL
+        """,
+            nativeQuery = true)
     List<Object[]> findAllStatsByGameVersion(@Param("gameVersion") int gameVersion);
-
-    @Query("SELECT COUNT(DISTINCT cs.id.playerId) FROM CharacterStats cs WHERE cs.id.gameVersion = :gameVersion")
-    int countDistinctPlayersByGameVersion(@Param("gameVersion") int gameVersion);
-
-    @Query("SELECT SUM(cs.wins + cs.losses) FROM CharacterStats cs WHERE cs.id.gameVersion = :gameVersion")
-    int sumTotalReplaysByGameVersion(@Param("gameVersion") int gameVersion);
 }

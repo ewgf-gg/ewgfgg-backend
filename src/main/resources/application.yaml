@@ -33,12 +33,30 @@ backpressure:
   slowdown:
     factor: 10
 
+security:
+  rate-limit:
+    # Number of requests allowed per time window (default: 20)
+    requests-per-window: ${RATE_LIMIT_REQUESTS:20}
+    # Time window in minutes (default: 1)
+    window-minutes: ${RATE_LIMIT_WINDOW:1}
+    # Cleanup interval for rate limit buckets in milliseconds (default: 1 hour)
+    cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_MS:3600000}
+  cors:
+    # Allowed origin for CORS (default: localhost:3000)
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
+    # Max age for CORS preflight responses in seconds (default: 1 hour)
+    max-age-seconds: ${CORS_MAX_AGE:3600}
+
 logging:
   level:
     org:
       tekkenstats:
+        controllers:
+          PlayerController: INFO
+          AggregatedStatisticController: INFO
         services:
           APIService: INFO
           RabbitService: INFO
         configuration:
           BackpressureManager: INFO
+          org.tekkenstats.configuration.webconfigurations.WebConfig: INFO

@@ -2,18 +2,18 @@ package org.tekkenstats.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tekkenstats.aggregations.AggregatedStatistic;
 import org.tekkenstats.aggregations.AggregatedStatisticId;
 import org.tekkenstats.aggregations.PlayerCharacterData;
 import org.tekkenstats.events.ReplayProcessingCompletedEvent;
+import org.tekkenstats.interfaces.PlayerAnalyticsProjection;
 import org.tekkenstats.repositories.AggregatedStatisticsRepository;
 import org.tekkenstats.repositories.CharacterStatsRepository;
+import org.tekkenstats.repositories.TekkenStatsSummaryRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -23,21 +23,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
-public class StatisticsService {
+public class StatisticsCalculationService {
 
     private final CharacterStatsRepository characterStatsRepository;
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
+    private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
     private final Executor statisticsExecutor;
-    private static final Logger logger = LoggerFactory.getLogger(StatisticsService.class);
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsCalculationService.class);
     private final AtomicBoolean isProcessing = new AtomicBoolean(false);
 
-    public StatisticsService(
+    public StatisticsCalculationService(
             CharacterStatsRepository characterStatsRepository,
             AggregatedStatisticsRepository aggregatedStatisticsRepository,
+            TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             @Qualifier("statisticsThreadExecutor") Executor statisticsExecutor) {
         this.characterStatsRepository = characterStatsRepository;
         this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
         this.statisticsExecutor = statisticsExecutor;
+        this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
     }
 
     @EventListener
@@ -115,7 +118,9 @@ public class StatisticsService {
                 int totalPlays = wins + losses;
 
                 PlayerCharacterData currentData = playerDataMap.get(playerId);
-                if (currentData == null || totalPlays > currentData.getTotalPlays())
+                if (currentData == null ||
+                        danRank > currentData.getDanRank() ||
+                        (danRank == currentData.getDanRank() && totalPlays > currentData.getTotalPlays()))
                 {
                     playerDataMap.put(playerId, new PlayerCharacterData(characterId, danRank, wins, losses, totalPlays, regionId, areaId));
                 }
@@ -141,8 +146,8 @@ public class StatisticsService {
             int danRank = ((Number) row[2]).intValue();
             int wins = ((Number) row[3]).intValue();
             int losses = ((Number) row[4]).intValue();
-            int regionId = ((Number) row[5]).intValue();  // New field
-            int areaId = ((Number) row[6]).intValue();    // New field
+            int regionId = ((Number) row[5]).intValue();
+            int areaId = ((Number) row[6]).intValue();
             int totalPlays = wins + losses;
 
             playerDataMap.computeIfAbsent(playerId, k -> new ArrayList<>())
@@ -269,4 +274,5 @@ public class StatisticsService {
     private void saveAggregatedStatistics(Collection<AggregatedStatistic> statistics) {
         aggregatedStatisticsRepository.saveAll(statistics);
     }
+
 }

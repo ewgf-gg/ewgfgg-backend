@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class enumsMapper
+public class EnumsMapper
 {
     private Map<String, String> characterMap = new HashMap<>();
     private Map<String, String> stageMap = new HashMap<>();

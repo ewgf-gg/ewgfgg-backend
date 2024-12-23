@@ -5,9 +5,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.tekkenstats.mappers.enumsMapper;
+import org.tekkenstats.mappers.EnumsMapper;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "players")
@@ -85,40 +86,44 @@ public class Player {
         }
     }
 
-    private Map<String, String> getMostPlayedCharacterInLatestVersion()
-    {
+    private Map<String, String> findMainCharacter() {
         Map<String, String> result = new HashMap<>();
 
+        // Handle empty or null character stats
         if (characterStats == null || characterStats.isEmpty()) {
             result.put("characterId", "No Character Data");
             result.put("danRank", "0");
             return result;
         }
 
-        // Find the latest version
-        int latestVersion = characterStats.keySet().stream()
-                .mapToInt(CharacterStatsId::getGameVersion)
+        // Step 1: Find the highest dan rank achieved by any character
+        int highestDanRank = characterStats.values().stream()
+                .mapToInt(CharacterStats::getDanRank)
                 .max()
                 .orElse(0);
 
-        // If no valid version found
-        if (latestVersion == 0) {
-            result.put("characterId", "No Character Data");
-            result.put("danRank", "0");
-            return result;
-        }
+        // Step 2: Group characters and sum their total matches
+        Map<String, Integer> totalMatchesByCharacter = characterStats.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        entry -> entry.getKey().getCharacterId(),
+                        Collectors.summingInt(entry ->
+                                entry.getValue().getWins() + entry.getValue().getLosses()
+                        )
+                ));
 
-        // Find the most played character in the latest version
-        return characterStats.entrySet().stream()
-                .filter(entry -> entry.getKey().getGameVersion() == latestVersion)
-                .max(Comparator.comparingInt(entry -> {
-                    CharacterStats stats = entry.getValue();
-                    return stats.getWins() + stats.getLosses();
-                }))
-                .map(entry -> {
+        // Step 3: Find characters that reached the highest dan rank
+        Set<String> charactersWithHighestRank = characterStats.entrySet().stream()
+                .filter(entry -> entry.getValue().getDanRank() == highestDanRank)
+                .map(entry -> entry.getKey().getCharacterId())
+                .collect(Collectors.toSet());
+
+        // Step 4: Among characters with highest rank, find the one with most total matches
+        return charactersWithHighestRank.stream()
+                .max(Comparator.comparingInt(totalMatchesByCharacter::get))
+                .map(characterId -> {
                     Map<String, String> map = new HashMap<>();
-                    map.put("characterId", entry.getKey().getCharacterId());
-                    map.put("danRank", String.valueOf(entry.getValue().getDanRank()));
+                    map.put("characterId", characterId);
+                    map.put("danRank", String.valueOf(highestDanRank));
                     return map;
                 })
                 .orElseGet(() -> {
@@ -129,9 +134,9 @@ public class Player {
                 });
     }
 
-    public Map<String, String> getMostPlayedCharacterInfo(enumsMapper mapper)
+    public Map<String, String> getMostPlayedCharacterInfo(EnumsMapper mapper)
     {
-        Map<String, String> stats = getMostPlayedCharacterInLatestVersion();
+        Map<String, String> stats = findMainCharacter();
         Map<String, String> result = new HashMap<>();
 
         if (stats.get("characterId").equals("No Character Data"))

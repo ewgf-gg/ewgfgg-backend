@@ -3,7 +3,6 @@ package org.tekkenstats.aggregations;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Entity

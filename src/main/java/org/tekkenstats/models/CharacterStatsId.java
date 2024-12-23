@@ -4,12 +4,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
 @Data
+@NoArgsConstructor
 public class CharacterStatsId implements Serializable {
 
     @Column(name = "player_id", insertable=false, updatable=false)
@@ -20,6 +22,13 @@ public class CharacterStatsId implements Serializable {
 
     @Column(name = "game_version")
     private int gameVersion;
+
+    public CharacterStatsId(String playerId, String characterId, Integer gameVersion)
+    {
+        this.playerId = playerId;
+        this.characterId = characterId;
+        this.gameVersion = gameVersion;
+    }
 
     @Override
     public boolean equals(Object o)

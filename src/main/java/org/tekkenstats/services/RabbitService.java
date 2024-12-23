@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.tekkenstats.events.ReplayProcessingCompletedEvent;
 import org.tekkenstats.models.*;
 import org.tekkenstats.configuration.RabbitMQConfig;
@@ -35,7 +36,7 @@ public class RabbitService {
     private final BattleRepository battleRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    private static final long COOLDOWN_PERIOD = TimeUnit.MINUTES.toMillis(5); // 5 minute cooldown
+    private static final long COOLDOWN_PERIOD = TimeUnit.MINUTES.toMillis(2); // 2 minute cooldown
     private final AtomicLong lastEventPublishTime = new AtomicLong(0);
     private final AtomicBoolean isPublishing = new AtomicBoolean(false);
 
@@ -50,6 +51,7 @@ public class RabbitService {
         this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
@@ -117,6 +119,7 @@ public class RabbitService {
 
         return existingBattles;
     }
+
 
     private void processBattlesAndPlayers(
             List<Battle> battles,
@@ -409,19 +412,6 @@ public class RabbitService {
                 (endTime - startTime), batchArgs.size());
     }
 
-    private void updateSummaryStatistics(int newBattleCount, int newPlayerCount)
-    {
-        if (newBattleCount == 0 && newPlayerCount == 0)
-        {
-            return;
-        }
-
-        String sql = "UPDATE tekken_stats_summary SET " +
-                "total_replays = total_replays + ?, " +
-                "total_players = total_players + ?";
-
-        jdbcTemplate.update(sql, newBattleCount, newPlayerCount);
-    }
 
     private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
@@ -471,6 +461,20 @@ public class RabbitService {
         }
     }
 
+    private void updateSummaryStatistics(int newBattleCount, int newPlayerCount)
+    {
+        if (newBattleCount == 0 && newPlayerCount == 0)
+        {
+            return;
+        }
+
+        String sql = "UPDATE tekken_stats_summary SET " +
+                "total_replays = total_replays + ?, " +
+                "total_players = total_players + ?";
+
+        jdbcTemplate.update(sql, newBattleCount, newPlayerCount);
+    }
+
 
     private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber)
     {
@@ -510,15 +514,16 @@ public class RabbitService {
         long lastPublishTime = lastEventPublishTime.get();
 
         // check if enough time has passed since last publish
-        if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD) {
-            logger.debug("Skipping statistics computation due to cooldown period");
+        if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD)
+        {
+            logger.info("Skipping statistics computation due to cooldown period");
             return;
         }
 
         // Try to acquire the publishing lock
         if (!isPublishing.compareAndSet(false, true))
         {
-            logger.debug("Another thread is currently publishing an event");
+            logger.info("Another thread is currently publishing an event");
             return;
         }
 
