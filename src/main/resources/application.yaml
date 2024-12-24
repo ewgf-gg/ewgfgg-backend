@@ -5,6 +5,11 @@ spring:
     url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/Tekken-Database}
     username: ${DATASOURCE_USERNAME:postgres}
     password: ${DATASOURCE_PASSWORD:guest}
+  config:
+    activate:
+      on-profile: !prod  # Activates when NOT in prod profile
+    import: optional:docker-compose.yml
+
   jpa:
     hibernate:
       ddl-auto: validate

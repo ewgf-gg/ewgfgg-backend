@@ -1,6 +1,5 @@
 FROM eclipse-temurin:21-jre-alpine
 
-# Create app directory
 WORKDIR /app
 
 # Copy the JAR file
