@@ -1,15 +1,4 @@
 spring:
-  application:
-    name: ${SPRING_APP_NAME:ewgf-backend-development}
-  datasource:
-    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/Tekken-Database}
-    username: ${DATASOURCE_USERNAME:postgres}
-    password: ${DATASOURCE_PASSWORD:guest}
-  config:
-    activate:
-      on-profile: !prod  # Activates when NOT in prod profile
-    import: optional:docker-compose.yml
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -31,10 +20,6 @@ rabbitmq:
   routing:
     key: ${RABBITMQ_ROUTING_KEY:battle.routingkey}
   management:
-    api:
-      url: ${RABBITMQ_API_URL:http://localhost:15672/api}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
     vhost: ${RABBITMQ_VHOST:/}
 
 concurrency:
@@ -53,9 +38,6 @@ security:
     requests-per-window: ${RATE_LIMIT_REQUESTS:20}
     window-minutes: ${RATE_LIMIT_WINDOW:1}
     cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_MS:3600000}
-  cors:
-    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
-    max-age-seconds: ${CORS_MAX_AGE:3600}
 
 logging:
   level:
@@ -69,3 +51,54 @@ logging:
           RabbitService: INFO
         configuration:
           BackpressureManager: INFO
+
+---
+# Development profile
+spring:
+  config:
+    activate:
+      on-profile: "dev"
+    import: optional:docker-compose.yml
+  application:
+    name: ewgf-backend-development
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Tekken-Database
+    username: postgres
+    password: guest
+
+rabbitmq:
+  management:
+    api:
+      url: http://localhost:15672/api
+    username: guest
+    password: guest
+
+security:
+  cors:
+    allowed-origin: http://localhost:3000
+    max-age-seconds: 3600
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: "prod"
+  application:
+    name: ${SPRING_APP_NAME:ewgf-backend-production}
+  datasource:
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+
+rabbitmq:
+  management:
+    api:
+      url: ${RABBITMQ_API_URL}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
+security:
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN}
+    max-age-seconds: ${CORS_MAX_AGE:3600}
