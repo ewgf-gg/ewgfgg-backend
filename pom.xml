@@ -77,14 +77,14 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- Spring Security -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
 		<!-- END OF SPRING DEPENDENCIES -->
 
-		<!-- Bucket4j Core -->
-		<dependency>
-			<groupId>com.bucket4j</groupId>
-			<artifactId>bucket4j-core</artifactId>
-			<version>8.10.1</version>
-		</dependency>
 
 		<!-- Log4j Core -->
 		<dependency>

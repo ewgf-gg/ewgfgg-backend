@@ -35,7 +35,6 @@ public class PlayerController {
     private static final Logger logger = LoggerFactory.getLogger(PlayerController.class);
 
     @GetMapping("/{player}")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<PlayerStatsDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request)
     {
         String clientIp = request.getRemoteAddr();
@@ -50,7 +49,6 @@ public class PlayerController {
     }
 
     @GetMapping("/search")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
         if (query.isEmpty() || query.length() >= 20) {
             return ResponseEntity.badRequest().build();

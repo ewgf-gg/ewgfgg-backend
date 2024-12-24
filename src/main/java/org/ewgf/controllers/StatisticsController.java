@@ -28,24 +28,20 @@ public class StatisticsController {
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
     private final EnumsMapper enumsMapper;
     private final CharacterAnalyticsService characterAnalyticsService;
-    private final StatisticsEventPublisher statisticsEventPublisher;
 
     public StatisticsController(
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             AggregatedStatisticsRepository aggregatedStatisticsRepository,
             CharacterAnalyticsService characterAnalyticsService,
-            StatisticsEventPublisher statisticsEventPublisher,
             EnumsMapper enumsMapper)
     {
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
         this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
         this.characterAnalyticsService = characterAnalyticsService;
         this.enumsMapper = enumsMapper;
-        this.statisticsEventPublisher = statisticsEventPublisher;
     }
 
     @GetMapping("/stats-summary")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<TekkenStatsSummaryDTO> getPlayerCount(HttpServletRequest request) throws InterruptedException
     {
         log.info("Received request for stats summary");
@@ -56,21 +52,22 @@ public class StatisticsController {
     }
 
     @GetMapping("/version-popularity")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, CharacterPopularityDTO>> getVersionPopularity()
     {
         log.info("Fetching popularity stats for all game versions");
-        try {
+        try
+        {
             Map<String, CharacterPopularityDTO> popularity = characterAnalyticsService.getAllVersionPopularity();
             return ResponseEntity.ok(popularity);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.error("Error fetching version-specific popularity statistics", e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
     @GetMapping("/version-winrates")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, CharacterWinratesDTO>> getVersionWinrates()
     {
         log.info("Fetching winrates for all game versions");
@@ -86,28 +83,7 @@ public class StatisticsController {
         }
     }
 
-    @GetMapping("/recalculate-statistics")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<String> calculateStatistics(HttpServletRequest request) throws InterruptedException
-    {
-        log.info("Received request to recalculate all statistics from {}", request.getRequestURI());
-        try
-        {
-            Optional<List<Integer>> gameVersions = aggregatedStatisticsRepository.getGameVersions();
-            gameVersions.ifPresent(integers -> statisticsEventPublisher.tryPublishEvent(
-                    new ReplayProcessingCompletedEvent(new HashSet<>(integers))
-            ));
-            return ResponseEntity.ok("Successfully calculated statistics");
-        }
-        catch(Exception e)
-        {
-            log.error("Error calculating statistics", e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
     @GetMapping("/top-popularity")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<CharacterPopularityDTO> getTop5CharacterPopularityStats() {
         log.info("Fetching top 5 popular characters");
         try {
@@ -120,9 +96,8 @@ public class StatisticsController {
     }
 
     @GetMapping("/top-winrates")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<CharacterWinratesDTO> getTop5CharacterWinratesStats() {
-        log.info("Fetching top 5 popular characters");
+        log.info("Fetching top 5 highest winrate characters");
         try {
             CharacterWinratesDTO winratesDTO = characterAnalyticsService.getTopCharacterWinrates();
             return ResponseEntity.ok(winratesDTO);
@@ -133,8 +108,8 @@ public class StatisticsController {
     }
 
     @GetMapping("/gameVersions")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<List<Integer>> getGameVersions(HttpServletRequest request) throws InterruptedException {
+    public ResponseEntity<List<Integer>> getGameVersions(HttpServletRequest request) throws InterruptedException
+    {
         log.info("Received request for gameVerions");
         return aggregatedStatisticsRepository.getGameVersions()
                 .map(ResponseEntity::ok)
@@ -142,7 +117,6 @@ public class StatisticsController {
     }
 
     @GetMapping("/rankDistribution")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<Integer, RankDistributionDTO>> getAllRankDistributions() {
         log.info("Fetching rank distribution for all versions");
         Optional<List<Integer>> gameVersions = aggregatedStatisticsRepository.getGameVersions();
@@ -159,7 +133,6 @@ public class StatisticsController {
     }
 
     @GetMapping("/winrate-changes")
-    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getWinrateChanges() {
         log.info("Fetching character winrate changes");
         try {

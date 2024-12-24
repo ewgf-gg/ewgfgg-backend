@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ${SPRING_APP_NAME:Tekken-SpringBoot}
+    name: ${SPRING_APP_NAME:ewgf-backend-development}
   datasource:
     url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/Tekken-Database}
     username: ${DATASOURCE_USERNAME:postgres}
@@ -48,7 +48,7 @@ security:
 logging:
   level:
     org:
-      tekkenstats:
+      ewgf:
         controllers:
           PlayerController: INFO
           AggregatedStatisticController: INFO
