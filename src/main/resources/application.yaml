@@ -84,6 +84,9 @@ spring:
   config:
     activate:
       on-profile: "prod"
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
   application:
     name: ${SPRING_APP_NAME:ewgf-backend-production}
   datasource:
