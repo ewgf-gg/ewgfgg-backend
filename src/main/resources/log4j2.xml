@@ -20,7 +20,7 @@
         </Root>
 
         <!-- Logger for a specific package, also set to INFO level -->
-        <Logger name="org.tekkenstats" level="info" additivity="false">
+        <Logger name="org.ewgf" level="info" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
         </Logger>

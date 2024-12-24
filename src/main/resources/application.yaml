@@ -33,6 +33,9 @@ backpressure:
   slowdown:
     factor: ${BACKPRESSURE_SLOWDOWN_FACTOR:10}
 
+wavu:
+  api: ${WAVU_API:https://wank.wavu.wiki/api/replays}
+
 security:
   rate-limit:
     requests-per-window: ${RATE_LIMIT_REQUESTS:20}
