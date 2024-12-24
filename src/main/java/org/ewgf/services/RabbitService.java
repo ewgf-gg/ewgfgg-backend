@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ewgf.events.ReplayProcessingCompletedEvent;
 import org.ewgf.models.*;
-import org.ewgf.configuration.RabbitMQConfig;
 import org.ewgf.repositories.BattleRepository;
 
 import java.time.Instant;
@@ -62,6 +60,7 @@ public class RabbitService {
         long startTime = System.currentTimeMillis();
 
         List<Battle> battles = objectMapper.readValue(message, new TypeReference<>() {});
+
         processBattlesAsync(battles);
 
         long endTime = System.currentTimeMillis();
@@ -73,7 +72,7 @@ public class RabbitService {
     {
         Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
 
-        Map<String, Battle> mapOfExistingBattles = fetchExistingBattles(battles);
+        Map<String, Battle> mapOfExistingBattles = fetchSurroundingBattles(battles);
 
         HashMap<String, Player> updatedPlayers = new HashMap<>();
         Set<Battle> battleSet = new HashSet<>();
@@ -88,13 +87,12 @@ public class RabbitService {
     private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
     {
         int battleCount = executeBattleBatchWrite(battleSet);
-        int playerCount = executePlayerBulkOperations(updatedPlayers);
+        executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
-
-        updateSummaryStatistics(battleCount, playerCount);
+        updateSummaryStatistics(battleCount);
     }
 
-    private Map<String, Battle> fetchExistingBattles(List<Battle> battles)
+    private Map<String, Battle> fetchSurroundingBattles(List<Battle> battles)
     {
         if (battles.isEmpty())
         {
@@ -104,7 +102,7 @@ public class RabbitService {
 
         long startTime = System.currentTimeMillis();
 
-        // Get the timestamp of the middle battle in the list
+        // fetch the timestamp of the median battle in the list
         long middleTimestamp = battles.get(battles.size() / 2).getBattleAt();
 
         // Fetch surrounding battle IDs directly as a Set
@@ -244,7 +242,7 @@ public class RabbitService {
 
             int insertedCount = Arrays.stream(results).sum();
 
-            logger.info("Battle Insertion: {} ms, Inserted/Updated: {}, Inserted Count: {}", (endTime - startTime), battleSet.size(), insertedCount);
+            logger.info("Battle Insertion: {} ms, Inserted Count: {}", (endTime - startTime), insertedCount);
 
             return insertedCount;
         }
@@ -255,20 +253,25 @@ public class RabbitService {
         }
     }
 
-    public int executePlayerBulkOperations(Map<String, Player> updatedPlayersMap)
+    public void executePlayerBulkOperations(Map<String, Player> updatedPlayersMap)
     {
 
         if (updatedPlayersMap.isEmpty()) {
             logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
-            return 0;
+            return;
         }
 
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "INSERT INTO players (player_id, name, region_id, area_id, language, polaris_id, tekken_power, latest_battle) " +
+                "INSERT INTO players " +
+                        "(player_id, name, region_id, area_id, language, polaris_id, tekken_power, latest_battle) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (player_id) DO UPDATE SET " +
+
+                        "name = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
+                        "THEN EXCLUDED.name " +
+                        "ELSE players.name END, " +
 
                         "tekken_power = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.tekken_power " +
@@ -291,8 +294,7 @@ public class RabbitService {
 
                         "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
                         "THEN EXCLUDED.latest_battle " +
-                        "ELSE players.latest_battle END " +
-                        "RETURNING (xmax = 0)::int"; // 1 for inserts, 0 for updates
+                        "ELSE players.latest_battle END ";
 
         List<Object[]> batchArgs = new ArrayList<>();
 
@@ -317,13 +319,11 @@ public class RabbitService {
         batchArgs.sort(Comparator.comparing((Object[] args) -> (String) args[0]));
 
         // Execute batch update
-        int[] results = jdbcTemplate.batchUpdate(sql, batchArgs);
-        int insertedCount = Arrays.stream(results).sum();
+        jdbcTemplate.batchUpdate(sql, batchArgs);
         long endTime = System.currentTimeMillis();
 
         logger.info("Player Bulk Upsert: {} ms, Processed Players: {}",
                 (endTime - startTime), updatedPlayersMap.size());
-        return insertedCount;
     }
 
 
@@ -338,7 +338,8 @@ public class RabbitService {
         long startTime = System.currentTimeMillis();
 
         String sql =
-                "INSERT INTO character_stats (player_id, character_id, game_version, dan_rank, latest_battle, wins, losses) " +
+                "INSERT INTO character_stats " +
+                        "(player_id, character_id, game_version, dan_rank, latest_battle, wins, losses) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (player_id, character_id, game_version) DO UPDATE SET " +
 
@@ -388,25 +389,7 @@ public class RabbitService {
                 .thenComparing(args -> (String) args[1])  // character_id
                 .thenComparing(args -> (Integer) args[2])); // game_version
 
-        int batchSize = 1000;
-        int totalBatches = (int) Math.ceil((double) batchArgs.size() / batchSize);
-
-        //upsert in batches of batchSize
-        try
-        {
-            for (int i = 0; i < totalBatches; i++)
-            {
-                int start = i * batchSize;
-                int end = Math.min(start + batchSize, batchArgs.size());
-
-                List<Object[]> batch = batchArgs.subList(start, end);
-
-                jdbcTemplate.batchUpdate(sql, batch);
-            }
-        } catch(Exception e)
-        {
-            logger.error("Error occurred while inserting character stats: {}", e.getMessage());
-        }
+        jdbcTemplate.batchUpdate(sql, batchArgs);
 
         long endTime = System.currentTimeMillis();
         logger.info("CharacterStats Bulk Upsert: {} ms, Total Processed CharacterStats: {}",
@@ -462,18 +445,16 @@ public class RabbitService {
         }
     }
 
-    private void updateSummaryStatistics(int newBattleCount, int newPlayerCount)
+    private void updateSummaryStatistics(int newBattleCount)
     {
-        if (newBattleCount == 0 && newPlayerCount == 0)
+        if (newBattleCount == 0)
         {
             return;
         }
-
         String sql = "UPDATE tekken_stats_summary SET " +
-                "total_replays = total_replays + ?, " +
-                "total_players = total_players + ?";
+                "total_replays = total_replays + ?";
 
-        jdbcTemplate.update(sql, newBattleCount, newPlayerCount);
+        jdbcTemplate.update(sql, newBattleCount);
     }
 
 

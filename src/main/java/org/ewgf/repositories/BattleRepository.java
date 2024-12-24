@@ -46,9 +46,9 @@ public interface BattleRepository extends JpaRepository<Battle, String> {
             "battles.player2_rounds_won as player2RoundsWon, " +
             "battles.winner as winner, " +
             "battles.stageid as stageId " +
-            "FROM battles WHERE player1_id = :playerID OR player2_id = :playerID " +
+            "FROM battles WHERE player1_id = :playerId OR player2_id = :playerId " +
             "ORDER BY battles.battle_at DESC",
             nativeQuery = true)
-    Optional<List<BattlesProjection>> findAllBattlesByPlayer(@Param("playerID") String playerID);
+    Optional<List<BattlesProjection>> findAllBattlesByPlayer(@Param("playerId") String playerId);
 
 }
