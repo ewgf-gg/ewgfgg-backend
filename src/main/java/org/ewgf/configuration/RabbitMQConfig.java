@@ -1,5 +1,7 @@
 package org.ewgf.configuration;
 
+import lombok.Data;
+import lombok.Getter;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -9,6 +11,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
@@ -16,43 +19,35 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 @Configuration
+@Getter
 public class RabbitMQConfig {
 
+    @Value("${rabbitmq.queue.name}")
+    private String queueName;
 
-    public static final String QUEUE_NAME = "battle_queue";
-    public static final String EXCHANGE_NAME = "battle_exchange";
-    public static final String ROUTING_KEY = "battle.routingkey";
+    @Value("${concurrency.rabbitmq}")
+    private String rabbitConcurrency;
+
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.routing.key")
+    private String routingKey;
 
     private final VirtualThreadConfig virtualThreadConfig;
 
-    public RabbitMQConfig(VirtualThreadConfig virtualThreadConfig)
-    {
+    public RabbitMQConfig(VirtualThreadConfig virtualThreadConfig) {
         this.virtualThreadConfig = virtualThreadConfig;
     }
 
     @Bean
-    public Queue queue()
-    {
-        return new Queue(QUEUE_NAME, true);
-    }
-
-    @Bean
-    public TopicExchange exchange()
-    {
-        return new TopicExchange(EXCHANGE_NAME);
-    }
-
-    @Bean
-    public Binding binding(Queue queue, TopicExchange exchange)
-    {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
-    }
-
-    @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory)
-    {
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
+
+        // Set concurrent consumers based on property
+        factory.setConcurrentConsumers(Integer.parseInt(rabbitConcurrency));
+        factory.setMaxConcurrentConsumers(Integer.parseInt(rabbitConcurrency));
 
         // Set the task executor to use virtual threads
         factory.setTaskExecutor(virtualThreadConfig.rabbitVirtualThreadExecutor());
@@ -76,19 +71,28 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public MessageConverter messageConverter()
-    {
-        // Use the SimpleMessageConverter for plain text messages
+    public Queue queue() {
+        return new Queue(queueName, true);
+    }
+
+    @Bean
+    public TopicExchange exchange() {
+        return new TopicExchange(exchangeName);
+    }
+
+    @Bean
+    public Binding binding(Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(routingKey);
+    }
+
+    @Bean
+    public MessageConverter messageConverter() {
         return new SimpleMessageConverter();
     }
 
-        @Bean
-        public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory)
-        {
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
-            return new RabbitAdmin(connectionFactory);
-
-        }
-
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        return new RabbitAdmin(connectionFactory);
     }
+}
 

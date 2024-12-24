@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledFuture;
 public class WavuService implements InitializingBean, DisposableBean {
 
     private final RabbitTemplate rabbitTemplate;
+    private final RabbitMQConfig rabbitMQConfig;
     private final BackpressureManager backpressureManager;
     private final RestTemplate restTemplate;
     private final BattleRepository battleRepository;
@@ -63,7 +64,8 @@ public class WavuService implements InitializingBean, DisposableBean {
             TaskScheduler taskScheduler,
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             StatisticsEventPublisher eventPublisher,
-            CharacterStatsRepository characterStatsRepository
+            CharacterStatsRepository characterStatsRepository,
+            RabbitMQConfig rabbitMQConfig
     )
     {
         this.rabbitTemplate = rabbitTemplate;
@@ -74,6 +76,7 @@ public class WavuService implements InitializingBean, DisposableBean {
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
         this.eventPublisher = eventPublisher;
         this.characterStatsRepository = characterStatsRepository;
+        this.rabbitMQConfig = rabbitMQConfig;
     }
     
     @Override
@@ -284,8 +287,8 @@ public class WavuService implements InitializingBean, DisposableBean {
     public void sendToRabbitMQ(String message, String dateAndTime)
     {
         rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EXCHANGE_NAME,
-                RabbitMQConfig.ROUTING_KEY,
+                rabbitMQConfig.getExchangeName(),
+                rabbitMQConfig.getRoutingKey(),
                 message,
                 msg -> {
                     msg.getMessageProperties()

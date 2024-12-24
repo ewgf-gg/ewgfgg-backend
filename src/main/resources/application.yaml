@@ -21,12 +21,19 @@ spring:
 rabbitmq:
   queue:
     name: ${RABBITMQ_QUEUE_NAME:battle_queue}
+  exchange:
+    name: ${RABBITMQ_EXCHANGE_NAME:battle_exchange}
+  routing:
+    key: ${RABBITMQ_ROUTING_KEY:battle.routingkey}
   management:
     api:
       url: ${RABBITMQ_API_URL:http://localhost:15672/api}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     vhost: ${RABBITMQ_VHOST:/}
+
+concurrency:
+  rabbitmq: ${RABBITMQ_CONCURRENCY:4}
 
 backpressure:
   threshold: ${BACKPRESSURE_THRESHOLD:50}

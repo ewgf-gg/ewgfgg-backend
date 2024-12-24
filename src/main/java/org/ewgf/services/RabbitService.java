@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.handler.annotation.Header;
@@ -40,7 +41,6 @@ public class RabbitService {
     private final AtomicLong lastEventPublishTime = new AtomicLong(0);
     private final AtomicBoolean isPublishing = new AtomicBoolean(false);
 
-
     public RabbitService(
             JdbcTemplate jdbcTemplate,
             BattleRepository battleRepository,
@@ -52,7 +52,8 @@ public class RabbitService {
     }
 
     @Transactional
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory", concurrency = "6")
+    @RabbitListener(queues = "#{rabbitMQConfig.queueName}",
+            containerFactory = "rabbitListenerContainerFactory")
     public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
     {
         String threadName = Thread.currentThread().getName();
