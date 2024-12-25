@@ -1,5 +1,6 @@
 package org.ewgf.services;
 
+import org.ewgf.repositories.TekkenStatsSummaryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,12 +29,15 @@ public class StatisticsCalculationService {
     private final Executor statisticsExecutor;
     private static final Logger logger = LoggerFactory.getLogger(StatisticsCalculationService.class);
     private final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
 
     public StatisticsCalculationService(
             CharacterStatsRepository characterStatsRepository,
             AggregatedStatisticsRepository aggregatedStatisticsRepository,
+            TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             @Qualifier("statisticsThreadExecutor") Executor statisticsExecutor) {
         this.characterStatsRepository = characterStatsRepository;
+        this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
         this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
         this.statisticsExecutor = statisticsExecutor;
     }
@@ -56,11 +60,13 @@ public class StatisticsCalculationService {
             {
                 processGameVersionStatistics(gameVersion);
             }
-
-        } catch (Exception e)
+            tekkenStatsSummaryRepository.updateTotalPlayersCount();
+        }
+        catch (Exception e)
         {
             logger.error("Error computing statistics: ", e);
-        } finally
+        }
+        finally
         {
             isProcessing.set(false);
             logger.info("Statistics computation done.");
@@ -170,8 +176,8 @@ public class StatisticsCalculationService {
                     data.getCharacterId(),
                     data.getDanRank(),
                     category,
-                    data.getRegionID(),  // New field
-                    data.getAreaID()      // New field
+                    data.getRegionID(),
+                    data.getAreaID()
             );
 
             AggregatedStatistic stat = existingStats.get(id);
