@@ -4,7 +4,7 @@ public interface CharacterWinrateProjection {
     String getCharacterId();
     Long getTotalWins();
     Long getTotalLosses();
-    Double getWinratePercentage();
+    Double getWinRate();
     Integer getGameVersion();
     String getRankCategory();
     String getRegionId();

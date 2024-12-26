@@ -1,7 +1,5 @@
 package org.ewgf.services;
 
-
-
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
@@ -25,7 +23,6 @@ import java.util.*;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 
 @Service
 @Slf4j
@@ -59,11 +56,12 @@ public class CharacterAnalyticsService {
                         .collect(Collectors.groupingBy(CharacterWinrateProjection::getRankCategory));
 
                 // Process each rank range
+                RegionalCharacterWinrateDTO allRanks = processWinrateStatsWithRegions(statsByRank.get("allRanks"));
                 RegionalCharacterWinrateDTO highRank = processWinrateStatsWithRegions(statsByRank.get("highRank"));
                 RegionalCharacterWinrateDTO mediumRank = processWinrateStatsWithRegions(statsByRank.get("mediumRank"));
                 RegionalCharacterWinrateDTO lowRank = processWinrateStatsWithRegions(statsByRank.get("lowRank"));
 
-                result.put(version, new CharacterWinratesDTO(highRank, mediumRank, lowRank));
+                result.put(version, new CharacterWinratesDTO(allRanks, highRank, mediumRank, lowRank));
             }
 
             return result;
@@ -123,11 +121,12 @@ public class CharacterAnalyticsService {
                 Map<String, List<CharacterAnalyticsProjection>> statsByRank = versionStats.stream()
                         .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
+                RegionalCharacterPopularityDTO allRanks = processStats(statsByRank.get("allRanks"));
                 RegionalCharacterPopularityDTO highRank = processStats(statsByRank.get("highRank"));
                 RegionalCharacterPopularityDTO mediumRank = processStats(statsByRank.get("mediumRank"));
                 RegionalCharacterPopularityDTO lowRank = processStats(statsByRank.get("lowRank"));
 
-                result.put(version, new CharacterPopularityDTO(highRank, mediumRank, lowRank));
+                result.put(version, new CharacterPopularityDTO(allRanks, highRank, mediumRank, lowRank));
             }
 
             return result;
