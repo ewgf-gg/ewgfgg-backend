@@ -8,7 +8,8 @@ This is the backend service that will supplement the frontend for the website. T
 
 
 ## Current Architecture (as of 12/26/2024)
-![ewgfgg diagram](https://github.com/user-attachments/assets/8649e243-d624-47e5-9e55-7160fef71457)
+![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
+
 
 
 ## Lessons Learned (so far)
