@@ -1,6 +1,5 @@
 package org.ewgf.configuration;
 
-import lombok.Data;
 import lombok.Getter;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -14,12 +13,19 @@ import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
-@Configuration
+import org.postgresql.util.PSQLException;
+
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
+@Configuration
 public class RabbitMQConfig {
 
     @Value("${rabbitmq.queue.name}")
@@ -52,23 +58,41 @@ public class RabbitMQConfig {
         // Set the task executor to use virtual threads
         factory.setTaskExecutor(virtualThreadConfig.rabbitVirtualThreadExecutor());
 
-        RetryTemplate retryTemplate = new RetryTemplate();
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-        retryPolicy.setMaxAttempts(3);
-
-        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(2000);
-
-        retryTemplate.setRetryPolicy(retryPolicy);
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-
-        // Add the LoggingRetryListener
-        retryTemplate.registerListener(new LoggingRetryListener());
-
-        factory.setRetryTemplate(retryTemplate);
+        factory.setRetryTemplate(createRetryTemplate());
 
         return factory;
     }
+
+    private RetryTemplate createRetryTemplate()
+    {
+        RetryTemplate retryTemplate = new RetryTemplate();
+
+        // Custom retry policy that specifically handles deadlocks
+        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(5, createRetryableExceptions());
+
+        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+        backOffPolicy.setInitialInterval(100); // 100ms initial backoff
+        backOffPolicy.setMultiplier(2.0); // Double the wait time for each retry
+        backOffPolicy.setMaxInterval(2000); // Cap at 2 seconds
+
+        retryTemplate.setRetryPolicy(retryPolicy);
+        retryTemplate.setBackOffPolicy(backOffPolicy);
+        retryTemplate.registerListener(new LoggingRetryListener());
+
+        return retryTemplate;
+    }
+
+    private Map<Class<? extends Throwable>, Boolean> createRetryableExceptions()
+    {
+        Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
+
+        retryableExceptions.put(PSQLException.class, true);
+        retryableExceptions.put(CannotAcquireLockException.class, true);
+        retryableExceptions.put(PessimisticLockingFailureException.class, true);
+
+        return retryableExceptions;
+    }
+
 
     @Bean
     public Queue queue() {

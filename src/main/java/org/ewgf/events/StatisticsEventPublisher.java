@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public class StatisticsEventPublisher
 {
-
     private final ApplicationEventPublisher eventPublisher;
     private final AtomicLong lastEventPublishTime;
     private final AtomicBoolean isPublishing;

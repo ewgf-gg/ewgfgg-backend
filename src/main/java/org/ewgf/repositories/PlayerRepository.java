@@ -21,7 +21,6 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
    @Query(value = "SELECT * FROM players p WHERE p.polaris_id = :criteria",nativeQuery = true)
     Optional<Player> findByPolarisId(@Param("criteria") String criteria);
 
-
     @Query(value = """
     SELECT * FROM players
     WHERE LOWER(name) LIKE LOWER(CONCAT('%', :query, '%'))
@@ -36,9 +35,5 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
     LIMIT 50
     """, nativeQuery = true)
     Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
-
-    @Query(value = "SELECT COUNT (*) FROM players", nativeQuery=true)
-    Optional<Long> getPlayerCount();
-
 }
 

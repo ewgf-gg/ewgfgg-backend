@@ -76,7 +76,6 @@ public class Player {
         this.latestBattle = latestBattle;
     }
 
-
     // Logic for setting/updating tekkenPower based on the latest battle
     public void updateTekkenPower(long newPower, long battleTime)
     {
@@ -151,13 +150,6 @@ public class Player {
         }
 
         return result;
-    }
-
-    public void setLatestBattle()
-    {
-        this.latestBattle = characterStats.values().stream()
-                .mapToLong(CharacterStats::getLatestBattle)
-                .max().orElse(0);
     }
 
     public boolean hasPlayerName(String name) {

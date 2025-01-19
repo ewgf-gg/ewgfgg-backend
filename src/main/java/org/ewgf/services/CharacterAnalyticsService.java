@@ -27,19 +27,20 @@ import java.util.stream.Stream;
 @Service
 @Slf4j
 public class CharacterAnalyticsService {
-    private final AggregatedStatisticsRepository repository;
+
+    private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
     private final EnumsMapper enumsMapper;
 
     public CharacterAnalyticsService(
             AggregatedStatisticsRepository repository,
             EnumsMapper enumsMapper) {
-        this.repository = repository;
+        this.aggregatedStatisticsRepository = repository;
         this.enumsMapper = enumsMapper;
     }
 
     public Map<String, CharacterWinratesDTO> getAllVersionWinrates() throws Exception {
         try {
-            List<CharacterWinrateProjection> allStats = repository.findAllWinrateStats();
+            List<CharacterWinrateProjection> allStats = aggregatedStatisticsRepository.findAllWinrateStats();
 
             // First group by version
             Map<Integer, List<CharacterWinrateProjection>> statsByVersion = allStats.stream()
@@ -105,7 +106,7 @@ public class CharacterAnalyticsService {
 
     public Map<String, CharacterPopularityDTO> getAllVersionPopularity() throws Exception {
         try {
-            List<CharacterAnalyticsProjection> allStats = repository.findAllCharactersByPopularity();
+            List<CharacterAnalyticsProjection> allStats = aggregatedStatisticsRepository.findAllCharactersByPopularity();
 
             // First group by version
             Map<Integer, List<CharacterAnalyticsProjection>> statsByVersion = allStats.stream()
@@ -170,7 +171,7 @@ public class CharacterAnalyticsService {
     public CharacterPopularityDTO getTopCharacterPopularity() throws Exception
     {
         try {
-            List<CharacterAnalyticsProjection> stats = repository.findTopCharactersByPopularity();
+            List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByPopularity();
 
             // Group by rank category
             Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
@@ -196,7 +197,7 @@ public class CharacterAnalyticsService {
     public CharacterWinratesDTO getTopCharacterWinrates() throws Exception {
         try
         {
-            List<CharacterAnalyticsProjection> stats = repository.findTopCharactersByWinrate();
+            List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByWinrate();
 
             // Group by rank category
             Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()

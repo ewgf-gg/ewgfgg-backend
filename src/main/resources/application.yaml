@@ -1,4 +1,11 @@
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000        # 5 minutes
+      connection-timeout: 20000   # 20 seconds
+      max-lifetime: 1200000      # 20 minutes
   jpa:
     hibernate:
       ddl-auto: validate
@@ -12,6 +19,10 @@ spring:
     ansi:
       enabled: ALWAYS
 
+admin:
+  auth:
+    token: ${AUTHORIZATION_TOKEN:test}
+
 rabbitmq:
   queue:
     name: ${RABBITMQ_QUEUE_NAME:battle_queue}
@@ -23,7 +34,7 @@ rabbitmq:
     vhost: ${RABBITMQ_VHOST:/}
 
 concurrency:
-  rabbitmq: ${RABBITMQ_CONCURRENCY:4}
+  rabbitmq: ${RABBITMQ_CONCURRENCY:6}
 
 backpressure:
   threshold: ${BACKPRESSURE_THRESHOLD:50}
@@ -51,6 +62,7 @@ logging:
           RabbitService: INFO
         configuration:
           BackpressureManager: INFO
+          LoggingRetryListener: INFO
 
 ---
 # Development profile
@@ -62,7 +74,7 @@ spring:
   application:
     name: ewgf-backend-development
   datasource:
-    url: jdbc:postgresql://localhost:5432/Tekken-Database
+    url: jdbc:postgresql://localhost:5432/ewgf-database-dev
     username: postgres
     password: guest
 

@@ -8,5 +8,4 @@ public interface CharacterWinrateProjection {
     Integer getGameVersion();
     String getRankCategory();
     String getRegionId();
-
 }

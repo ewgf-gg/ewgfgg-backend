@@ -1,8 +1,23 @@
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     ports:
       - "5672:5672"
       - "15672:15672"
     volumes:
       - ./data/rabbitmq:/var/lib/rabbitmq
+
+  postgres:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ewgf-database-dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: guest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:

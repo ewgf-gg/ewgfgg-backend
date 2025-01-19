@@ -23,6 +23,4 @@ public class PlayerCharacterData {
         this.regionID = regionID;
         this.areaID = areaID;
     }
-
-    // Constructor, getters, and setters
 }
