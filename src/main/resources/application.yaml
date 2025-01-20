@@ -34,7 +34,7 @@ rabbitmq:
     vhost: ${RABBITMQ_VHOST:/}
 
 concurrency:
-  rabbitmq: ${RABBITMQ_CONCURRENCY:6}
+  rabbitmq: ${RABBITMQ_CONCURRENCY:5}
 
 backpressure:
   threshold: ${BACKPRESSURE_THRESHOLD:50}
