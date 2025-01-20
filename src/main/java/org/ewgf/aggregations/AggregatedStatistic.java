@@ -28,9 +28,6 @@ public class AggregatedStatistic {
     @Column(name = "computed_at")
     private LocalDateTime computedAt;
 
-    // Getters and setters
-
-
     public AggregatedStatistic(AggregatedStatisticId id)
     {
         this.id = id;

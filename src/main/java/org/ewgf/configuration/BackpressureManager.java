@@ -41,6 +41,8 @@ public class BackpressureManager {
 
     private volatile boolean backpressureActive = false;
 
+    private volatile boolean manuallyActivated = false;
+
     private static final Logger logger = LogManager.getLogger(BackpressureManager.class);
 
     private RestTemplate restTemplate = new RestTemplate();
@@ -52,7 +54,7 @@ public class BackpressureManager {
             if (messageCount > backpressureThreshold && !backpressureActive) {
                 logger.warn("BOTTLENECK DETECTED, ENABLING BACKPRESSURE");
                 activateBackpressure();
-            } else if (messageCount <= 2 && backpressureActive) {
+            } else if (messageCount <= 2 && backpressureActive && !manuallyActivated) {
                 logger.info("Backlog emptied! Resuming normal operation");
                 deactivateBackpressure();
             }
@@ -79,11 +81,19 @@ public class BackpressureManager {
 
     private void activateBackpressure() {
         backpressureActive = true;
-        // Slow down consumers or other logic for backpressure
     }
 
     private void deactivateBackpressure() {
         backpressureActive = false;
-        // Resume normal operation
+    }
+
+    public void manualBackpressureActivation() {
+        manuallyActivated = true;
+        backpressureActive = true;
+    }
+
+    public void manualBackpressureDeactivation() {
+        manuallyActivated = false;
+        backpressureActive = false;
     }
 }

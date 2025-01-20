@@ -7,8 +7,9 @@ This is the backend service that will supplement the frontend for the website. T
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Architecture (as of 12/26/2024)
-![ewgfgg diagram](https://github.com/user-attachments/assets/8649e243-d624-47e5-9e55-7160fef71457)
+## Current Architecture (as of 01/19/2025)
+![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
+
 
 
 ## Lessons Learned (so far)

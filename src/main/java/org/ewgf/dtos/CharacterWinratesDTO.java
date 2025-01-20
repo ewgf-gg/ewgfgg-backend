@@ -5,7 +5,8 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CharacterWinratesDTO {
+public class CharacterWinratesDTO
+{
     private RegionalCharacterWinrateDTO allRanks;
     private RegionalCharacterWinrateDTO highRank;
     private RegionalCharacterWinrateDTO mediumRank;
@@ -19,5 +20,4 @@ public class CharacterWinratesDTO {
         this.mediumRank = mediumRank;
         this.lowRank = lowRank;
     }
-
 }

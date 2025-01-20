@@ -18,5 +18,4 @@ public class RankDistributionDTO
             standard.add(entry);
         }
     }
-
 }

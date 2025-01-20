@@ -5,13 +5,11 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CharacterPopularityDTO
-{
+public class CharacterPopularityDTO {
    private RegionalCharacterPopularityDTO allRanks;
    private RegionalCharacterPopularityDTO highRank;
    private RegionalCharacterPopularityDTO mediumRank;
    private RegionalCharacterPopularityDTO lowRank;
-
 
    public CharacterPopularityDTO(RegionalCharacterPopularityDTO highRank,
                                  RegionalCharacterPopularityDTO mediumRank,

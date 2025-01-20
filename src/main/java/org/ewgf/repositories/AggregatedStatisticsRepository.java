@@ -19,7 +19,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
 
     @Query(value = """
     WITH global_all_ranks AS (
-        SELECT 
+        SELECT
             game_version,
             character_id,
             SUM(total_wins) as total_wins,
@@ -30,10 +30,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY game_version, character_id
     ),
     global_by_rank AS (
-        SELECT 
+        SELECT
             game_version,
             character_id,
-            CASE 
+            CASE
                 WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
                 WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
                 WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
@@ -43,10 +43,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             SUM(total_replays) as total_replays
         FROM aggregated_statistics
         WHERE category = 'standard'
-        GROUP BY 
+        GROUP BY
             game_version,
             character_id,
-            CASE 
+            CASE
                 WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
                 WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
                 WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
@@ -54,7 +54,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     )
     SELECT * FROM (
         -- All ranks query with global stats
-        SELECT 
+        SELECT
             game_version as gameVersion,
             'allRanks' as rankCategory,
             'Global' as regionId,
@@ -63,11 +63,11 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             total_losses as totalLosses,
             total_replays as totalBattles
         FROM global_all_ranks
-        
+    
         UNION ALL
-        
+    
         -- All ranks query with regional stats
-        SELECT 
+        SELECT
             a.game_version as gameVersion,
             'allRanks' as rankCategory,
             a.region_id::text as regionId,
@@ -77,16 +77,16 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             SUM(a.total_replays) as totalBattles
         FROM aggregated_statistics a
         WHERE a.category = 'standard'
-        GROUP BY 
+        GROUP BY
             a.game_version,
             a.region_id,
             a.character_id
         HAVING SUM(a.total_replays) > 0
-        
+    
         UNION ALL
-        
+    
         -- Rank categories query with global stats
-        SELECT 
+        SELECT
             game_version as gameVersion,
             rank_category as rankCategory,
             'Global' as regionId,
@@ -95,13 +95,13 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             total_losses as totalLosses,
             total_replays as totalBattles
         FROM global_by_rank
-        
+    
         UNION ALL
-        
+    
         -- Rank categories query with regional stats
-        SELECT 
+        SELECT
             a.game_version as gameVersion,
-            CASE 
+            CASE
                 WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
                 WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
                 WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
@@ -113,9 +113,9 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             SUM(a.total_replays) as totalBattles
         FROM aggregated_statistics a
         WHERE a.category = 'standard'
-        GROUP BY 
+        GROUP BY
             a.game_version,
-            CASE 
+            CASE
                 WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
                 WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
                 WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
@@ -124,19 +124,19 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             a.character_id
         HAVING SUM(a.total_replays) > 0
     ) combined
-    ORDER BY 
+    ORDER BY
         gameVersion DESC,
         CASE WHEN rankCategory = 'allRanks' THEN 0 ELSE 1 END,
         rankCategory,
         CASE WHEN regionId = 'Global' THEN 0 ELSE 1 END,
         regionId,
         totalBattles DESC
-""", nativeQuery = true)
+    """, nativeQuery = true)
     List<CharacterAnalyticsProjection> findAllCharactersByPopularity();
 
     @Query(value = """
     WITH global_all_ranks AS (
-        SELECT 
+        SELECT
             game_version,
             character_id,
             SUM(total_wins) as total_wins,
@@ -146,10 +146,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY game_version, character_id
     ),
     global_by_rank AS (
-        SELECT 
+        SELECT
             game_version,
             character_id,
-            CASE 
+            CASE
                 WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
                 WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
                 WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
@@ -158,7 +158,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             SUM(total_losses) as total_losses
         FROM aggregated_statistics
         WHERE category = 'standard'
-        GROUP BY 
+        GROUP BY
             game_version,
             character_id,
             CASE 

@@ -137,5 +137,4 @@ public class Battle {
     @Column(name = "winner")
     private int winner;
 
-    // Getters and Setters generated automatically thanks to lombok
 }

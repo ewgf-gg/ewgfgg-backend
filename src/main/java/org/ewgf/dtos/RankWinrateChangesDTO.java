@@ -16,14 +16,6 @@ public class RankWinrateChangesDTO {
     private String trend;
     private String rankCategory;
 
-    // Optional constructor for grouping data
-    public RankWinrateChangesDTO(String characterId, double change, String trend) {
-        this.characterId = characterId;
-        this.change = change;
-        this.trend = trend;
-    }
-
-    // Static grouping method to help with response creation
     public static Map<String, List<RankWinrateChangesDTO>> groupByRankCategory(List<RankWinrateChangesDTO> changes) {
         return changes.stream()
                 .collect(Collectors.groupingBy(

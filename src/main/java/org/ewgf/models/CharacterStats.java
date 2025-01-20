@@ -36,17 +36,11 @@ public class CharacterStats {
     @Transient
     private int ratingChange = 0;
 
-    public CharacterStats() {
+    public CharacterStats()
+    {
         this.wins = 0;
         this.losses = 0;
         this.danRank = 0;
         this.latestBattle = 0;
-    }
-
-    public CharacterStats(int wins, int losses, int danRank, long latestBattle) {
-        this.wins = wins;
-        this.losses = losses;
-        this.danRank = danRank;
-        this.latestBattle = latestBattle;
     }
 }

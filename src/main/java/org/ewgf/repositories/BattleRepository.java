@@ -51,4 +51,10 @@ public interface BattleRepository extends JpaRepository<Battle, String> {
             nativeQuery = true)
     Optional<List<BattlesProjection>> findAllBattlesByPlayer(@Param("playerId") String playerId);
 
+    @Query(value = "SELECT * FROM battles " +
+            "WHERE player1_id = :playerId OR player2_id = :playerId " +
+            "ORDER BY battles.battle_at DESC",
+            nativeQuery = true)
+    Optional<List<Battle>> findAllBattlesByPlayerId(@Param("playerId") String playerId);
+
 }
