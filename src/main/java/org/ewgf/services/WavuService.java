@@ -2,6 +2,8 @@ package org.ewgf.services;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.ewgf.utils.DateTimeUtils;
+import org.ewgf.utils.EventPublisherUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -30,8 +32,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
-@Service
 @Slf4j
+@Service
 public class WavuService implements InitializingBean, DisposableBean {
 
     private final RabbitTemplate rabbitTemplate;
@@ -41,16 +43,17 @@ public class WavuService implements InitializingBean, DisposableBean {
     private final BattleRepository battleRepository;
     private final TaskScheduler taskScheduler;
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
-    private final StatisticsEventPublisher eventPublisher;
     private final CharacterStatsRepository characterStatsRepository;
-    private final int TIME_STEP = 700;
     private final ZoneId zoneId = ZoneId.of("UTC");
+    private ScheduledFuture<?> scheduledTask;
+    private final EventPublisherUtils eventPublisherUtils;
+
+    private final int TIME_STEP = 700;
     private boolean isFetchingForward = false;
     private long currentFetchTimestamp;
     private long latestBattleTimestamp;
     private final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
     private long newestKnownBattleTimestamp;
-    private ScheduledFuture<?> scheduledTask;
     private boolean fetchIsBelowCurrent = false;
 
     @Value("${wavu.api}")
@@ -65,7 +68,8 @@ public class WavuService implements InitializingBean, DisposableBean {
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             StatisticsEventPublisher eventPublisher,
             CharacterStatsRepository characterStatsRepository,
-            RabbitMQConfig rabbitMQConfig
+            RabbitMQConfig rabbitMQConfig,
+            EventPublisherUtils eventPublisherUtils
     )
     {
         this.rabbitTemplate = rabbitTemplate;
@@ -74,9 +78,9 @@ public class WavuService implements InitializingBean, DisposableBean {
         this.battleRepository = battleRepository;
         this.taskScheduler = taskScheduler;
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
-        this.eventPublisher = eventPublisher;
         this.characterStatsRepository = characterStatsRepository;
         this.rabbitMQConfig = rabbitMQConfig;
+        this.eventPublisherUtils = eventPublisherUtils;
     }
     
     @Override
@@ -166,15 +170,15 @@ public class WavuService implements InitializingBean, DisposableBean {
 
             log.info("Current fetch timestamp {} {} is below than latest database " + "timestamp {} {}",
                     currentFetchTimestamp,
-                    ReadableTimeFromUnixTimestamp(currentFetchTimestamp),
+                    DateTimeUtils.toReadableTime(currentFetchTimestamp),
                     latestBattleTimestamp,
-                    ReadableTimeFromUnixTimestamp(latestBattleTimestamp));
+                    DateTimeUtils.toReadableTime(latestBattleTimestamp));
             
             currentFetchTimestamp = (latestBattleTimestamp + (TIME_STEP-1));
             fetchIsBelowCurrent = true;
         }
 
-        String dateFromUnix = ReadableTimeFromUnixTimestamp(currentFetchTimestamp);
+        String dateFromUnix = DateTimeUtils.toReadableTime(currentFetchTimestamp);
         log.info("Fetching battles before timestamp: {} UTC, Unix: {}", dateFromUnix, currentFetchTimestamp);
 
         try
@@ -193,7 +197,7 @@ public class WavuService implements InitializingBean, DisposableBean {
     {
         try
         {
-            String dateFromUnix = ReadableTimeFromUnixTimestamp(currentFetchTimestamp);
+            String dateFromUnix = DateTimeUtils.toReadableTime(currentFetchTimestamp);
             log.info("Fetching battles before: {} UTC (Unix: {})", dateFromUnix, currentFetchTimestamp);
 
             String url = UriComponentsBuilder.fromUriString(WAVU_API)
@@ -227,9 +231,7 @@ public class WavuService implements InitializingBean, DisposableBean {
     {
         log.info("Switching to forward fetching, publishing event for statistics calculation.");
 
-        Optional<List<Integer>> gameVersions = characterStatsRepository.findAllGameVersions();
-        gameVersions.ifPresent(integers -> eventPublisher.tryPublishEvent(
-                new ReplayProcessingCompletedEvent(new HashSet<>(integers))));
+        eventPublisherUtils.publishEventForAllGameVersions();
 
         Optional<Battle> newestBattle = battleRepository.findNewestBattle();
 
@@ -254,8 +256,7 @@ public class WavuService implements InitializingBean, DisposableBean {
             log.debug("Received response from Wavu Api");
             long startTime = System.currentTimeMillis();
             sendToRabbitMQ(jsonResponse, dateFromUnix + " UTC");
-            long endTime = System.currentTimeMillis();
-            log.debug("Sending data to RabbitMQ took {} ms", (endTime - startTime));
+            log.debug("Sending data to RabbitMQ took {} ms", (System.currentTimeMillis() - startTime));
         }
     }
 
@@ -272,14 +273,6 @@ public class WavuService implements InitializingBean, DisposableBean {
                 }
         );
     }
-
-    private String ReadableTimeFromUnixTimestamp(long unixTimestamp)
-    {
-        return Instant.ofEpochSecond(unixTimestamp)
-                .atZone(zoneId)
-                .format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
-    }
-
 
     private void initializeForPreloadedDatabase(Optional<Battle> newestBattle)
     {
@@ -316,5 +309,4 @@ public class WavuService implements InitializingBean, DisposableBean {
         Instant executionTime = Instant.now().plusMillis(delayMillis);
         scheduledTask = taskScheduler.schedule(this::fetchReplays, executionTime);
     }
-
 }

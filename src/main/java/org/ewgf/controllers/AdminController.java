@@ -2,10 +2,9 @@ package org.ewgf.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.ewgf.configuration.BackpressureManager;
 import org.ewgf.services.CharacterStatsRevalidationService;
 import org.ewgf.services.RefetchBattleService;
-import org.ewgf.services.WavuService;
+import org.ewgf.utils.EventPublisherUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Slf4j
 @RestController
@@ -25,23 +24,30 @@ public class AdminController {
     private final CharacterStatsRevalidationService revalidationService;
     private final String devAuthToken;
     private final RefetchBattleService refetchBattleService;
+    private final EventPublisherUtils eventPublisherUtils;
 
     public AdminController(
             CharacterStatsRevalidationService revalidationService,
-            @Value("${admin.auth.token}") String devAuthToken, RefetchBattleService refetchBattleService) {
+            @Value("${admin.auth.token}") String devAuthToken, RefetchBattleService refetchBattleService, EventPublisherUtils eventPublisherUtils) {
 
         this.revalidationService = revalidationService;
         this.devAuthToken = devAuthToken;
         this.refetchBattleService = refetchBattleService;
+        this.eventPublisherUtils = eventPublisherUtils;
     }
 
     private boolean isAuthenticated(String authToken) {
-        return devAuthToken != null && devAuthToken.equals(authToken);
-    }
+        if (authToken == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                devAuthToken.getBytes(StandardCharsets.UTF_8),
+                authToken.getBytes(StandardCharsets.UTF_8)
+        );    }
 
 
-    @GetMapping("/revalidate")
-    public ResponseEntity<String> revalidateStats(
+    @GetMapping("/revalidateCharacterStats")
+    public ResponseEntity<String> revalidateSCharacterStats(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authToken,
             HttpServletRequest request) {
 
@@ -62,14 +68,14 @@ public class AdminController {
     }
 
 
-    @GetMapping("/recalc")
+    @GetMapping("/refetch")
     public ResponseEntity<String> fetchHistoricalBattles(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authToken,
             @RequestHeader(value = "X-Days-To-Fetch", defaultValue = "5") Integer daysToFetch,
             HttpServletRequest request) {
 
-        if (isAuthenticated(authToken)) {
-            log.warn("Unauthorized recalc attempt from IP: {}", request.getRemoteAddr());
+        if (!isAuthenticated(authToken)) {
+            log.warn("Unauthorized refetch attempt from IP: {}", request.getRemoteAddr());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
 
@@ -81,7 +87,27 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error during historical battle fetch", e);
             return ResponseEntity.internalServerError()
-                    .body("Error during historical battle fetch: " + e.getMessage());
+                    .body("Error during historical battle fetch: ");
         }
+    }
+
+    @GetMapping("/recalculateStats")
+    public ResponseEntity<String> recalculateStats(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authToken,
+            HttpServletRequest request)
+    {
+
+        if(!isAuthenticated(authToken)) {
+            log.warn("Unauthorized recalc attempt from IP: {}", request.getRemoteAddr());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        try{
+            eventPublisherUtils.publishEventForAllGameVersions();
+        }
+        catch (Exception e) {
+            log.error("Error recalculating stats", e);
+            return ResponseEntity.internalServerError().body("Error recalculating stats");
+        }
+        return ResponseEntity.ok("Successfully Recalculated stats");
     }
 }

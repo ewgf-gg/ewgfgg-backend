@@ -86,8 +86,7 @@ public class BattleProcessingService {
                 .filter(battle -> surroundingBattleIdSet.contains(battle.getBattleId()))
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
 
-        long endTime = System.currentTimeMillis();
-        logger.info("Identified {} existing battles in {} ms", existingBattles.size(), (endTime - startTime));
+        logger.info("Identified {} existing battles in {} ms", existingBattles.size(), (System.currentTimeMillis() - startTime));
 
         return existingBattles;
     }
@@ -136,12 +135,11 @@ public class BattleProcessingService {
                 duplicateBattles++;
             }
         }
-        long endTime = System.currentTimeMillis();
         if (duplicateBattles == battles.size()) {
             logger.warn("Entire batch already exists in database!");
             return;
         }
-        logger.info("Updated player and battle information: {} ms", (endTime - startTime));
+        logger.info("Updated player and battle information: {} ms", (System.currentTimeMillis() - startTime));
     }
 
 
@@ -172,11 +170,10 @@ public class BattleProcessingService {
             List<Object[]> batchArgs = getBattleBatchObjects(battleSet);
 
             int[] results = jdbcTemplate.batchUpdate(sql, batchArgs);
-            long endTime = System.currentTimeMillis();
 
             int insertedCount = Arrays.stream(results).sum();
 
-            logger.info("Battle Insertion: {} ms, Inserted Count: {}", (endTime - startTime), insertedCount);
+            logger.info("Battle Insertion: {} ms, Inserted Count: {}", (System.currentTimeMillis() - startTime), insertedCount);
 
             return insertedCount;
         }
@@ -236,10 +233,9 @@ public class BattleProcessingService {
 
         // Execute batch update
         jdbcTemplate.batchUpdate(sql, batchArgs);
-        long endTime = System.currentTimeMillis();
 
         logger.info("Player Bulk Upsert: {} ms, Processed Players: {}",
-                (endTime - startTime), updatedPlayersMap.size());
+                (System.currentTimeMillis() - startTime), updatedPlayersMap.size());
     }
 
     public void executeCharacterStatsBulkOperations(Map<String, Player> updatedPlayersSet)
@@ -278,9 +274,8 @@ public class BattleProcessingService {
 
         jdbcTemplate.batchUpdate(sql, batchArgs);
 
-        long endTime = System.currentTimeMillis();
         logger.info("CharacterStats Bulk Upsert: {} ms, Total Processed CharacterStats: {}",
-                (endTime - startTime), batchArgs.size());
+                (System.currentTimeMillis() - startTime), batchArgs.size());
     }
 
     private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber)

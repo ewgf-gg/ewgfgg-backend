@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.ewgf.utils.DateTimeUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,15 +43,16 @@ public class RabbitService {
 
     @RabbitListener(queues = "#{rabbitMQConfig.queueName}",
             containerFactory = "rabbitListenerContainerFactory")
-    public void receiveMessage(String message, @Header("unixTimestamp") String dateAndTime) throws Exception
+    public void receiveMessage(String message, @Header("unixTimestamp") String unixTimestamp) throws Exception
     {
-        String threadName = Thread.currentThread().getName();
-        logger.info("{} Received Battle Data from RabbitMQ, Timestamped: {}", threadName, dateAndTime);
+        logger.info("Received Battle Data from RabbitMQ, Timestamped: {} {}",
+                unixTimestamp,
+                DateTimeUtils.toReadableTime(Long.parseLong(unixTimestamp)));
 
         long startTime = System.currentTimeMillis();
         List<Battle> battles = objectMapper.readValue(message, battleListType);
         battleProcessingService.processBattlesAsync(battles);
 
-        logger.info("{} Total Operation Time: {} ms", threadName, System.currentTimeMillis() - startTime);
+        logger.info("Total Operation Time: {} ms", System.currentTimeMillis() - startTime);
     }
 }
