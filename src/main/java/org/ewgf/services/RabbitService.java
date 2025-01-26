@@ -45,9 +45,7 @@ public class RabbitService {
             containerFactory = "rabbitListenerContainerFactory")
     public void receiveMessage(String message, @Header("unixTimestamp") String unixTimestamp) throws Exception
     {
-        logger.info("Received Battle Data from RabbitMQ, Timestamped: {} {}",
-                unixTimestamp,
-                DateTimeUtils.toReadableTime(Long.parseLong(unixTimestamp)));
+        logger.info("Received Battle Data from RabbitMQ, Timestamped: {}", unixTimestamp);
 
         long startTime = System.currentTimeMillis();
         List<Battle> battles = objectMapper.readValue(message, battleListType);
