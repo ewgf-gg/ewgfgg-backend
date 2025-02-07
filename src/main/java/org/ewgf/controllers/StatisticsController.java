@@ -4,14 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.ewgf.utils.TekkenDataMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.ewgf.events.StatisticsEventPublisher;
-import org.ewgf.events.ReplayProcessingCompletedEvent;
 import org.ewgf.interfaces.*;
 import org.ewgf.dtos.*;
-import org.ewgf.mappers.EnumsMapper;
 import org.ewgf.models.TekkenStatsSummary;
 import org.ewgf.repositories.AggregatedStatisticsRepository;
 import org.ewgf.repositories.TekkenStatsSummaryRepository;
@@ -26,19 +24,16 @@ import java.util.stream.Collectors;
 public class StatisticsController {
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
-    private final EnumsMapper enumsMapper;
     private final CharacterAnalyticsService characterAnalyticsService;
 
     public StatisticsController(
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             AggregatedStatisticsRepository aggregatedStatisticsRepository,
-            CharacterAnalyticsService characterAnalyticsService,
-            EnumsMapper enumsMapper)
+            CharacterAnalyticsService characterAnalyticsService)
     {
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
         this.aggregatedStatisticsRepository = aggregatedStatisticsRepository;
         this.characterAnalyticsService = characterAnalyticsService;
-        this.enumsMapper = enumsMapper;
     }
 
     @GetMapping("/stats-summary")
@@ -139,7 +134,7 @@ public class StatisticsController {
             List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getWinrateChanges();
             List<RankWinrateChangesDTO> changes = projections.stream()
                     .map(proj -> new RankWinrateChangesDTO(
-                            enumsMapper.getCharacterName(proj.getCharacterId()),
+                            TekkenDataMapper.getCharacterName(proj.getCharacterId()),
                             proj.getChange(),
                             proj.getTrend(),
                             proj.getRankCategory()

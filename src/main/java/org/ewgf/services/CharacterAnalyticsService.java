@@ -14,7 +14,7 @@ import org.ewgf.dtos.RegionalCharacterWinrateDTO;
 import org.ewgf.interfaces.CharacterAnalyticsProjection;
 import org.ewgf.interfaces.CharacterWinrateProjection;
 
-import org.ewgf.mappers.EnumsMapper;
+import org.ewgf.utils.TekkenDataMapper;
 
 import org.ewgf.repositories.AggregatedStatisticsRepository;
 
@@ -29,13 +29,10 @@ import java.util.stream.Stream;
 public class CharacterAnalyticsService {
 
     private final AggregatedStatisticsRepository aggregatedStatisticsRepository;
-    private final EnumsMapper enumsMapper;
 
     public CharacterAnalyticsService(
-            AggregatedStatisticsRepository repository,
-            EnumsMapper enumsMapper) {
+            AggregatedStatisticsRepository repository) {
         this.aggregatedStatisticsRepository = repository;
-        this.enumsMapper = enumsMapper;
     }
 
     public Map<String, CharacterWinratesDTO> getAllVersionWinrates() throws Exception {
@@ -85,7 +82,7 @@ public class CharacterAnalyticsService {
         Map<String, Double> globalStats = groupedByRegion.getOrDefault("Global", Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
-                        stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                        stat -> TekkenDataMapper.getCharacterName((stat.getCharacterId())),
                         this::calculateWinrate
                 ));
 
@@ -96,7 +93,7 @@ public class CharacterAnalyticsService {
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
                                 .collect(Collectors.toMap(
-                                        stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                                         this::calculateWinrate
                                 ))
                 ));
@@ -149,7 +146,7 @@ public class CharacterAnalyticsService {
         Map<String, Long> globalStats = groupedByRegion.getOrDefault("Global", Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
-                        stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                         CharacterAnalyticsProjection::getTotalBattles
                 ));
 
@@ -160,7 +157,7 @@ public class CharacterAnalyticsService {
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
                                 .collect(Collectors.toMap(
-                                        stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                                         CharacterAnalyticsProjection::getTotalBattles
                                 ))
                 ));
@@ -225,7 +222,7 @@ public class CharacterAnalyticsService {
         Stream<CharacterAnalyticsProjection> stream = stats.stream();
 
         return stream.collect(Collectors.toMap(
-                stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getTotalBattles
         ));
     }
@@ -235,7 +232,7 @@ public class CharacterAnalyticsService {
         Stream<CharacterAnalyticsProjection> stream = stats.stream();
 
         return stream.collect(Collectors.toMap(
-                stat -> enumsMapper.getCharacterName(stat.getCharacterId()),
+                stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getWinratePercentage
         ));
     }

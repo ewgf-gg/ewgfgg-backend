@@ -63,8 +63,8 @@
     },
     "platform": {
         "3": "pc",
-        "8": "console/PS?",
-        "9": "console/XBOX?"
+        "8": "console/PS",
+        "9": "console/XBOX"
     },
     "dan_names": {
         "0": "Beginner",

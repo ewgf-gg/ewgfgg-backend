@@ -16,19 +16,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import org.ewgf.configuration.BackpressureManager;
 import org.ewgf.configuration.RabbitMQConfig;
-import org.ewgf.events.ReplayProcessingCompletedEvent;
-import org.ewgf.events.StatisticsEventPublisher;
 import org.ewgf.models.Battle;
 import org.ewgf.repositories.BattleRepository;
-import org.ewgf.repositories.CharacterStatsRepository;
 import org.ewgf.repositories.TekkenStatsSummaryRepository;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -43,8 +36,6 @@ public class WavuService implements InitializingBean, DisposableBean {
     private final BattleRepository battleRepository;
     private final TaskScheduler taskScheduler;
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
-    private final CharacterStatsRepository characterStatsRepository;
-    private final ZoneId zoneId = ZoneId.of("UTC");
     private ScheduledFuture<?> scheduledTask;
     private final EventPublisherUtils eventPublisherUtils;
 
@@ -66,8 +57,6 @@ public class WavuService implements InitializingBean, DisposableBean {
             BattleRepository battleRepository,
             TaskScheduler taskScheduler,
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
-            StatisticsEventPublisher eventPublisher,
-            CharacterStatsRepository characterStatsRepository,
             RabbitMQConfig rabbitMQConfig,
             EventPublisherUtils eventPublisherUtils
     )
@@ -78,7 +67,6 @@ public class WavuService implements InitializingBean, DisposableBean {
         this.battleRepository = battleRepository;
         this.taskScheduler = taskScheduler;
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
-        this.characterStatsRepository = characterStatsRepository;
         this.rabbitMQConfig = rabbitMQConfig;
         this.eventPublisherUtils = eventPublisherUtils;
     }

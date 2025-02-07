@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.ewgf.mappers.EnumsMapper;
+import org.ewgf.utils.TekkenDataMapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -133,7 +133,7 @@ public class Player {
                 });
     }
 
-    public Map<String, String> getMostPlayedCharacterInfo(EnumsMapper mapper)
+    public Map<String, String> getMostPlayedCharacterInfo()
     {
         Map<String, String> stats = findMainCharacter();
         Map<String, String> result = new HashMap<>();
@@ -145,8 +145,8 @@ public class Player {
         }
         else
         {
-            result.put("characterName", mapper.getCharacterName(stats.get("characterId")));
-            result.put("danRank", mapper.getDanName(stats.get("danRank")));
+            result.put("characterName", TekkenDataMapper.getCharacterName(stats.get("characterId")));
+            result.put("danRank", TekkenDataMapper.getDanName(stats.get("danRank")));
         }
 
         return result;
