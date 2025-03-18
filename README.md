@@ -10,15 +10,13 @@ This is the backend service that will supplement the frontend for the website. T
 ## Current Architecture (as of 01/19/2025)
 ![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
 
-
 ## How to run the server locally
 1. Clone this repository.
 2. In your environment variables, set your active profile to "Dev"
-3. Install the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
-
+3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
+4. The service should handle downloading and creating of the two dependencies needed, which should be RabbitMQ and Postgres v17. 
 
 ## Lessons Learned (so far)
-* **
 * **Concurrency & Multithreading:** Lots and lots of race conditions and deadlocks. Figuring out how to mitigate them, and how to handle them gracefully without incurring data or performance losses.
 
 
