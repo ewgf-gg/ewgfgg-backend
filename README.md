@@ -11,6 +11,11 @@ This is the backend service that will supplement the frontend for the website. T
 ![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
 
 
+## How to run the server locally
+1. Clone this repository.
+2. In your environment variables, set your active profile to "Dev"
+3. Install the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
+
 
 ## Lessons Learned (so far)
 * **
@@ -29,7 +34,7 @@ This is the backend service that will supplement the frontend for the website. T
 * **Database interfacing:** I had never worked with Postgres yet, nor have I built any personal projects (Java or otherwise) that used any sort of database. Understanding how java classes interopped with the database was fun, and I must say I am eternally grateful for the mighty Jdbc Template.
 
 
-## Current Progress
+## Changelog
 
 * **03/18/2024:** Website has been running successfully for a few months now! Though there were some speedbumps along the way:
   * There were race conditions still occuring in the character_stats table, most likely Time-of-check-to-time-of-use. This only occurs during the initial preload (as that is when the database is under the heaviest load), so I added a revalidator that will manually recalculate all character stats until I could implement a more permanent solution.
