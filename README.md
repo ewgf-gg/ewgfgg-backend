@@ -33,7 +33,9 @@ This is the backend service that will supplement the frontend for the website. T
 
 * **03/18/2024:** Website has been running successfully for a few months now! Though there were some speedbumps along the way:
   * There were race conditions still occuring in the character_stats table, most likely Time-of-check-to-time-of-use. This only occurs during the initial preload (as that is when the database is under the heaviest load), so I added a revalidator that will manually recalculate all character stats until I could implement a more permanent solution.
-  * Fixed a bug with the fetching of battles. Prior to this, the fetching logic was allowing a small window of time to go unaccounted for.\
+  * Fixed a bug with the fetching of battles. Prior to this, the fetching logic was allowing a small window of time to go unaccounted for.
+  * Cleaned up some of the codebase and created some static utils classes. 
+ 
 * **12/23/2024:** So many updates! This is pretty close to a production build, there's just a few more loose ends to clean up. Probably also should write tests at some point, too. 
   * Moved the event publisher to its own class to avoid coupling unrelated classes together
   * Added new endpoints to retrieve versioned + regioned statistics
