@@ -1,7 +1,7 @@
 
 # ewgf-gg Backend
 
-This is the backend service that runs https://www.ewgf.gg/. It is designed to collect, analyze, and serve Tekken 8 Ranked battle data, served from the [Wavu Wank api](https://wank.wavu.wiki/api). This service will poll the Wavu api for new data, and update the relevant tables within the database. 
+This is the backend service that runs https://www.ewgf.gg/. It is designed to collect, analyze, and serve Tekken 8 replay data, collected from the [Wavu Wank](https://wank.wavu.wiki/api) api.
 
 ## Technologies used
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
@@ -15,10 +15,9 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 1. Battle data is fetched by `WavuService.java`
 2. Battle data is published to RabbitMQ in batches of 6000 - 12000
 3. BattleProcessingService listens for new messages from RabbitMQ, processes batches
-4. Events are published when new data is processed
-5. Statistics are re-calculated in
-6. Frontend requests data through REST endpoints
-7. Controllers retrieve and format the data for presentation
+4. Events are published when new data is processed, triggering a statistics recalculation
+5. Frontend requests data through REST endpoints
+6. Controllers retrieve and format the data for presentation
 
 ## Local Development Setup
 
@@ -38,12 +37,12 @@ Dealing with race conditions and deadlocks was a significant challenge. Key solu
 * Incrementing wins/losses directly instead of read->modify->insert dramatically reduced database reads, eliminated issues with stale data from having multiple threads target the same rows
 * Using JDBC for more granular control over database operations
 
-JPA vs JDBC Tradeoffs
+### JPA vs JDBC Tradeoffs
 Discovered limitations with JPA for high-throughput operations:
 
 * Default JPA methods weren't batched or executed efficiently
-JDBC provided more control for optimizing database interactions
-Custom query implementations delivered better performance for specific operations
+* JDBC provided more control for optimizing database interactions
+* Custom query implementations delivered better performance for specific operations
 
 
 ## Changelog
