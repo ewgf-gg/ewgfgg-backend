@@ -1,35 +1,49 @@
 
 # ewgf-gg Backend
 
-This is the backend service that will supplement the frontend for the website. The purpose of this is to aggregate replay data, create player profiles based on said data, and then perform statistics analysis using the freshly made player profiles as data points.
+This is the backend service that runs https://www.ewgf.gg/. It is designed to collect, analyze, and serve Tekken 8 Ranked battle data, served from the [Wavu Wank api](https://wank.wavu.wiki/api). This service will poll the Wavu api for new data, and update the relevant tables within the database. 
 
 ## Technologies used
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Architecture (as of 01/19/2025)
+## Current Production Architecture (as of 01/19/2025)
 ![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
 
-## How to run the server locally
-1. Clone this repository.
-2. In your environment variables, set your active profile to "Dev"
+## Data Flow
+
+1. Battle data is fetched by `WavuService.java`
+2. Battle data is published to RabbitMQ in batches of 6000 - 12000
+3. BattleProcessingService listens for new messages from RabbitMQ, processes batches
+4. Events are published when new data is processed
+5. Statistics are re-calculated in
+6. Frontend requests data through REST endpoints
+7. Controllers retrieve and format the data for presentation
+
+## Local Development Setup
+
+1. Clone this repository
+2. In your environment configuration, set your active profile to "Dev"
 3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
-4. The service should handle downloading and creating of the two dependencies needed, which should be RabbitMQ and Postgres v17. 
+4. The service will automatically download the required dependencies (RabbitMQ and PostgreSQL v17)
+5. Run the commands from `init.sql` within the containerized postgres database
+6. Run the application using your preferred IDE or via command line: ./mvnw spring-boot:run
 
-## Lessons Learned (so far)
-* **Concurrency & Multithreading:** Lots and lots of race conditions and deadlocks. Figuring out how to mitigate them, and how to handle them gracefully without incurring data or performance losses.
+## Lessons Learned
+### Concurrency & Multithreading
+Dealing with race conditions and deadlocks was a significant challenge. Key solutions included:
+* Sorting batches prior to insertion
+* Leveraging virtual threads for better resource utilization
+* Upsert operations eliminated race conditions by atomically modifying rows
+* Incrementing wins/losses directly instead of read->modify->insert dramatically reduced database reads, eliminated issues with stale data from having multiple threads target the same rows
+* Using JDBC for more granular control over database operations
 
+JPA vs JDBC Tradeoffs
+Discovered limitations with JPA for high-throughput operations:
 
-* **Caching:** In order to improve the performance of the database, I decided to cache frequently accessed data rather than bombarding the database with existence checks.
-
-
-* **Upsert vs. Query->Modify->Insert:** One of the main ways I mitigated race conditions was to modify rows atomically, rather than locking an entire table. This was done by upserting the *increments* of wins and losses, instead of the total wins and losses. This eliminated a good chunk of the race conditions and also eliminated the possibility of inserting stale data.
-
-
-* **JPA vs JDBC:** One of the earliest bottlenecks I faced so far with JPA, particularly when I would query the database. The default `findAll()` and `saveAll()` methods are not batched by default (though you can change the `spring.jpa.properties.hibernate.jdbc.batch_size` to fix this), though in order to resolve race conditions and later implement upserting, I would need the more granular control that JDBC provided.
-
-
-* **Database interfacing:** I had never worked with Postgres yet, nor have I built any personal projects (Java or otherwise) that used any sort of database. Understanding how java classes interopped with the database was fun, and I must say I am eternally grateful for the mighty Jdbc Template.
+* Default JPA methods weren't batched or executed efficiently
+JDBC provided more control for optimizing database interactions
+Custom query implementations delivered better performance for specific operations
 
 
 ## Changelog
