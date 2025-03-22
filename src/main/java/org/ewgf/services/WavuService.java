@@ -29,6 +29,14 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class WavuService implements InitializingBean, DisposableBean {
 
+    private static final int DEFAULT_FETCH_DELAY = 300;
+    private static final int BACKPRESSURE_CHECK_DELAY = 60000; // 1 minute
+    private static final int NEW_REPLAYS_DELAY_MILLIS = 30000;// 30 seconds
+    private static final int NEW_REPLAYS_DELAY_SECONDS = 30;
+    private static final int TIME_STEP = 700;
+    private static final int TIME_STEP_OVERLAP = 100; // Overlap to ensure no battles are missed
+    private static final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
+
     private final RabbitTemplate rabbitTemplate;
     private final RabbitMQConfig rabbitMQConfig;
     private final BackpressureManager backpressureManager;
@@ -36,20 +44,17 @@ public class WavuService implements InitializingBean, DisposableBean {
     private final BattleRepository battleRepository;
     private final TaskScheduler taskScheduler;
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
-    private ScheduledFuture<?> scheduledTask;
     private final EventPublisherUtils eventPublisherUtils;
 
-    private final int TIME_STEP = 700;
-    private boolean isFetchingForward = false;
+    private ScheduledFuture<?> scheduledTask;
+    private boolean isFetchingNewReplays = false;
     private long currentFetchTimestamp;
-    private long latestBattleTimestamp;
-    private final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
-    private long newestKnownBattleTimestamp;
-    private boolean fetchIsBelowCurrent = false;
+    private long newestBattleTimestampInDatabase;
+    private boolean currentFetchIsBelowNewestBattleInDatabase = false;
 
     @Value("${wavu.api}")
-    private String WAVU_API;
-    
+    private String wavuApiUrl;
+
     public WavuService(
             RabbitTemplate rabbitTemplate,
             BackpressureManager backpressureManager,
@@ -59,8 +64,7 @@ public class WavuService implements InitializingBean, DisposableBean {
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
             RabbitMQConfig rabbitMQConfig,
             EventPublisherUtils eventPublisherUtils
-    )
-    {
+    ) {
         this.rabbitTemplate = rabbitTemplate;
         this.backpressureManager = backpressureManager;
         this.restTemplate = restTemplate;
@@ -70,186 +74,157 @@ public class WavuService implements InitializingBean, DisposableBean {
         this.rabbitMQConfig = rabbitMQConfig;
         this.eventPublisherUtils = eventPublisherUtils;
     }
-    
+
     @Override
-    public void afterPropertiesSet()
-    {
-        init();
-        scheduleNextExecution(0);
+    public void afterPropertiesSet() {
+        initializeService();
+        scheduleNextExecution(0); // Start immediately
     }
 
     @Override
-    public void destroy()
-    {
-        if (scheduledTask != null)
-        {
+    public void destroy() {
+        if (scheduledTask != null) {
             scheduledTask.cancel(true);
         }
     }
 
-    private void init()
-    {
-        try
-        {
-            Optional<Battle> oldestBattle = battleRepository.findOldestBattle();
-            Optional<Battle> newestBattle = battleRepository.findNewestBattle();
+    private void initializeService() {
+        try {
+            Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestBattle();
+            Optional<Battle> newestBattleInDatabase = battleRepository.findNewestBattle();
 
-            if (oldestBattle.isPresent() && oldestBattle.get().getBattleAt() == OLDEST_HISTORICAL_TIMESTAMP)
-            {
-                initializeForPreloadedDatabase(newestBattle);
-            }
-            else if (oldestBattle.isPresent())
-            {
-                initializeForPartiallyLoadedDatabase(oldestBattle.get());
-            }
-            else
-            {
+            if (isDatabaseFullyPreloaded(oldestBattleInDatabase, newestBattleInDatabase)) {
+                initializeForPreloadedDatabase(newestBattleInDatabase.get());
+            } else if (oldestBattleInDatabase.isPresent()) {
+                initializeForPartiallyLoadedDatabase(oldestBattleInDatabase.get());
+            } else {
                 initializeForEmptyDatabase();
             }
-        }
-        catch (Exception e)
-        {
-            log.error("Error initializing server: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Error initializing WavuService: {}", e.getMessage());
             System.exit(-1);
         }
     }
-    
-    
-    private void fetchReplays()
-    {
-        if (backpressureManager.isBackpressureActive())
-        {
-            if(backpressureManager.isManuallyActivated())
-            {
-                log.warn("MESSAGE RETRIEVAL HAS BEEN MANUALLY PAUSED.");
-                scheduleNextExecution(60000); // 1 minute
+
+    private void fetchReplays() {
+        if (handleBackpressure()) return;
+
+        if (isFetchingNewReplays) {
+            fetchNewReplays();
+
+            if (currentFetchIsBelowNewestBattleInDatabase) {
+                resetFetchStateForNewReplays();
                 return;
+            }
+        } else {
+            fetchHistoricalReplays();
+        }
+        scheduleNextExecution(DEFAULT_FETCH_DELAY);
+    }
+
+    private boolean handleBackpressure() {
+        if (backpressureManager.isBackpressureActive()) {
+            if (backpressureManager.isManuallyActivated()) {
+                log.warn("MESSAGE RETRIEVAL HAS BEEN MANUALLY PAUSED.");
+                scheduleNextExecution(BACKPRESSURE_CHECK_DELAY);
+                return true;
             }
             log.warn("BACKPRESSURE ACTIVE: MESSAGE RETRIEVAL IS STOPPED");
             scheduleNextExecution(1200L * backpressureManager.getSlowdownFactor());
-            return;
+            return true;
         }
-
-        if (isFetchingForward)
-        {
-            fetchNewReplays();
-
-            if(fetchIsBelowCurrent)
-            {
-                fetchIsBelowCurrent = false;
-                scheduleNextExecution((TIME_STEP-660) * 1000); // fetch again in one minute
-                currentFetchTimestamp = Instant.now().getEpochSecond() + 30; //set current fetch to the futture schedule time
-                latestBattleTimestamp = battleRepository.findNewestBattle().get().getBattleAt();
-                return;
-            }
-        }
-        else
-        {
-            fetchHistoricalReplays();
-        }
-
-        scheduleNextExecution(300);
+        return false;
     }
 
-    private void fetchNewReplays()
-    {
-        if (currentFetchTimestamp < latestBattleTimestamp)
-        {
+    private void resetFetchStateForNewReplays() {
+        currentFetchIsBelowNewestBattleInDatabase = false;
+        scheduleNextExecution(NEW_REPLAYS_DELAY_MILLIS);
+        currentFetchTimestamp = Instant.now().getEpochSecond() + NEW_REPLAYS_DELAY_SECONDS;
+        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
+                .map(Battle::getBattleAt)
+                .orElse(Instant.now().getEpochSecond());
+    }
 
-            log.info("Current fetch timestamp {} {} is below than latest database " + "timestamp {} {}",
+    private void fetchNewReplays() {
+        checkIfFetchTimestampBelowNewestBattle();
+        String readableTimestamp = DateTimeUtils.toReadableTime(currentFetchTimestamp);
+        log.info("Fetching battles before timestamp: {} UTC, Unix: {}", readableTimestamp, currentFetchTimestamp);
+
+        try {
+            String response = fetchBattlesFromApi(currentFetchTimestamp);
+            processApiResponse(response, readableTimestamp);
+            currentFetchTimestamp -= (TIME_STEP - TIME_STEP_OVERLAP);
+        } catch (Exception e) {
+            log.error("Error fetching new replays: {}", e.getMessage());
+        }
+    }
+
+    private void checkIfFetchTimestampBelowNewestBattle() {
+        if (currentFetchTimestamp < newestBattleTimestampInDatabase) {
+            log.info("Current fetch timestamp {} ({}) is below latest database timestamp {} ({})",
                     currentFetchTimestamp,
                     DateTimeUtils.toReadableTime(currentFetchTimestamp),
-                    latestBattleTimestamp,
-                    DateTimeUtils.toReadableTime(latestBattleTimestamp));
-            
-            currentFetchTimestamp = (latestBattleTimestamp + (TIME_STEP-1));
-            fetchIsBelowCurrent = true;
-        }
-
-        String dateFromUnix = DateTimeUtils.toReadableTime(currentFetchTimestamp);
-        log.info("Fetching battles before timestamp: {} UTC, Unix: {}", dateFromUnix, currentFetchTimestamp);
-
-        try
-        {
-            String jsonResponse = restTemplate.getForObject(WAVU_API + "?before=" + currentFetchTimestamp, String.class);
-            processApiResponse(jsonResponse, dateFromUnix);
-            currentFetchTimestamp -= (TIME_STEP-100);
-        }
-        catch (Exception e)
-        {
-            log.error("Error fetching forward or sending data: {}", e.getMessage());
+                    newestBattleTimestampInDatabase,
+                    DateTimeUtils.toReadableTime(newestBattleTimestampInDatabase));
+            currentFetchIsBelowNewestBattleInDatabase = true;
         }
     }
 
-    private void fetchHistoricalReplays()
-    {
-        try
-        {
-            String dateFromUnix = DateTimeUtils.toReadableTime(currentFetchTimestamp);
-            log.info("Fetching battles before: {} UTC (Unix: {})", dateFromUnix, currentFetchTimestamp);
+    private void fetchHistoricalReplays() {
+        try {
+            String readableTimestamp = DateTimeUtils.toReadableTime(currentFetchTimestamp);
+            log.info("Fetching historical battles before: {} UTC (Unix: {})", readableTimestamp, currentFetchTimestamp);
 
-            String url = UriComponentsBuilder.fromUriString(WAVU_API)
-                    .queryParam("before", currentFetchTimestamp)
-                    .toUriString();
+            String response = fetchBattlesFromApi(currentFetchTimestamp);
+            processApiResponse(response, readableTimestamp);
 
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            currentFetchTimestamp -= (TIME_STEP - TIME_STEP_OVERLAP); // Overlap to ensure no battles are missed
 
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new RuntimeException("API request failed with status: " + response.getStatusCode());
-            }
-
-            // Process response and update timestamp
-            processApiResponse(response.getBody(), dateFromUnix);
-            currentFetchTimestamp -= (TIME_STEP - 60); // -60 to overlap times
-
-            if (currentFetchTimestamp < OLDEST_HISTORICAL_TIMESTAMP)
-            {
+            if (currentFetchTimestamp < OLDEST_HISTORICAL_TIMESTAMP) {
                 log.info("Timestamp {} below oldest historical timestamp {}. Switching to forward fetching",
                         currentFetchTimestamp, OLDEST_HISTORICAL_TIMESTAMP);
                 switchToFetchingNewReplays();
             }
-        }
-        catch (Exception e)
-        {
-            log.error("Error while fetching backward: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Error fetching historical replays: {}", e.getMessage());
         }
     }
 
-    private void switchToFetchingNewReplays()
-    {
-        log.info("Switching to forward fetching, publishing event for statistics calculation.");
+    private String fetchBattlesFromApi(long timestamp) {
+        String url = UriComponentsBuilder.fromUriString(wavuApiUrl)
+                .queryParam("before", timestamp)
+                .toUriString();
 
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful())
+            throw new RuntimeException("API request failed with status: " + response.getStatusCode());
+
+        return response.getBody();
+    }
+
+    private void switchToFetchingNewReplays() {
         eventPublisherUtils.publishEventForAllGameVersions();
 
-        Optional<Battle> newestBattle = battleRepository.findNewestBattle();
+        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
+                .map(Battle::getBattleAt)
+                .orElse(Instant.now().getEpochSecond());
 
-        if (newestBattle.isPresent())
-        {
-            latestBattleTimestamp = newestBattle.get().getBattleAt();
-            currentFetchTimestamp = Instant.now().getEpochSecond();
-        }
-        else
-        {
-            currentFetchTimestamp = Instant.now().getEpochSecond();
-        }
-        latestBattleTimestamp = Instant.now().getEpochSecond();
+        currentFetchTimestamp = Instant.now().getEpochSecond();
         log.info("Database preload complete! Fetching forward starting at: {}", currentFetchTimestamp);
-        isFetchingForward = true;
+        isFetchingNewReplays = true;
     }
 
-    private void processApiResponse(String jsonResponse, String dateFromUnix)
-    {
-        if (jsonResponse != null)
-        {
-            log.debug("Received response from Wavu Api");
+    private void processApiResponse(String jsonResponse, String readableTimestamp) {
+        if (jsonResponse != null) {
+            log.debug("Received response from Wavu API");
             long startTime = System.currentTimeMillis();
-            sendToRabbitMQ(jsonResponse, dateFromUnix + " UTC");
+            sendToRabbitMQ(jsonResponse, readableTimestamp + " UTC");
             log.debug("Sending data to RabbitMQ took {} ms", (System.currentTimeMillis() - startTime));
         }
     }
 
-    public void sendToRabbitMQ(String message, String dateAndTime)
-    {
+    void sendToRabbitMQ(String message, String dateAndTime) {
         rabbitTemplate.convertAndSend(
                 rabbitMQConfig.getExchangeName(),
                 rabbitMQConfig.getRoutingKey(),
@@ -262,38 +237,31 @@ public class WavuService implements InitializingBean, DisposableBean {
         );
     }
 
-    private void initializeForPreloadedDatabase(Optional<Battle> newestBattle)
-    {
-        isFetchingForward = true;
-        log.info("Database is preloaded. Fetching new battles.");
-
-        if (newestBattle.isPresent())
-        {
-            newestKnownBattleTimestamp = newestBattle.get().getBattleAt();
-            currentFetchTimestamp = newestKnownBattleTimestamp + TIME_STEP;
-        }
-        else
-        {
-            currentFetchTimestamp = Instant.now().getEpochSecond();
-        }
-        latestBattleTimestamp = Instant.now().getEpochSecond();
+    private boolean isDatabaseFullyPreloaded(Optional<Battle> oldestBattle, Optional<Battle> newestBattle) {
+        return oldestBattle.isPresent() &&
+                newestBattle.isPresent() &&
+                oldestBattle.get().getBattleAt() == OLDEST_HISTORICAL_TIMESTAMP;
     }
 
-    private void initializeForPartiallyLoadedDatabase(Battle oldestBattle)
-    {
+    private void initializeForPreloadedDatabase(Battle newestBattle) {
+        isFetchingNewReplays = true;
+        log.info("Database is preloaded. Fetching new battles.");
+        newestBattleTimestampInDatabase = newestBattle.getBattleAt();
+        currentFetchTimestamp = Instant.now().getEpochSecond();
+    }
+
+    private void initializeForPartiallyLoadedDatabase(Battle oldestBattle) {
         currentFetchTimestamp = oldestBattle.getBattleAt();
         log.info("Continuing historical data fetching, starting at: {}", currentFetchTimestamp);
     }
 
-    private void initializeForEmptyDatabase()
-    {
+    private void initializeForEmptyDatabase() {
         tekkenStatsSummaryRepository.initializeStatsSummaryTable();
         currentFetchTimestamp = Instant.now().getEpochSecond();
         log.info("No battles found in database, using current timestamp: {}", currentFetchTimestamp);
     }
 
-    private void scheduleNextExecution(long delayMillis)
-    {
+    private void scheduleNextExecution(long delayMillis) {
         Instant executionTime = Instant.now().plusMillis(delayMillis);
         scheduledTask = taskScheduler.schedule(this::fetchReplays, executionTime);
     }
