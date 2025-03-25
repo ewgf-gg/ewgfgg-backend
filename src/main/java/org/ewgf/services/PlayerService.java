@@ -12,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +23,9 @@ public class PlayerService {
     private final PlayerRepository playerRepository;
     private final BattleRepository battleRepository;
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
+
+    private static final String CHARACTER_NAME = "characterName";
+    private static final String DAN_RANK = "danRank";
 
     public PlayerService(PlayerRepository playerRepository, BattleRepository battleRepository) {
         this.playerRepository = playerRepository;
@@ -127,8 +133,25 @@ public class PlayerService {
         dto.setName(player.getName());
         dto.setTekkenId(player.getPolarisId());
         dto.setRegionId(player.getRegionId() == null ? -1 : player.getRegionId());
-        dto.setMostPlayedCharacter(characterInfo.get("characterName"));
-        dto.setDanRankName(characterInfo.get("danRank"));
+        dto.setMostPlayedCharacter(characterInfo.get(CHARACTER_NAME));
+        dto.setDanRankName(characterInfo.get(DAN_RANK));
         return dto;
+    }
+
+    public List<RecentlyActivePlayersDTO> getRecentlyActivePlayers() {
+        Optional<List<Player>> recentlyActivePlayers = playerRepository.findAllActivePlayersInLast30Minutes();
+        List<RecentlyActivePlayersDTO> recentlyActivePlayersDTOs = new ArrayList<>();
+
+        if (recentlyActivePlayers.isPresent()) {
+            for (Player player : recentlyActivePlayers.get()) {
+                RecentlyActivePlayersDTO dto = new RecentlyActivePlayersDTO();
+                dto.setName(player.getName());
+                dto.setTekkenPower(player.getTekkenPower());
+                dto.setRegion(player.getRegionId());
+                dto.setLastSeen(LocalDateTime.ofInstant(Instant.ofEpochSecond(player.getLatestBattle()), ZoneId.of("UTC")));
+                recentlyActivePlayersDTOs.add(dto);
+            }
+        }
+        return recentlyActivePlayersDTOs;
     }
 }

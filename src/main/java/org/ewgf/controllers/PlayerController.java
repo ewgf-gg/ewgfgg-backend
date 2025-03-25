@@ -2,6 +2,7 @@ package org.ewgf.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.ewgf.dtos.*;
+import org.ewgf.models.Player;
 import org.ewgf.services.PlayerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,5 +41,12 @@ public class PlayerController {
         PlayerMetadataDTO metadata = playerService.getPlayerMetadata(polarisId);
         if (metadata == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(metadata);
+    }
+
+    @GetMapping("/recentlyActive")
+    public ResponseEntity<List<RecentlyActivePlayersDTO>> getRecentlyActivePlayers() {
+        List<RecentlyActivePlayersDTO> recentlyActivePlayers = playerService.getRecentlyActivePlayers();
+        if (recentlyActivePlayers == null || recentlyActivePlayers.isEmpty()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(recentlyActivePlayers);
     }
 }

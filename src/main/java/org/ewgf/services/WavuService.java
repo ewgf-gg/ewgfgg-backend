@@ -1,7 +1,6 @@
 package org.ewgf.services;
 
 import lombok.extern.slf4j.Slf4j;
-
 import org.ewgf.utils.DateTimeUtils;
 import org.ewgf.utils.EventPublisherUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,15 +12,12 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import org.ewgf.configuration.BackpressureManager;
 import org.ewgf.configuration.RabbitMQConfig;
 import org.ewgf.models.Battle;
 import org.ewgf.repositories.BattleRepository;
 import org.ewgf.repositories.TekkenStatsSummaryRepository;
-
 import java.time.Instant;
-
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -29,12 +25,12 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class WavuService implements InitializingBean, DisposableBean {
 
-    private static final int DEFAULT_FETCH_DELAY = 300;
-    private static final int BACKPRESSURE_CHECK_DELAY = 60000; // 1 minute
+    private static final int DEFAULT_FETCH_DELAY_MILLIS = 300;
+    private static final int BACKPRESSURE_CHECK_DELAY_MILLIS = 60000; // 1 minute
     private static final int NEW_REPLAYS_DELAY_MILLIS = 30000;// 30 seconds
     private static final int NEW_REPLAYS_DELAY_SECONDS = 30;
     private static final int TIME_STEP = 700;
-    private static final int TIME_STEP_OVERLAP = 100; // Overlap to ensure no battles are missed
+    private static final int TIME_STEP_OVERLAP = 60; // Overlap to ensure no battles are missed
     private static final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
 
     private final RabbitTemplate rabbitTemplate;
@@ -91,10 +87,9 @@ public class WavuService implements InitializingBean, DisposableBean {
     private void initializeService() {
         try {
             Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestBattle();
-            Optional<Battle> newestBattleInDatabase = battleRepository.findNewestBattle();
 
-            if (isDatabaseFullyPreloaded(oldestBattleInDatabase, newestBattleInDatabase)) {
-                initializeForPreloadedDatabase(newestBattleInDatabase.get());
+            if (oldestBattleInDatabase.isPresent() && isDatabaseFullyPreloaded(oldestBattleInDatabase)) {
+                initializeForPreloadedDatabase(oldestBattleInDatabase.get());
             } else if (oldestBattleInDatabase.isPresent()) {
                 initializeForPartiallyLoadedDatabase(oldestBattleInDatabase.get());
             } else {
@@ -119,14 +114,14 @@ public class WavuService implements InitializingBean, DisposableBean {
         } else {
             fetchHistoricalReplays();
         }
-        scheduleNextExecution(DEFAULT_FETCH_DELAY);
+        scheduleNextExecution(DEFAULT_FETCH_DELAY_MILLIS);
     }
 
     private boolean handleBackpressure() {
         if (backpressureManager.isBackpressureActive()) {
             if (backpressureManager.isManuallyActivated()) {
                 log.warn("MESSAGE RETRIEVAL HAS BEEN MANUALLY PAUSED.");
-                scheduleNextExecution(BACKPRESSURE_CHECK_DELAY);
+                scheduleNextExecution(BACKPRESSURE_CHECK_DELAY_MILLIS);
                 return true;
             }
             log.warn("BACKPRESSURE ACTIVE: MESSAGE RETRIEVAL IS STOPPED");
@@ -237,9 +232,8 @@ public class WavuService implements InitializingBean, DisposableBean {
         );
     }
 
-    private boolean isDatabaseFullyPreloaded(Optional<Battle> oldestBattle, Optional<Battle> newestBattle) {
+    private boolean isDatabaseFullyPreloaded(Optional<Battle> oldestBattle) {
         return oldestBattle.isPresent() &&
-                newestBattle.isPresent() &&
                 oldestBattle.get().getBattleAt() == OLDEST_HISTORICAL_TIMESTAMP;
     }
 

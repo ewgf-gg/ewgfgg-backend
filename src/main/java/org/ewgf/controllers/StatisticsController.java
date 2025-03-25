@@ -50,13 +50,11 @@ public class StatisticsController {
     public ResponseEntity<Map<String, CharacterPopularityDTO>> getVersionPopularity()
     {
         log.info("Fetching popularity stats for all game versions");
-        try
-        {
+        try {
             Map<String, CharacterPopularityDTO> popularity = characterAnalyticsService.getAllVersionPopularity();
             return ResponseEntity.ok(popularity);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             log.error("Error fetching version-specific popularity statistics", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -66,13 +64,11 @@ public class StatisticsController {
     public ResponseEntity<Map<String, CharacterWinratesDTO>> getVersionWinrates()
     {
         log.info("Fetching winrates for all game versions");
-        try
-        {
+        try {
             Map<String, CharacterWinratesDTO> winrates = characterAnalyticsService.getAllVersionWinrates();
             return ResponseEntity.ok(winrates);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             log.error("Error fetching version-specific winrates", e);
             return ResponseEntity.internalServerError().build();
         }
