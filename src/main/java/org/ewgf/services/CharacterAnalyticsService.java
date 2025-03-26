@@ -3,26 +3,18 @@ package org.ewgf.services;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
-
 import org.ewgf.dtos.CharacterPopularityDTO;
-
 import org.ewgf.dtos.CharacterWinratesDTO;
-
 import org.ewgf.dtos.RegionalCharacterPopularityDTO;
-
 import org.ewgf.dtos.RegionalCharacterWinrateDTO;
 import org.ewgf.interfaces.CharacterAnalyticsProjection;
 import org.ewgf.interfaces.CharacterWinrateProjection;
-
 import org.ewgf.utils.TekkenDataMapper;
-
 import org.ewgf.repositories.AggregatedStatisticsRepository;
-
-
 import java.util.*;
-
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static org.ewgf.utils.Constants.*;
 
 @Service
 @Slf4j
@@ -54,12 +46,13 @@ public class CharacterAnalyticsService {
                         .collect(Collectors.groupingBy(CharacterWinrateProjection::getRankCategory));
 
                 // Process each rank range
-                RegionalCharacterWinrateDTO allRanks = processWinrateStatsWithRegions(statsByRank.get("allRanks"));
-                RegionalCharacterWinrateDTO highRank = processWinrateStatsWithRegions(statsByRank.get("highRank"));
-                RegionalCharacterWinrateDTO mediumRank = processWinrateStatsWithRegions(statsByRank.get("mediumRank"));
-                RegionalCharacterWinrateDTO lowRank = processWinrateStatsWithRegions(statsByRank.get("lowRank"));
+                RegionalCharacterWinrateDTO allRanks = processWinrateStatsWithRegions(statsByRank.get(ALL_RANKS));
+                RegionalCharacterWinrateDTO masterRanks = processWinrateStatsWithRegions(statsByRank.get(MASTER_RANK_CATEGORY));
+                RegionalCharacterWinrateDTO advancedRanks = processWinrateStatsWithRegions(statsByRank.get(ADVANCED_RANK_CATEGORY));
+                RegionalCharacterWinrateDTO intermediateRanks = processWinrateStatsWithRegions(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
+                RegionalCharacterWinrateDTO beginnerRanks = processWinrateStatsWithRegions(statsByRank.get(BEGINNER_RANK_CATEGORY));
 
-                result.put(version, new CharacterWinratesDTO(allRanks, highRank, mediumRank, lowRank));
+                result.put(version, new CharacterWinratesDTO(allRanks, masterRanks, advancedRanks, intermediateRanks, beginnerRanks));
             }
 
             return result;
@@ -79,7 +72,7 @@ public class CharacterAnalyticsService {
                 .collect(Collectors.groupingBy(CharacterWinrateProjection::getRegionId));
 
         // Process global stats
-        Map<String, Double> globalStats = groupedByRegion.getOrDefault("Global", Collections.emptyList())
+        Map<String, Double> globalStats = groupedByRegion.getOrDefault(GLOBAL_REGION, Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
                         stat -> TekkenDataMapper.getCharacterName((stat.getCharacterId())),
@@ -88,7 +81,7 @@ public class CharacterAnalyticsService {
 
         // Process regional stats
         Map<String, Map<String, Double>> regionalStats = groupedByRegion.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals("Global"))
+                .filter(entry -> !GLOBAL_REGION.equals(entry.getKey()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
@@ -119,12 +112,13 @@ public class CharacterAnalyticsService {
                 Map<String, List<CharacterAnalyticsProjection>> statsByRank = versionStats.stream()
                         .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
-                RegionalCharacterPopularityDTO allRanks = processStats(statsByRank.get("allRanks"));
-                RegionalCharacterPopularityDTO highRank = processStats(statsByRank.get("highRank"));
-                RegionalCharacterPopularityDTO mediumRank = processStats(statsByRank.get("mediumRank"));
-                RegionalCharacterPopularityDTO lowRank = processStats(statsByRank.get("lowRank"));
+                RegionalCharacterPopularityDTO allRanks = processStats(statsByRank.get(ALL_RANKS));
+                RegionalCharacterPopularityDTO masterRanks = processStats(statsByRank.get(MASTER_RANK_CATEGORY));
+                RegionalCharacterPopularityDTO advancedRanks = processStats(statsByRank.get(ADVANCED_RANK_CATEGORY));
+                RegionalCharacterPopularityDTO intermediateRanks = processStats(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
+                RegionalCharacterPopularityDTO beginnerRanks = processStats(statsByRank.get(BEGINNER_RANK_CATEGORY));
 
-                result.put(version, new CharacterPopularityDTO(allRanks, highRank, mediumRank, lowRank));
+                result.put(version, new CharacterPopularityDTO(allRanks, masterRanks, advancedRanks, intermediateRanks, beginnerRanks));
             }
 
             return result;
@@ -143,7 +137,7 @@ public class CharacterAnalyticsService {
                 .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRegionId));
 
         // Process global stats
-        Map<String, Long> globalStats = groupedByRegion.getOrDefault("Global", Collections.emptyList())
+        Map<String, Long> globalStats = groupedByRegion.getOrDefault(GLOBAL_REGION, Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
                         stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
@@ -152,7 +146,7 @@ public class CharacterAnalyticsService {
 
         // Process regional stats
         Map<String, Map<String, Long>> regionalStats = groupedByRegion.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals("Global"))
+                .filter(entry -> !GLOBAL_REGION.equals(entry.getKey()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
@@ -174,17 +168,18 @@ public class CharacterAnalyticsService {
             Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
                     .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
-
-            Map<String, Long> highRankStats = processTopStats(statsByRank.get("highRank"));
-            Map<String, Long> mediumRankStats = processTopStats(statsByRank.get("mediumRank"));
-            Map<String, Long> lowRankStats = processTopStats(statsByRank.get("lowRank"));
+            Map<String, Long> masterRankStats = processTopStats(statsByRank.get(MASTER_RANK_CATEGORY));
+            Map<String, Long> advcancedRankStats = processTopStats(statsByRank.get(ADVANCED_RANK_CATEGORY));
+            Map<String, Long> intermediateRankStats = processTopStats(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
+            Map<String, Long> beginnerRankStats = processTopStats(statsByRank.get(BEGINNER_RANK_CATEGORY));
 
             // Since we're only getting top characters, we only need global stats
-            RegionalCharacterPopularityDTO highRank = new RegionalCharacterPopularityDTO(highRankStats, new HashMap<>());
-            RegionalCharacterPopularityDTO mediumRank = new RegionalCharacterPopularityDTO(mediumRankStats, new HashMap<>());
-            RegionalCharacterPopularityDTO lowRank = new RegionalCharacterPopularityDTO(lowRankStats, new HashMap<>());
+            RegionalCharacterPopularityDTO masterRanks = new RegionalCharacterPopularityDTO(masterRankStats, new HashMap<>());
+            RegionalCharacterPopularityDTO advancedRanks = new RegionalCharacterPopularityDTO(advcancedRankStats, new HashMap<>());
+            RegionalCharacterPopularityDTO intermediateRanks = new RegionalCharacterPopularityDTO(intermediateRankStats, new HashMap<>());
+            RegionalCharacterPopularityDTO beginnerRanks = new RegionalCharacterPopularityDTO(beginnerRankStats, new HashMap<>());
 
-            return new CharacterPopularityDTO(highRank, mediumRank, lowRank);
+            return new CharacterPopularityDTO(masterRanks, advancedRanks, intermediateRanks, beginnerRanks);
         } catch (Exception e) {
             log.error("Error calculating top character popularity", e);
             throw new Exception("Failed to retrieve top character popularity", e);
@@ -200,17 +195,18 @@ public class CharacterAnalyticsService {
             Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
                     .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
-            // For each rank, if fetchTop5 is true, take only top 5 characters
-            Map<String, Double> highRankStats = processTopWinrates(statsByRank.get("highRank"));
-            Map<String, Double> mediumRankStats = processTopWinrates(statsByRank.get("mediumRank"));
-            Map<String, Double> lowRankStats = processTopWinrates(statsByRank.get("lowRank"));
+            Map<String, Double> masterRankStats = processTopWinrates(statsByRank.get(MASTER_RANK_CATEGORY));
+            Map<String, Double> advancedRankStats = processTopWinrates(statsByRank.get(ADVANCED_RANK_CATEGORY));
+            Map<String, Double> intermediateRankStats = processTopWinrates(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
+            Map<String, Double> beginnnerRankStats = processTopWinrates(statsByRank.get(BEGINNER_RANK_CATEGORY));
 
-            // Since we're only getting top characters, we only need global stats
-            RegionalCharacterWinrateDTO highRank = new RegionalCharacterWinrateDTO(highRankStats, new HashMap<>());
-            RegionalCharacterWinrateDTO mediumRank = new RegionalCharacterWinrateDTO(mediumRankStats, new HashMap<>());
-            RegionalCharacterWinrateDTO lowRank = new RegionalCharacterWinrateDTO(lowRankStats, new HashMap<>());
+            // Since we're only returning top characters (for the front page) , we only need global stats
+            RegionalCharacterWinrateDTO masterRanks = new RegionalCharacterWinrateDTO(masterRankStats, new HashMap<>());
+            RegionalCharacterWinrateDTO highRank = new RegionalCharacterWinrateDTO(advancedRankStats, new HashMap<>());
+            RegionalCharacterWinrateDTO mediumRank = new RegionalCharacterWinrateDTO(intermediateRankStats, new HashMap<>());
+            RegionalCharacterWinrateDTO lowRank = new RegionalCharacterWinrateDTO(beginnnerRankStats, new HashMap<>());
 
-            return new CharacterWinratesDTO(highRank, mediumRank, lowRank);
+            return new CharacterWinratesDTO(masterRanks,highRank, mediumRank, lowRank);
         } catch (Exception e) {
             log.error("Error calculating top character winrates", e);
             throw new Exception("Failed to retrieve top character winrates", e);
@@ -218,20 +214,14 @@ public class CharacterAnalyticsService {
     }
 
     private Map<String, Long> processTopStats(List<CharacterAnalyticsProjection> stats) {
-
-        Stream<CharacterAnalyticsProjection> stream = stats.stream();
-
-        return stream.collect(Collectors.toMap(
+        return stats.stream().collect(Collectors.toMap(
                 stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getTotalBattles
         ));
     }
 
     private Map<String, Double> processTopWinrates(List<CharacterAnalyticsProjection> stats) {
-
-        Stream<CharacterAnalyticsProjection> stream = stats.stream();
-
-        return stream.collect(Collectors.toMap(
+        return stats.stream().collect(Collectors.toMap(
                 stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getWinratePercentage
         ));
@@ -242,5 +232,4 @@ public class CharacterAnalyticsService {
                 ? (stat.getTotalWins() * 100.0) / totalMatches
                 : 0.0;
     }
-
 }

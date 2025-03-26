@@ -37,8 +37,6 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
     Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
 
     @Query(value = "SELECT * FROM players " +
-            "WHERE 'latest_battle' > (EXTRACT(EPOCH FROM NOW()) - 1800)", nativeQuery = true)
+            "WHERE latest_battle > (EXTRACT(EPOCH FROM NOW()) - 1800)", nativeQuery = true)
     Optional<List<Player>> findAllActivePlayersInLast30Minutes();
-
 }
-

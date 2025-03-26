@@ -18,21 +18,21 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.ewgf.utils.Constants.CHARACTER_NAME;
+import static org.ewgf.utils.Constants.DAN_RANK;
+
 @Service
 public class PlayerService {
     private final PlayerRepository playerRepository;
     private final BattleRepository battleRepository;
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
 
-    private static final String CHARACTER_NAME = "characterName";
-    private static final String DAN_RANK = "danRank";
-
     public PlayerService(PlayerRepository playerRepository, BattleRepository battleRepository) {
         this.playerRepository = playerRepository;
         this.battleRepository = battleRepository;
     }
 
-    public PlayerStatsDTO getPlayerStats(String polarisId) {
+    public PlayerDTO getPlayerStats(String polarisId) {
         Optional<Player> playerStats = playerRepository.findByPolarisId(polarisId);
         if (playerStats.isEmpty()) return null;
 
@@ -58,8 +58,8 @@ public class PlayerService {
         return player.map(this::convertToMetadataDTO).orElse(null);
     }
 
-    private PlayerStatsDTO convertToPlayerDTO(Player player, List<BattlesProjection> playerBattles) {
-        PlayerStatsDTO dto = new PlayerStatsDTO(
+    private PlayerDTO convertToPlayerDTO(Player player, List<BattlesProjection> playerBattles) {
+        PlayerDTO dto = new PlayerDTO(
                 player.getPlayerId(),
                 player.getName(),
                 player.getRegionId(),
@@ -87,8 +87,8 @@ public class PlayerService {
         dto.setCharacterStats(characterStatsMap);
 
         if (playerBattles != null && !playerBattles.isEmpty()) {
-            List<PlayerBattleDTO> battleDTOs = playerBattles.stream()
-                    .map(battle -> new PlayerBattleDTO(
+            List<BattleDTO> battleDTOs = playerBattles.stream()
+                    .map(battle -> new BattleDTO(
                             battle.getDate(),
                             battle.getGameVersion(),
                             battle.getPlayer1Name(),
@@ -148,6 +148,7 @@ public class PlayerService {
                 dto.setName(player.getName());
                 dto.setTekkenPower(player.getTekkenPower());
                 dto.setRegion(player.getRegionId());
+                dto.setCharacterAndRank(player.getRecentlyPlayedCharacter());
                 dto.setLastSeen(LocalDateTime.ofInstant(Instant.ofEpochSecond(player.getLatestBattle()), ZoneId.of("UTC")));
                 recentlyActivePlayersDTOs.add(dto);
             }

@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @Data
-public class PlayerBattleDTO
+public class BattleDTO
 {
     private String date;
     private Integer gameVersion;
@@ -26,24 +26,24 @@ public class PlayerBattleDTO
     private Integer winner;
     private Integer StageId;
 
-    public PlayerBattleDTO(String date,
-                           Integer gameVersion,
-                           String player1Name,
-                           String player1PolarisId,
-                           Integer player1CharacterId,
-                           Integer player1RegionId,
-                           Long player1TekkenPower,
-                           Integer player1DanRank,
-                           String player2Name,
-                           String player2PolarisId,
-                           Integer player2RegionId,
-                           Integer player2CharacterId,
-                           Integer player2DanRank,
-                           Long player2TekkenPower,
-                           Integer player1RoundsWon,
-                           Integer player2RoundsWon,
-                           Integer winner,
-                           Integer stageId)
+    public BattleDTO(String date,
+                     Integer gameVersion,
+                     String player1Name,
+                     String player1PolarisId,
+                     Integer player1CharacterId,
+                     Integer player1RegionId,
+                     Long player1TekkenPower,
+                     Integer player1DanRank,
+                     String player2Name,
+                     String player2PolarisId,
+                     Integer player2RegionId,
+                     Integer player2CharacterId,
+                     Integer player2DanRank,
+                     Long player2TekkenPower,
+                     Integer player1RoundsWon,
+                     Integer player2RoundsWon,
+                     Integer winner,
+                     Integer stageId)
     {
         this.date = date;
         this.gameVersion = gameVersion;

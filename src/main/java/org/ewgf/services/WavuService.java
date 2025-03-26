@@ -21,11 +21,13 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
+import static org.ewgf.utils.Constants.TIMESTAMP_HEADER;
+
 @Slf4j
 @Service
 public class WavuService implements InitializingBean, DisposableBean {
 
-    private static final int DEFAULT_FETCH_DELAY_MILLIS = 300;
+    private static final int DEFAULT_FETCH_INTERVAL_MILLIS = 300;
     private static final int BACKPRESSURE_CHECK_DELAY_MILLIS = 60000; // 1 minute
     private static final int NEW_REPLAYS_DELAY_MILLIS = 30000;// 30 seconds
     private static final int NEW_REPLAYS_DELAY_SECONDS = 30;
@@ -87,9 +89,10 @@ public class WavuService implements InitializingBean, DisposableBean {
     private void initializeService() {
         try {
             Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestBattle();
+            Optional<Battle> newestBattleInDatabase = battleRepository.findNewestBattle();
 
-            if (oldestBattleInDatabase.isPresent() && isDatabaseFullyPreloaded(oldestBattleInDatabase)) {
-                initializeForPreloadedDatabase(oldestBattleInDatabase.get());
+            if (oldestBattleInDatabase.isPresent() && newestBattleInDatabase.isPresent() && isDatabaseFullyPreloaded(oldestBattleInDatabase)) {
+                initializeForPreloadedDatabase(newestBattleInDatabase.get());
             } else if (oldestBattleInDatabase.isPresent()) {
                 initializeForPartiallyLoadedDatabase(oldestBattleInDatabase.get());
             } else {
@@ -114,7 +117,7 @@ public class WavuService implements InitializingBean, DisposableBean {
         } else {
             fetchHistoricalReplays();
         }
-        scheduleNextExecution(DEFAULT_FETCH_DELAY_MILLIS);
+        scheduleNextExecution(DEFAULT_FETCH_INTERVAL_MILLIS);
     }
 
     private boolean handleBackpressure() {
@@ -129,15 +132,6 @@ public class WavuService implements InitializingBean, DisposableBean {
             return true;
         }
         return false;
-    }
-
-    private void resetFetchStateForNewReplays() {
-        currentFetchIsBelowNewestBattleInDatabase = false;
-        scheduleNextExecution(NEW_REPLAYS_DELAY_MILLIS);
-        currentFetchTimestamp = Instant.now().getEpochSecond() + NEW_REPLAYS_DELAY_SECONDS;
-        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
-                .map(Battle::getBattleAt)
-                .orElse(Instant.now().getEpochSecond());
     }
 
     private void fetchNewReplays() {
@@ -226,10 +220,19 @@ public class WavuService implements InitializingBean, DisposableBean {
                 message,
                 msg -> {
                     msg.getMessageProperties()
-                            .setHeader("unixTimestamp", dateAndTime);
+                            .setHeader(TIMESTAMP_HEADER, dateAndTime);
                     return msg;
                 }
         );
+    }
+
+    private void resetFetchStateForNewReplays() {
+        currentFetchIsBelowNewestBattleInDatabase = false;
+        scheduleNextExecution(NEW_REPLAYS_DELAY_MILLIS);
+        currentFetchTimestamp = Instant.now().getEpochSecond() + NEW_REPLAYS_DELAY_SECONDS;
+        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
+                .map(Battle::getBattleAt)
+                .orElse(Instant.now().getEpochSecond());
     }
 
     private boolean isDatabaseFullyPreloaded(Optional<Battle> oldestBattle) {

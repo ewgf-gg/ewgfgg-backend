@@ -7,8 +7,7 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
-public class RegionalCharacterWinrateDTO
-{
+public class RegionalCharacterWinrateDTO {
     private Map<String, Double> globalStats;
     private Map<String, Map<String, Double>> regionalStats;
 }
