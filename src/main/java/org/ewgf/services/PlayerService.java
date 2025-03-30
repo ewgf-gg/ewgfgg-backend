@@ -147,6 +147,7 @@ public class PlayerService {
                 RecentlyActivePlayersDTO dto = new RecentlyActivePlayersDTO();
                 dto.setName(player.getName());
                 dto.setTekkenPower(player.getTekkenPower());
+                dto.setPolarisId(player.getPolarisId());
                 dto.setRegion(player.getRegionId());
                 dto.setCharacterAndRank(player.getRecentlyPlayedCharacter());
                 dto.setLastSeen(player.getLatestBattle());
