@@ -18,6 +18,8 @@ import org.ewgf.models.Battle;
 import org.ewgf.repositories.BattleRepository;
 import org.ewgf.repositories.TekkenStatsSummaryRepository;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -33,7 +35,7 @@ public class WavuService implements InitializingBean, DisposableBean {
     private static final int NEW_REPLAYS_DELAY_SECONDS = 30;
     private static final int TIME_STEP = 700;
     private static final int TIME_STEP_OVERLAP = 60; // Overlap to ensure no battles are missed
-    private static final long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
+    private static long OLDEST_HISTORICAL_TIMESTAMP = 1711548580L;
 
     private final RabbitTemplate rabbitTemplate;
     private final RabbitMQConfig rabbitMQConfig;
@@ -52,6 +54,9 @@ public class WavuService implements InitializingBean, DisposableBean {
 
     @Value("${wavu.api}")
     private String wavuApiUrl;
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
 
     public WavuService(
             RabbitTemplate rabbitTemplate,
@@ -90,6 +95,7 @@ public class WavuService implements InitializingBean, DisposableBean {
         try {
             Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestBattle();
             Optional<Battle> newestBattleInDatabase = battleRepository.findNewestBattle();
+            checkIfActiveProfileIsDev(activeProfile);
 
             if (oldestBattleInDatabase.isPresent() && newestBattleInDatabase.isPresent() && isDatabaseFullyPreloaded(oldestBattleInDatabase)) {
                 initializeForPreloadedDatabase(newestBattleInDatabase.get());
@@ -150,7 +156,7 @@ public class WavuService implements InitializingBean, DisposableBean {
 
     private void checkIfFetchTimestampBelowNewestBattle() {
         if (currentFetchTimestamp < newestBattleTimestampInDatabase) {
-            log.info("Current fetch timestamp {} ({}) is below latest database timestamp {} ({})",
+            log.info("Current fetch timestamp {} ({}) is below newest database timestamp {} ({})",
                     currentFetchTimestamp,
                     DateTimeUtils.toReadableTime(currentFetchTimestamp),
                     newestBattleTimestampInDatabase,
@@ -237,7 +243,7 @@ public class WavuService implements InitializingBean, DisposableBean {
 
     private boolean isDatabaseFullyPreloaded(Optional<Battle> oldestBattle) {
         return oldestBattle.isPresent() &&
-                oldestBattle.get().getBattleAt() == OLDEST_HISTORICAL_TIMESTAMP;
+                oldestBattle.get().getBattleAt() <= OLDEST_HISTORICAL_TIMESTAMP;
     }
 
     private void initializeForPreloadedDatabase(Battle newestBattle) {
@@ -261,5 +267,15 @@ public class WavuService implements InitializingBean, DisposableBean {
     private void scheduleNextExecution(long delayMillis) {
         Instant executionTime = Instant.now().plusMillis(delayMillis);
         scheduledTask = taskScheduler.schedule(this::fetchReplays, executionTime);
+    }
+
+    private void checkIfActiveProfileIsDev(String activeProfile) {
+        if ("dev".equals(activeProfile) || activeProfile == null || activeProfile.isEmpty()) {
+            // Calculate date two weeks from today
+            ZonedDateTime twoWeeksFromNow = ZonedDateTime.now(ZoneId.systemDefault()).minusWeeks(2);
+            OLDEST_HISTORICAL_TIMESTAMP = twoWeeksFromNow.toEpochSecond();
+            log.info("Dev profile detected or no profile set. Setting oldest historical battle timestamp to two weeks from now: {} ({})",
+                    OLDEST_HISTORICAL_TIMESTAMP, DateTimeUtils.toReadableTime(OLDEST_HISTORICAL_TIMESTAMP));
+        }
     }
 }

@@ -36,7 +36,8 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
     """, nativeQuery = true)
     Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
 
+    // 600 is in seconds
     @Query(value = "SELECT * FROM players " +
-            "WHERE latest_battle > (EXTRACT(EPOCH FROM NOW()) - 1800)", nativeQuery = true)
-    Optional<List<Player>> findAllActivePlayersInLast30Minutes();
+            "WHERE latest_battle > (EXTRACT(EPOCH FROM NOW()) - 600) ORDER BY latest_battle DESC LIMIT 40", nativeQuery = true)
+    Optional<List<Player>> findAllActivePlayersInLast10Minutes();
 }

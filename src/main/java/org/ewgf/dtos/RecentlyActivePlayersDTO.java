@@ -11,5 +11,5 @@ public class RecentlyActivePlayersDTO {
     private Map<String,String> characterAndRank;
     private Long tekkenPower;
     private Integer region;
-    private LocalDateTime lastSeen;
+    private Long lastSeen;
 }

@@ -139,7 +139,7 @@ public class PlayerService {
     }
 
     public List<RecentlyActivePlayersDTO> getRecentlyActivePlayers() {
-        Optional<List<Player>> recentlyActivePlayers = playerRepository.findAllActivePlayersInLast30Minutes();
+        Optional<List<Player>> recentlyActivePlayers = playerRepository.findAllActivePlayersInLast10Minutes();
         List<RecentlyActivePlayersDTO> recentlyActivePlayersDTOs = new ArrayList<>();
 
         if (recentlyActivePlayers.isPresent()) {
@@ -149,7 +149,7 @@ public class PlayerService {
                 dto.setTekkenPower(player.getTekkenPower());
                 dto.setRegion(player.getRegionId());
                 dto.setCharacterAndRank(player.getRecentlyPlayedCharacter());
-                dto.setLastSeen(LocalDateTime.ofInstant(Instant.ofEpochSecond(player.getLatestBattle()), ZoneId.of("UTC")));
+                dto.setLastSeen(player.getLatestBattle());
                 recentlyActivePlayersDTOs.add(dto);
             }
         }

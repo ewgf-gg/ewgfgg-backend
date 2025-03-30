@@ -23,9 +23,8 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 
 1. Clone this repository
 2. In your environment configuration, set your active profile to "Dev"
-3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
-4. The service will automatically download the required dependencies (RabbitMQ and PostgreSQL v17)
-5. Run the commands from `init.sql` within the containerized postgres database
+3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#) and enable WSL2/desktop virtualization
+4. Spring will automatically pull the required images and run `init.sql` to initialize your local database
 6. Run the application using your preferred IDE or via command line: ./mvnw spring-boot:run
 
 ## Lessons Learned
