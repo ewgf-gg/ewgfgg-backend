@@ -12,8 +12,7 @@ import java.util.Map;
 
 @Data
 @NoArgsConstructor
-public class PlayerStatsDTO
-{
+public class PlayerDTO {
     private String playerId;
     private String name;
     private Integer regionId;
@@ -22,14 +21,14 @@ public class PlayerStatsDTO
     private long latestBattle;
     private Map<String, String> mainCharacterAndRank;
     private Map<CharacterStatsId, CharacterStatsDTO> characterStats;
-    private List<PlayerBattleDTO> battles;
+    private List<BattleDTO> battles;
 
-    public PlayerStatsDTO(String playerId,
-                          String name,
-                          Integer regionId,
-                          Integer areaId,
-                          Long tekkenPower,
-                          Long latestBattle)
+    public PlayerDTO(String playerId,
+                     String name,
+                     Integer regionId,
+                     Integer areaId,
+                     Long tekkenPower,
+                     Long latestBattle)
     {
         this.playerId = playerId;
         this.name = name;
@@ -39,6 +38,5 @@ public class PlayerStatsDTO
         this.latestBattle = latestBattle;
         characterStats = new HashMap<>();
         battles = new ArrayList<>();
-
     }
 }

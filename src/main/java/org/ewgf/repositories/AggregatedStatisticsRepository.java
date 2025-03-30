@@ -34,9 +34,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             game_version,
             character_id,
             CASE
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rank_category,
             SUM(total_wins) as total_wins,
             SUM(total_losses) as total_losses,
@@ -47,9 +48,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             game_version,
             character_id,
             CASE
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END
     )
     SELECT * FROM (
@@ -102,9 +104,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         SELECT
             a.game_version as gameVersion,
             CASE
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rankCategory,
             a.region_id::text as regionId,
             a.character_id as characterId,
@@ -116,9 +119,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY
             a.game_version,
             CASE
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END,
             a.region_id,
             a.character_id
@@ -150,9 +154,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             game_version,
             character_id,
             CASE
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rank_category,
             SUM(total_wins) as total_wins,
             SUM(total_losses) as total_losses
@@ -161,15 +166,16 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY
             game_version,
             character_id,
-            CASE 
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+            CASE
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END
     )
     SELECT * FROM (
         -- All ranks query with global stats
-        SELECT 
+        SELECT
             game_version as gameVersion,
             'allRanks' as rankCategory,
             'Global' as regionId,
@@ -182,7 +188,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         UNION ALL
         
         -- All ranks query with regional stats
-        SELECT 
+        SELECT
             a.game_version as gameVersion,
             'allRanks' as rankCategory,
             a.region_id::text as regionId,
@@ -217,9 +223,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         SELECT 
             a.game_version as gameVersion,
             CASE 
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rankCategory,
             a.region_id::text as regionId,
             a.character_id as characterId,
@@ -231,9 +238,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY 
             a.game_version,
             CASE 
-                WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END,
             a.region_id,
             a.character_id
@@ -256,18 +264,20 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     ranked_stats AS (
         SELECT 
             CASE 
-                WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rankCategory,
             a.character_id as characterId,
             SUM(a.total_replays) as totalBattles,
             ROW_NUMBER() OVER (
                 PARTITION BY 
                     CASE 
-                        WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                        WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                        WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                        WHEN dan_rank >= 27 THEN 'master'
+                        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                        WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
                     END 
                 ORDER BY SUM(a.total_replays) DESC
             ) as rank
@@ -277,9 +287,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY 
             character_id,
             CASE 
-                WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END
         HAVING SUM(a.total_replays) > 0
     )
@@ -299,9 +310,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     ranked_stats AS (
         SELECT 
             CASE 
-                WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END as rankCategory,
             a.character_id as characterId,
             SUM(a.total_wins) as totalWins,
@@ -310,9 +322,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             ROW_NUMBER() OVER (
                 PARTITION BY 
                     CASE 
-                        WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                        WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                        WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                        WHEN dan_rank >= 27 THEN 'master'
+                        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                        WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
                     END 
                 ORDER BY SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0) DESC
             ) as rank
@@ -322,9 +335,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
         GROUP BY 
             character_id,
             CASE 
-                WHEN a.dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                WHEN a.dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                WHEN a.dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                WHEN dan_rank >= 27 THEN 'master'
+                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
             END
         HAVING SUM(a.total_wins + a.total_losses) > 0
     )
@@ -376,9 +390,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
                 a.character_id,
                 a.game_version,
                 CASE
-                    WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                    WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                    WHEN dan_rank >= 27 THEN 'master'
+                    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
                 END as rank_category,
                 SUM(a.total_wins) as total_wins,
                 SUM(a.total_losses) as total_losses,
@@ -393,9 +408,10 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
                 a.character_id,
                 a.game_version,
                 CASE
-                    WHEN dan_rank BETWEEN 25 AND 29 THEN 'highRank'
-                    WHEN dan_rank BETWEEN 15 AND 24 THEN 'mediumRank'
-                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'lowRank'
+                    WHEN dan_rank >= 27 THEN 'master'
+                    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
                 END
         ),
         winrate_changes AS (

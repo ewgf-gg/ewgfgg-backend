@@ -7,7 +7,7 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Production Architecture (as of 01/19/2025)
+## Current Production Architecture (as of 03/29/2025)
 ![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
 
 ## Data Flow
@@ -23,9 +23,8 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 
 1. Clone this repository
 2. In your environment configuration, set your active profile to "Dev"
-3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#)
-4. The service will automatically download the required dependencies (RabbitMQ and PostgreSQL v17)
-5. Run the commands from `init.sql` within the containerized postgres database
+3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#) and enable WSL2/desktop virtualization
+4. Spring will automatically pull the required images and run `init.sql` to initialize your local database
 6. Run the application using your preferred IDE or via command line: ./mvnw spring-boot:run
 
 ## Lessons Learned
@@ -47,6 +46,8 @@ Discovered limitations with JPA for high-throughput operations:
 
 ## Changelog
 
+
+* **03/29/2024:** Huge refactor on `WavuService.java`, as well as added the recently active players feature!
 * **03/18/2024:** Website has been running successfully for a few months now! Though there were some speedbumps along the way:
   * There were race conditions still occuring in the character_stats table, most likely Time-of-check-to-time-of-use. This only occurs during the initial preload (as that is when the database is under the heaviest load), so I added a revalidator that will manually recalculate all character stats until I could implement a more permanent solution.
   * Fixed a bug with the fetching of battles. Prior to this, the fetching logic was allowing a small window of time to go unaccounted for.

@@ -7,16 +7,19 @@ import lombok.Data;
 @AllArgsConstructor
 public class CharacterPopularityDTO {
    private RegionalCharacterPopularityDTO allRanks;
-   private RegionalCharacterPopularityDTO highRank;
-   private RegionalCharacterPopularityDTO mediumRank;
-   private RegionalCharacterPopularityDTO lowRank;
+   private RegionalCharacterPopularityDTO masterRanks;
+   private RegionalCharacterPopularityDTO advancedRanks;
+   private RegionalCharacterPopularityDTO intermediateRanks;
+   private RegionalCharacterPopularityDTO beginnerRanks;
 
-   public CharacterPopularityDTO(RegionalCharacterPopularityDTO highRank,
-                                 RegionalCharacterPopularityDTO mediumRank,
-                                 RegionalCharacterPopularityDTO lowRank)
-   {
-      this.highRank = highRank;
-      this.mediumRank = mediumRank;
-      this.lowRank = lowRank;
+   //constructer for top 5 global stats
+   public CharacterPopularityDTO(RegionalCharacterPopularityDTO masterRanks,
+                                 RegionalCharacterPopularityDTO advancedRanks,
+                                 RegionalCharacterPopularityDTO intermediateRanks,
+                                 RegionalCharacterPopularityDTO beginnerRanks) {
+      this.masterRanks = masterRanks;
+      this.advancedRanks = advancedRanks;
+      this.intermediateRanks = intermediateRanks;
+      this.beginnerRanks = beginnerRanks;
    }
 }

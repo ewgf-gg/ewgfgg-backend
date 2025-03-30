@@ -1,7 +1,6 @@
 package org.ewgf.interfaces;
 
-public interface RankDistributionProjection
-{
+public interface RankDistributionProjection {
     Integer getGameVersion();
     String getCategory();
     Integer getRank();

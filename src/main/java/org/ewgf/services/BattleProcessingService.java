@@ -41,43 +41,33 @@ public class BattleProcessingService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void processBattlesAsync(List<Battle> battles)
-    {
+    public void processBattlesAsync(List<Battle> battles) {
         Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
-
         Map<String, Battle> mapOfExistingBattles = fetchSurroundingBattles(battles);
-
         HashMap<String, Player> updatedPlayers = new HashMap<>();
         Set<Battle> battleSet = new HashSet<>();
 
         // Instantiate objects and update relevant information
         processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
         executeAllDatabaseOperations(updatedPlayers, battleSet);
-
         tryPublishEvent(gameVersionsToProcess);
     }
 
-    private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet)
-    {
+    private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet) {
         int battleCount = executeBattleBatchWrite(battleSet);
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
         updateSummaryStatistics(battleCount);
     }
 
-    private Map<String, Battle> fetchSurroundingBattles(List<Battle> battles)
-    {
-        if (battles.isEmpty())
-        {
+    private Map<String, Battle> fetchSurroundingBattles(List<Battle> battles) {
+        if (battles.isEmpty()) {
             logger.warn("No battles provided. Skipping database fetch.");
             return Collections.emptyMap();
         }
-
         long startTime = System.currentTimeMillis();
-
         // fetch the timestamp of the median battle in the list
         long middleTimestamp = battles.get(battles.size() / 2).getBattleAt();
-
         // Fetch surrounding battle IDs directly as a Set
         Set<String> surroundingBattleIdSet = new HashSet<>(battleRepository.findSurroundingBattleIds(middleTimestamp));
 
@@ -85,9 +75,7 @@ public class BattleProcessingService {
         Map<String, Battle> existingBattles = battles.stream()
                 .filter(battle -> surroundingBattleIdSet.contains(battle.getBattleId()))
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
-
         logger.info("Identified {} existing battles in {} ms", existingBattles.size(), (System.currentTimeMillis() - startTime));
-
         return existingBattles;
     }
 

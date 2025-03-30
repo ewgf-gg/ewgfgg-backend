@@ -10,6 +10,8 @@ import org.ewgf.utils.TekkenDataMapper;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.ewgf.utils.Constants.*;
+
 @Entity
 @Table(name = "players")
 @Data
@@ -90,8 +92,8 @@ public class Player {
 
         // Handle empty or null character stats
         if (characterStats == null || characterStats.isEmpty()) {
-            result.put("characterId", "No Character Data");
-            result.put("danRank", "0");
+            result.put(CHARACTER_ID, "No Character Data");
+            result.put(DAN_RANK, "0");
             return result;
         }
 
@@ -121,14 +123,14 @@ public class Player {
                 .max(Comparator.comparingInt(totalMatchesByCharacter::get))
                 .map(characterId -> {
                     Map<String, String> map = new HashMap<>();
-                    map.put("characterId", characterId);
-                    map.put("danRank", String.valueOf(highestDanRank));
+                    map.put(CHARACTER_ID, characterId);
+                    map.put(DAN_RANK, String.valueOf(highestDanRank));
                     return map;
                 })
                 .orElseGet(() -> {
                     Map<String, String> map = new HashMap<>();
-                    map.put("characterId", "No Character Data");
-                    map.put("danRank", "0");
+                    map.put(CHARACTER_ID, "No Character Data");
+                    map.put(DAN_RANK, "0");
                     return map;
                 });
     }
@@ -138,16 +140,36 @@ public class Player {
         Map<String, String> stats = findMainCharacter();
         Map<String, String> result = new HashMap<>();
 
-        if (stats.get("characterId").equals("No Character Data"))
+        if (stats.get(CHARACTER_ID).equals("No Character Data"))
         {
-            result.put("characterName", "No Character Data");
-            result.put("danRank", "N/A");
+            result.put(CHARACTER_NAME, "No Character Data");
+            result.put(DAN_RANK, "N/A");
         }
         else
         {
-            result.put("characterName", TekkenDataMapper.getCharacterName(stats.get("characterId")));
-            result.put("danRank", TekkenDataMapper.getDanName(stats.get("danRank")));
+            result.put(CHARACTER_NAME, TekkenDataMapper.getCharacterName(stats.get(CHARACTER_ID)));
+            result.put(DAN_RANK, TekkenDataMapper.getDanName(stats.get(DAN_RANK)));
         }
+
+        return result;
+    }
+
+    public Map<String, String> getRecentlyPlayedCharacter() {
+        Map<String, String> result = new HashMap<>();
+        if (characterStats == null || characterStats.isEmpty()) {
+            result.put(CHARACTER_NAME, "No Character Data");
+            result.put(DAN_RANK, "N/A");
+            return result;
+        }
+
+        // Find the character stats with the latest battle timestamp
+        Optional<Map.Entry<CharacterStatsId, CharacterStats>> latestCharacterStats = characterStats.entrySet().stream()
+                .max(Comparator.comparingLong(entry -> entry.getValue().getLatestBattle()));
+
+        String characterId = latestCharacterStats.get().getKey().getCharacterId();
+        int danRankId = latestCharacterStats.get().getValue().getDanRank();
+        result.put(CHARACTER_NAME, TekkenDataMapper.getCharacterName(characterId));
+        result.put(DAN_RANK, TekkenDataMapper.getDanName(String.valueOf(danRankId)));
 
         return result;
     }
