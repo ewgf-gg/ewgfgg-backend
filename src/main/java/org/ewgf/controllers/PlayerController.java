@@ -38,14 +38,12 @@ public class PlayerController {
     @GetMapping("/metaData/{polarisId}")
     public ResponseEntity<PlayerMetadataDTO> getPlayerMetadata(@PathVariable String polarisId) {
         PlayerMetadataDTO metadata = playerService.getPlayerMetadata(polarisId);
-        if (metadata == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(metadata);
     }
 
     @GetMapping("/recentlyActive")
     public ResponseEntity<List<RecentlyActivePlayersDTO>> getRecentlyActivePlayers() {
         List<RecentlyActivePlayersDTO> recentlyActivePlayers = playerService.getRecentlyActivePlayers();
-        if (recentlyActivePlayers == null || recentlyActivePlayers.isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(recentlyActivePlayers);
     }
 }

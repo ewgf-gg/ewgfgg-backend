@@ -140,19 +140,18 @@ public class PlayerService {
 
     public List<RecentlyActivePlayersDTO> getRecentlyActivePlayers() {
         Optional<List<Player>> recentlyActivePlayers = playerRepository.findAllActivePlayersInLast10Minutes();
+        if (recentlyActivePlayers.isEmpty()) return Collections.emptyList();
         List<RecentlyActivePlayersDTO> recentlyActivePlayersDTOs = new ArrayList<>();
 
-        if (recentlyActivePlayers.isPresent()) {
-            for (Player player : recentlyActivePlayers.get()) {
-                RecentlyActivePlayersDTO dto = new RecentlyActivePlayersDTO();
-                dto.setName(player.getName());
-                dto.setTekkenPower(player.getTekkenPower());
-                dto.setPolarisId(player.getPolarisId());
-                dto.setRegion(player.getRegionId());
-                dto.setCharacterAndRank(player.getRecentlyPlayedCharacter());
-                dto.setLastSeen(player.getLatestBattle());
-                recentlyActivePlayersDTOs.add(dto);
-            }
+        for (Player player : recentlyActivePlayers.get()) {
+            RecentlyActivePlayersDTO dto = new RecentlyActivePlayersDTO();
+            dto.setName(player.getName());
+            dto.setTekkenPower(player.getTekkenPower());
+            dto.setPolarisId(player.getPolarisId());
+            dto.setRegion(player.getRegionId());
+            dto.setCharacterAndRank(player.getRecentlyPlayedCharacter());
+            dto.setLastSeen(player.getLatestBattle());
+            recentlyActivePlayersDTOs.add(dto);
         }
         return recentlyActivePlayersDTOs;
     }
