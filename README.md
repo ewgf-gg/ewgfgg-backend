@@ -8,7 +8,8 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 
 
 ## Current Production Architecture (as of 03/29/2025)
-![Tekken Diagrams(1)](https://github.com/user-attachments/assets/acec0bdd-6d5e-4474-913b-59fa1f038183)
+![Tekken Diagrams(2)](https://github.com/user-attachments/assets/c605b74e-81c4-4618-bc4c-1047199c4068)
+
 
 ## Data Flow
 
@@ -23,9 +24,10 @@ This is the backend service that runs https://www.ewgf.gg/. It is designed to co
 
 1. Clone this repository
 2. In your environment configuration, set your active profile to "Dev"
-3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#) and enable WSL2/desktop virtualization
-4. Spring will automatically pull the required images and run `init.sql` to initialize your local database
-6. Run the application using your preferred IDE or via command line: ./mvnw spring-boot:run
+3. Install and run the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop/#) and make sure desktop virtualization is enabled from your BIOS
+4. Spring will automatically pull the required images and run `init.sql` to initialize your development local database
+5. Run the application using your preferred IDE or via command line: ./mvnw spring-boot:run
+6. Note: When the application is running in dev mode, it will only retrieve **2 weeks** worth of historical replays.
 
 ## Lessons Learned
 ### Concurrency & Multithreading
