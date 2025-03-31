@@ -8,15 +8,15 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.0</version>
+		<version>3.4.4</version>
 		<relativePath/>
 	</parent>
 
-	<groupId>com.tekkenBackend</groupId>
-	<artifactId>Tekken-Springboot</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>Tekken Statistics Project</name>
-	<description>Spring Boot project for Tekken Stats Website</description>
+	<groupId>com.ewgfgg</groupId>
+	<artifactId>ewgfgg-Springboot</artifactId>
+	<version>1.0</version>
+	<name>ewgf-gg-backend</name>
+	<description>backend server for ewgf.gg</description>
 
 	<properties>
 		<java.version>21</java.version>

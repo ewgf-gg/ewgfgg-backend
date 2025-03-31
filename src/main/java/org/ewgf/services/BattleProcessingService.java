@@ -33,8 +33,7 @@ public class BattleProcessingService {
 
     public BattleProcessingService(BattleRepository battleRepository,
                                    JdbcTemplate jdbcTemplate,
-                                   ApplicationEventPublisher eventPublisher)
-    {
+                                   ApplicationEventPublisher eventPublisher) {
         this.battleRepository = battleRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.eventPublisher = eventPublisher;
@@ -84,23 +83,19 @@ public class BattleProcessingService {
             List<Battle> battles,
             Map<String, Battle> existingBattlesMap,
             HashMap<String, Player> updatedPlayers,
-            Set<Battle> battleSet)
-    {
+            Set<Battle> battleSet) {
 
         long startTime = System.currentTimeMillis();
         int duplicateBattles = 0;
 
-        for (Battle battle : battles)
-        {
-            if (!existingBattlesMap.containsKey(battle.getBattleId()))
-            {
+        for (Battle battle : battles) {
+            if (!existingBattlesMap.containsKey(battle.getBattleId())) {
                 battle.setDate(getReadableDateInUTC(battle));
 
                 // Process Player 1
                 String player1Id = getPlayerUserIdFromBattle(battle, 1);
                 Player player1 = updatedPlayers.get(player1Id);
-                if (player1 == null)
-                {
+                if (player1 == null) {
                     player1 = new Player();
                     setPlayerStatsWithBattle(player1, battle, 1);
                     updatedPlayers.put(player1Id, player1);
@@ -110,16 +105,14 @@ public class BattleProcessingService {
                 // Process Player 2
                 String player2Id = getPlayerUserIdFromBattle(battle, 2);
                 Player player2 = updatedPlayers.get(player2Id);
-                if (player2 == null)
-                {
+                if (player2 == null) {
                     player2 = new Player();
                     setPlayerStatsWithBattle(player2, battle, 2);
                     updatedPlayers.put(player2Id, player2);
                 }
                 setCharacterStatsWithBattle(player2, battle, 2);
                 battleSet.add(battle);
-            } else
-            {
+            } else {
                 duplicateBattles++;
             }
         }
@@ -131,8 +124,7 @@ public class BattleProcessingService {
     }
 
 
-    public int executeBattleBatchWrite(Set<Battle> battleSet)
-    {
+    public int executeBattleBatchWrite(Set<Battle> battleSet) {
         if (battleSet == null || battleSet.isEmpty()) {
             logger.warn("No battles to insert or update.");
             return 0;
@@ -165,8 +157,7 @@ public class BattleProcessingService {
 
             return insertedCount;
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             logger.error("BATTLE INSERTION FAILED: ", e);
             return 0;
         }
@@ -197,18 +188,15 @@ public class BattleProcessingService {
                         "ELSE players.tekken_power END, " +
 
                         "region_id = CASE " +
-                        "WHEN players.region_id IS NULL AND EXCLUDED.region_id IS NOT NULL THEN EXCLUDED.region_id " +
-                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.region_id " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.region_id, players.region_id) " +
                         "ELSE players.region_id END, " +
 
                         "area_id = CASE " +
-                        "WHEN players.area_id IS NULL AND EXCLUDED.area_id IS NOT NULL THEN EXCLUDED.area_id " +
-                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.area_id " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.area_id, players.area_id) " +
                         "ELSE players.area_id END, " +
 
                         "language = CASE " +
-                        "WHEN players.language IS NULL AND EXCLUDED.language IS NOT NULL THEN EXCLUDED.language " +
-                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN EXCLUDED.language " +
+                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.language, players.language) " +
                         "ELSE players.language END, " +
 
                         "latest_battle = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
@@ -226,10 +214,8 @@ public class BattleProcessingService {
                 (System.currentTimeMillis() - startTime), updatedPlayersMap.size());
     }
 
-    public void executeCharacterStatsBulkOperations(Map<String, Player> updatedPlayersSet)
-    {
-        if (updatedPlayersSet.isEmpty())
-        {
+    public void executeCharacterStatsBulkOperations(Map<String, Player> updatedPlayersSet) {
+        if (updatedPlayersSet.isEmpty()) {
             logger.warn("Player set is empty, character updates aborted (Battle batch already existed in database)");
             return;
         }
@@ -280,8 +266,7 @@ public class BattleProcessingService {
         // Fetch or initialize CharacterStats for this character and game version
         CharacterStats stats = player.getCharacterStats().get(statsId);
 
-        if (stats == null)
-        {
+        if (stats == null) {
             // Initialize a new CharacterStats object if none exists
             stats = new CharacterStats();
             stats.setId(statsId);
@@ -290,20 +275,17 @@ public class BattleProcessingService {
         }
 
         // Update wins or losses based on the battle result
-        if (battle.getWinner() == playerNumber)
-        {
+        if (battle.getWinner() == playerNumber) {
             stats.setWinsIncrement(stats.getWinsIncrement() + 1);
             stats.setWins(stats.getWins() + 1);
         }
-        else
-        {
+        else {
             stats.setLossIncrement(stats.getLossIncrement() + 1);
             stats.setLosses(stats.getLosses() + 1);
         }
 
         // Only update the danRank and latest battle if this battle is newer than the current latest one in the batch
-        if (battle.getBattleAt() > stats.getLatestBattle())
-        {
+        if (battle.getBattleAt() > stats.getLatestBattle()) {
             stats.setLatestBattle(battle.getBattleAt());
             player.setLatestBattle(battle.getBattleAt());
             player.updateTekkenPower(
@@ -314,12 +296,8 @@ public class BattleProcessingService {
         }
     }
 
-    private void updateSummaryStatistics(int newBattleCount)
-    {
-        if (newBattleCount == 0)
-        {
-            return;
-        }
+    private void updateSummaryStatistics(int newBattleCount) {
+        if (newBattleCount == 0) return;
         String sql = "UPDATE tekken_stats_summary SET " +
                 "total_replays = total_replays + ?";
 
@@ -327,9 +305,7 @@ public class BattleProcessingService {
     }
 
 
-    private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber)
-    {
-        // Set player-level details
+    private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber) {
         player.setPlayerId(getPlayerUserIdFromBattle(battle, playerNumber));
         player.setName(getPlayerNameFromBattle(battle, playerNumber));
         player.setPolarisId(getPlayerPolarisIdFromBattle(battle, playerNumber));
@@ -338,24 +314,19 @@ public class BattleProcessingService {
         player.setRegionId(getPlayerRegionIDFromBattle(battle, playerNumber));
         player.setAreaId(getPlayerAreaIDFromBattle(battle, playerNumber));
 
-        // Create a new CharacterStats object for the player's character
         CharacterStats characterStats = new CharacterStats();
-
-        // Create and set the composite id CharacterStatsId
         CharacterStatsId statsId = new CharacterStatsId();
+
         statsId.setPlayerId(player.getPlayerId());
         statsId.setCharacterId(getPlayerCharacterFromBattle(battle, playerNumber));
         statsId.setGameVersion(battle.getGameVersion());
-        characterStats.setId(statsId);
 
+        characterStats.setId(statsId);
         characterStats.setDanRank(getPlayerDanRankFromBattle(battle, playerNumber));
         characterStats.setLatestBattle(battle.getBattleAt());
 
-        // Add the new character stats to the player's map
         player.getCharacterStats().put(statsId, characterStats);
         player.setLatestBattle(battle.getBattleAt());
-
-        // Add the player's name to the name history if it's new
         addPlayerNameIfNew(player, player.getName());
     }
 
@@ -365,59 +336,49 @@ public class BattleProcessingService {
         long lastPublishTime = lastEventPublishTime.get();
 
         // check if enough time has passed since last publish
-        if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD)
-        {
+        if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD) {
             logger.info("Skipping statistics computation due to cooldown period");
             return;
         }
 
         // Try to acquire the publishing lock
-        if (!isPublishing.compareAndSet(false, true))
-        {
+        if (!isPublishing.compareAndSet(false, true)) {
             logger.info("Another thread is currently publishing an event");
             return;
         }
 
-        try
-        {
+        try {
             // Double-check the time again now that we have the lock
             // This prevents multiple events being published if multiple threads
             // pass the first time check simultaneously
-            if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD)
-            {
+            if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD) {
                 eventPublisher.publishEvent(new ReplayProcessingCompletedEvent(gameVersions));
                 lastEventPublishTime.set(currentTime);
                 logger.info("Published statistics computation event");
             }
         }
-        finally
-        {
+        finally {
             isPublishing.set(false);
         }
     }
 
-    private Set<Integer> extractGameVersions(List<Battle> battles)
-    {
+    private Set<Integer> extractGameVersions(List<Battle> battles) {
         HashSet<Integer> gameVersions = new HashSet<>();
-        for (Battle battle : battles)
-        {
+        for (Battle battle : battles) {
             gameVersions.add(battle.getGameVersion());
         }
         return gameVersions;
     }
 
-    private void addPlayerNameIfNew(Player player, String name)
-    {
-        if (player.getPlayerNames().stream().noneMatch(pastName -> pastName.getName().equals(name)))
-        {
+    private void addPlayerNameIfNew(Player player, String name) {
+        if (player.getPlayerNames().stream().noneMatch(pastName -> pastName.getName().equals(name))) {
             PastPlayerNames pastName = new PastPlayerNames(name, player);
             player.getPlayerNames().add(pastName);
         }
     }
 
 
-    private List<Object[]> getBattleBatchObjects(Set<Battle> battleSet)
-    {
+    private List<Object[]> getBattleBatchObjects(Set<Battle> battleSet) {
         List<Object[]> batchArgs = new ArrayList<>();
 
         // the order of these parameters must match the SQL statement above
@@ -461,13 +422,10 @@ public class BattleProcessingService {
     }
 
 
-    private List<Object[]> getPlayerBatchObjects(Map<String, Player> updatedPlayersMap)
-    {
+    private List<Object[]> getPlayerBatchObjects(Map<String, Player> updatedPlayersMap) {
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersMap.values())
-        {
-
+        for (Player updatedPlayer : updatedPlayersMap.values()) {
             Object[] args = new Object[]{
                     updatedPlayer.getPlayerId(),
                     updatedPlayer.getName(),
@@ -478,9 +436,7 @@ public class BattleProcessingService {
                     updatedPlayer.getTekkenPower(),
                     updatedPlayer.getLatestBattle()
             };
-
             batchArgs.add(args);
-
         }
         return batchArgs;
     }
@@ -488,8 +444,7 @@ public class BattleProcessingService {
     private List<Object[]> getCharacterStatsBatchObjects(Map<String, Player> updatedPlayersSet) {
         List<Object[]> batchArgs = new ArrayList<>();
 
-        for (Player updatedPlayer : updatedPlayersSet.values())
-        {
+        for (Player updatedPlayer : updatedPlayersSet.values()) {
             String userId = updatedPlayer.getPlayerId();
 
             Map<CharacterStatsId, CharacterStats> updatedCharacterStats = updatedPlayer.getCharacterStats();
