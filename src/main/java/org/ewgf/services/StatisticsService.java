@@ -149,10 +149,10 @@ public class StatisticsService {
         Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
                     .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
-        Map<String, Long> masterRankStats = processTopStats(statsByRank.get(MASTER_RANK_CATEGORY));
-        Map<String, Long> advcancedRankStats = processTopStats(statsByRank.get(ADVANCED_RANK_CATEGORY));
-        Map<String, Long> intermediateRankStats = processTopStats(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
-        Map<String, Long> beginnerRankStats = processTopStats(statsByRank.get(BEGINNER_RANK_CATEGORY));
+        Map<String, Long> masterRankStats = processTopStats(statsByRank.getOrDefault(MASTER_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Long> advcancedRankStats = processTopStats(statsByRank.getOrDefault(ADVANCED_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Long> intermediateRankStats = processTopStats(statsByRank.getOrDefault(INTERMEDIATE_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Long> beginnerRankStats = processTopStats(statsByRank.getOrDefault(BEGINNER_RANK_CATEGORY, Collections.emptyList()));
 
         // Since we're only returning top characters (for the front page) , we only need global stats
         RegionalCharacterPopularityDTO masterRanks = new RegionalCharacterPopularityDTO(masterRankStats, new HashMap<>());
@@ -168,10 +168,10 @@ public class StatisticsService {
         Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
                 .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
 
-        Map<String, Double> masterRankStats = processTopWinrates(statsByRank.get(MASTER_RANK_CATEGORY));
-        Map<String, Double> advancedRankStats = processTopWinrates(statsByRank.get(ADVANCED_RANK_CATEGORY));
-        Map<String, Double> intermediateRankStats = processTopWinrates(statsByRank.get(INTERMEDIATE_RANK_CATEGORY));
-        Map<String, Double> beginnnerRankStats = processTopWinrates(statsByRank.get(BEGINNER_RANK_CATEGORY));
+        Map<String, Double> masterRankStats = processTopWinrates(statsByRank.getOrDefault(MASTER_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Double> advancedRankStats = processTopWinrates(statsByRank.getOrDefault(ADVANCED_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Double> intermediateRankStats = processTopWinrates(statsByRank.getOrDefault(INTERMEDIATE_RANK_CATEGORY, Collections.emptyList()));
+        Map<String, Double> beginnnerRankStats = processTopWinrates(statsByRank.getOrDefault(BEGINNER_RANK_CATEGORY, Collections.emptyList()));
 
         // Since we're only returning top characters (for the front page) , we only need global stats
         RegionalCharacterWinrateDTO masterRanks = new RegionalCharacterWinrateDTO(masterRankStats, new HashMap<>());
@@ -215,13 +215,14 @@ public class StatisticsService {
 
 
     private Map<String, Long> processTopStats(List<CharacterAnalyticsProjection> stats) {
+        if (stats == null) return new HashMap<>();
         return stats.stream().collect(Collectors.toMap(
                 stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getTotalBattles
         ));
     }
-
     private Map<String, Double> processTopWinrates(List<CharacterAnalyticsProjection> stats) {
+        if (stats == null) return new HashMap<>();
         return stats.stream().collect(Collectors.toMap(
                 stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getWinratePercentage
