@@ -22,7 +22,7 @@ import static org.ewgf.utils.Constants.*;
 public class PlayerService {
     private final PlayerRepository playerRepository;
     private final BattleRepository battleRepository;
-    private static final int MINIMUM_GAMES = 3
+    private static final int MINIMUM_GAMES = 3;
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
 
     public PlayerService(PlayerRepository playerRepository, BattleRepository battleRepository) {
