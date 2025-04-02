@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -39,7 +40,7 @@ public class BattleProcessingService {
         this.eventPublisher = eventPublisher;
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
     public void processBattlesAsync(List<Battle> battles) {
         Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
         Map<String, Battle> mapOfExistingBattles = fetchSurroundingBattles(battles);
