@@ -7,7 +7,7 @@ public class MatchupStat {
     private Integer wins = 0;
     private Integer losses = 0;
     private Float winRate;
-    private Integer totalMatches;
+    private Integer totalMatches = 0;
 
     public void incrementWins() {
         this.wins++;
@@ -21,7 +21,7 @@ public class MatchupStat {
     }
 
     public void calculateWinrate(){
-        this.winRate = totalMatches > 0 ? (float) this.wins / totalMatches : 0f;
+        this.winRate = totalMatches > 0 ? ((float) this.wins / totalMatches ) * 100 : 0f;
     }
 }
 

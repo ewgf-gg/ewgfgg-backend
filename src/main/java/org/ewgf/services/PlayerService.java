@@ -68,7 +68,6 @@ public class PlayerService {
         Map<String, PlayerMatchupSummaryDTO> matchupSummaryDto = initializePlayerMatchupSummaryDTO(player.getCharacterStats());
         playerDto.setPlayedCharacters(matchupSummaryDto);
 
-        List<BattleDTO> battleDTOs = new ArrayList<>();
         for (Battle battle : playerBattles) {
             updatePlayerDTOWithBattle(playerDto, battle);
             BattleDTO battleDTO = new BattleDTO( battle.getDate(),
@@ -91,7 +90,6 @@ public class PlayerService {
                     battle.getStageId());
             playerDto.getBattles().add(battleDTO);
         }
-        playerDto.setBattles(battleDTOs);
         return playerDto;
     }
 
@@ -152,8 +150,8 @@ public class PlayerService {
             currentCharacter.setLosses(currentCharacter.getLosses() + stats.getLosses());
 
             if (currentCharacter.getWins() + currentCharacter.getLosses() > 0) {
-                currentCharacter.setCharacterWinrate((float) currentCharacter.getWins() /
-                        (currentCharacter.getWins() + currentCharacter.getLosses()));
+                currentCharacter.setCharacterWinrate(((float) currentCharacter.getWins() /
+                        (currentCharacter.getWins() + currentCharacter.getLosses())) * 100);
             }
 
             currentCharacter.setCurrentSeasonDanRank(currentSeasonDanRanks.get(characterName));
