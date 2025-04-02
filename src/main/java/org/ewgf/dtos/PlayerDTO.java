@@ -5,38 +5,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.ewgf.models.CharacterStatsId;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
 public class PlayerDTO {
-    private String playerId;
+    private String polarisId;
     private String name;
     private Integer regionId;
     private Integer areaId;
     private long tekkenPower;
     private long latestBattle;
-    private Map<String, String> mainCharacterAndRank;
-    private Map<CharacterStatsId, CharacterStatsDTO> characterStats;
-    private List<BattleDTO> battles;
-
-    public PlayerDTO(String playerId,
-                     String name,
-                     Integer regionId,
-                     Integer areaId,
-                     Long tekkenPower,
-                     Long latestBattle)
-    {
-        this.playerId = playerId;
-        this.name = name;
-        this.regionId = regionId;
-        this.areaId = areaId;
-        this.tekkenPower = tekkenPower;
-        this.latestBattle = latestBattle;
-        characterStats = new HashMap<>();
-        battles = new ArrayList<>();
-    }
+    private Map<String, String> mainCharacterAndRank = new HashMap<>();
+    private Map<String, PlayerMatchupSummaryDTO> playedCharacters = new HashMap<>();
+    private List<BattleDTO> battles = new ArrayList<>();
 }

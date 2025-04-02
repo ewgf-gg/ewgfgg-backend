@@ -13,5 +13,5 @@ public class Constants {
     public static final String CHARACTER_ID = "characterId";
     public static final String GLOBAL_REGION = "Global";
     public static final String TIMESTAMP_HEADER = "unixTimestamp";
-
+    public static final Integer SEASON_2_GAME_VERSION = 20001;
 }

@@ -2,7 +2,6 @@ package org.ewgf.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.InputStream;
@@ -10,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class TekkenDataMapper
+public class TekkenDataMapperUtils
 {
     private static final Map<String, String> characterMap = new HashMap<>();
     private static final Map<String, String> stageMap = new HashMap<>();

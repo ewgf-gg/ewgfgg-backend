@@ -506,7 +506,7 @@ public class BattleProcessingService {
     }
 
     private String getPlayerPolarisIdFromBattle(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1PolarisId( ) : battle.getPlayer2PolarisId();
+        return playerNumber == 1 ? battle.getPlayer1PolarisId() : battle.getPlayer2PolarisId();
     }
 
     private long getPlayerTekkenPowerFromBattle(Battle battle, int playerNumber) {

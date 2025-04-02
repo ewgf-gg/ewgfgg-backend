@@ -1,30 +1,28 @@
 package org.ewgf.services;
 
 import org.ewgf.dtos.*;
-import org.ewgf.interfaces.BattlesProjection;
+import org.ewgf.models.Battle;
+import org.ewgf.models.CharacterStats;
 import org.ewgf.models.CharacterStatsId;
 import org.ewgf.models.Player;
 import org.ewgf.repositories.BattleRepository;
 import org.ewgf.repositories.PlayerRepository;
 import org.ewgf.utils.DateTimeUtils;
-import org.ewgf.utils.TekkenDataMapper;
+import org.ewgf.utils.TekkenDataMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.ewgf.utils.Constants.CHARACTER_NAME;
-import static org.ewgf.utils.Constants.DAN_RANK;
+import static org.ewgf.utils.Constants.*;
 
 @Service
 public class PlayerService {
     private final PlayerRepository playerRepository;
     private final BattleRepository battleRepository;
+    private static final int MINIMUM_GAMES = 3
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
 
     public PlayerService(PlayerRepository playerRepository, BattleRepository battleRepository) {
@@ -36,7 +34,7 @@ public class PlayerService {
         Optional<Player> playerStats = playerRepository.findByPolarisId(polarisId);
         if (playerStats.isEmpty()) return null;
 
-        Optional<List<BattlesProjection>> playerBattles =
+        Optional<List<Battle>> playerBattles =
                 battleRepository.findAllBattlesByPlayer(playerStats.get().getPlayerId());
 
         return convertToPlayerDTO(playerStats.get(),
@@ -58,60 +56,112 @@ public class PlayerService {
         return player.map(this::convertToMetadataDTO).orElse(null);
     }
 
-    private PlayerDTO convertToPlayerDTO(Player player, List<BattlesProjection> playerBattles) {
-        PlayerDTO dto = new PlayerDTO(
-                player.getPlayerId(),
-                player.getName(),
-                player.getRegionId(),
-                player.getAreaId(),
-                player.getTekkenPower(),
-                player.getLatestBattle()
-        );
+    private PlayerDTO convertToPlayerDTO(Player player, List<Battle> playerBattles) {
+        PlayerDTO playerDto = new PlayerDTO();
+        playerDto.setPolarisId(player.getPolarisId());
+        playerDto.setName(player.getName());
+        playerDto.setRegionId(player.getRegionId());
+        playerDto.setAreaId(player.getAreaId());
+        playerDto.setTekkenPower(player.getTekkenPower());
+        playerDto.setLatestBattle(player.getLatestBattle());
+        playerDto.setMainCharacterAndRank(player.getMostPlayedCharacterInfo());
+        Map<String, PlayerMatchupSummaryDTO> matchupSummaryDto = initializePlayerMatchupSummaryDTO(player.getCharacterStats());
+        playerDto.setPlayedCharacters(matchupSummaryDto);
 
-        dto.setMainCharacterAndRank(player.getMostPlayedCharacterInfo());
-
-        // Convert character stats
-        Map<CharacterStatsId, CharacterStatsDTO> characterStatsMap = new HashMap<>();
-        if (player.getCharacterStats() != null) {
-            player.getCharacterStats().forEach((characterStatsId, characterStats) -> {
-                CharacterStatsDTO characterStatsDTO = new CharacterStatsDTO(
-                        TekkenDataMapper.getCharacterName(characterStatsId.getCharacterId()),
-                        TekkenDataMapper.getDanName(String.valueOf(characterStats.getDanRank())),
-                        characterStats.getDanRank(),
-                        characterStats.getWins(),
-                        characterStats.getLosses()
-                );
-                characterStatsMap.put(characterStatsId, characterStatsDTO);
-            });
+        List<BattleDTO> battleDTOs = new ArrayList<>();
+        for (Battle battle : playerBattles) {
+            updatePlayerDTOWithBattle(playerDto, battle);
+            BattleDTO battleDTO = new BattleDTO( battle.getDate(),
+                    battle.getGameVersion(),
+                    battle.getPlayer1Name(),
+                    battle.getPlayer1PolarisId(),
+                    battle.getPlayer1CharacterId(),
+                    battle.getPlayer1RegionId(),
+                    battle.getPlayer1TekkenPower(),
+                    battle.getPlayer1DanRank(),
+                    battle.getPlayer2Name(),
+                    battle.getPlayer2PolarisId(),
+                    battle.getPlayer2RegionId(),
+                    battle.getPlayer2CharacterId(),
+                    battle.getPlayer2DanRank(),
+                    battle.getPlayer2TekkenPower(),
+                    battle.getPlayer1RoundsWon(),
+                    battle.getPlayer2RoundsWon(),
+                    battle.getWinner(),
+                    battle.getStageId());
+            playerDto.getBattles().add(battleDTO);
         }
-        dto.setCharacterStats(characterStatsMap);
+        playerDto.setBattles(battleDTOs);
+        return playerDto;
+    }
 
-        if (playerBattles != null && !playerBattles.isEmpty()) {
-            List<BattleDTO> battleDTOs = playerBattles.stream()
-                    .map(battle -> new BattleDTO(
-                            battle.getDate(),
-                            battle.getGameVersion(),
-                            battle.getPlayer1Name(),
-                            battle.getPlayer1PolarisId(),
-                            battle.getPlayer1CharacterId(),
-                            battle.getPlayer1RegionId(),
-                            battle.getPlayer1TekkenPower(),
-                            battle.getPlayer1DanRank(),
-                            battle.getPlayer2Name(),
-                            battle.getPlayer2PolarisId(),
-                            battle.getPlayer2RegionId(),
-                            battle.getPlayer2CharacterId(),
-                            battle.getPlayer2DanRank(),
-                            battle.getPlayer2TekkenPower(),
-                            battle.getPlayer1RoundsWon(),
-                            battle.getPlayer2RoundsWon(),
-                            battle.getWinner(),
-                            battle.getStageId()
-                    ))
-                    .collect(Collectors.toList());
-            dto.setBattles(battleDTOs);
+    private void updatePlayerDTOWithBattle(PlayerDTO player, Battle battle) {
+        String characterPlayedByPlayer = getPlayerCharacter(player, battle);
+        String characterPlayedByOpponent = getOpponentCharacter(player, battle);
+        Integer playerNumber = getPlayerNumber(player, battle);
+        PlayerMatchupSummaryDTO matchupSummary = player.getPlayedCharacters().get(characterPlayedByPlayer);
+        MatchupStat matchupStat = matchupSummary.getMatchups().getOrDefault(characterPlayedByOpponent, new MatchupStat());
+
+        if(isWinner(playerNumber, battle)){
+            matchupStat.incrementWins();
         }
-        return dto;
+        else {
+            matchupStat.incrementLosses();
+        }
+        matchupSummary.getMatchups().put(characterPlayedByOpponent, matchupStat);
+        updateBestAndWorstMatchups(matchupSummary);
+
+    }
+
+    private Map<String, PlayerMatchupSummaryDTO> initializePlayerMatchupSummaryDTO(Map<CharacterStatsId, CharacterStats> characterStats) {
+        Map<String, PlayerMatchupSummaryDTO> allCharacterMatchups = new HashMap<>();
+        Map<String, Integer> latestCurrentSeasonVersion = new HashMap<>();
+        Map<String, Integer> latestPreviousSeasonVersion = new HashMap<>();
+        Map<String, Integer> currentSeasonDanRanks = new HashMap<>();
+        Map<String, Integer> previousSeasonDanRanks = new HashMap<>();
+
+        for (Map.Entry<CharacterStatsId, CharacterStats> entry : characterStats.entrySet()) {
+            CharacterStatsId id = entry.getKey();
+            CharacterStats stats = entry.getValue();
+            String characterName = TekkenDataMapperUtils.getCharacterName(id.getCharacterId());
+
+            if (id.getGameVersion() >= SEASON_2_GAME_VERSION) {
+                Integer latestVersion = latestCurrentSeasonVersion.getOrDefault(characterName, -1);
+                if (id.getGameVersion() > latestVersion) {
+                    latestCurrentSeasonVersion.put(characterName, id.getGameVersion());
+                    currentSeasonDanRanks.put(characterName, stats.getDanRank());
+                }
+            } else {
+                // Previous season
+                Integer latestVersion = latestPreviousSeasonVersion.getOrDefault(characterName, -1);
+                if (id.getGameVersion() > latestVersion) {
+                    latestPreviousSeasonVersion.put(characterName, id.getGameVersion());
+                    previousSeasonDanRanks.put(characterName, stats.getDanRank());
+                }
+            }
+        }
+
+        for (Map.Entry<CharacterStatsId, CharacterStats> entry : characterStats.entrySet()) {
+            CharacterStatsId id = entry.getKey();
+            CharacterStats stats = entry.getValue();
+            String characterName = TekkenDataMapperUtils.getCharacterName(id.getCharacterId());
+
+            PlayerMatchupSummaryDTO currentCharacter = allCharacterMatchups.getOrDefault(characterName, new PlayerMatchupSummaryDTO());
+
+            currentCharacter.setWins(currentCharacter.getWins() + stats.getWins());
+            currentCharacter.setLosses(currentCharacter.getLosses() + stats.getLosses());
+
+            if (currentCharacter.getWins() + currentCharacter.getLosses() > 0) {
+                currentCharacter.setCharacterWinrate((float) currentCharacter.getWins() /
+                        (currentCharacter.getWins() + currentCharacter.getLosses()));
+            }
+
+            currentCharacter.setCurrentSeasonDanRank(currentSeasonDanRanks.get(characterName));
+            currentCharacter.setPreviousSeasonDanRank(previousSeasonDanRanks.get(characterName));
+            allCharacterMatchups.put(characterName, currentCharacter);
+        }
+
+        return allCharacterMatchups;
     }
 
     private PlayerMetadataDTO convertToMetadataDTO(Player player) {
@@ -154,5 +204,61 @@ public class PlayerService {
             recentlyActivePlayersDTOs.add(dto);
         }
         return recentlyActivePlayersDTOs;
+    }
+
+    private void updateBestAndWorstMatchups(PlayerMatchupSummaryDTO matchupSummary) {
+        Float bestWinRate = null;
+        Float worstWinRate = null;
+        String bestCharacter = null;
+        String worstCharacter = null;
+
+        for (Map.Entry<String, MatchupStat> entry : matchupSummary.getMatchups().entrySet()) {
+            String character = entry.getKey();
+            MatchupStat stat = entry.getValue();
+
+            if (stat.getTotalMatches() < MINIMUM_GAMES) {
+                continue;
+            }
+            if (bestWinRate == null || stat.getWinRate() > bestWinRate) {
+                bestWinRate = stat.getWinRate();
+                bestCharacter = character;
+            }
+            if (worstWinRate == null || stat.getWinRate() < worstWinRate) {
+                worstWinRate = stat.getWinRate();
+                worstCharacter = character;
+            }
+        }
+
+        if (bestCharacter != null) {
+            matchupSummary.getBestMatchup().clear();
+            matchupSummary.getBestMatchup().put(bestCharacter, bestWinRate);
+        }
+
+        if (worstCharacter != null) {
+            matchupSummary.getWorstMatchup().clear();
+            matchupSummary.getWorstMatchup().put(worstCharacter, worstWinRate);
+        }
+    }
+
+    private String getOpponentCharacter(PlayerDTO playerDto, Battle battle) {
+        String characterId = playerDto.getPolarisId().equals(battle.getPlayer1PolarisId())
+                ? String.valueOf(battle.getPlayer2CharacterId())
+                : String.valueOf(battle.getPlayer1CharacterId());
+        return TekkenDataMapperUtils.getCharacterName(characterId);
+    }
+
+    private String getPlayerCharacter(PlayerDTO playerDto, Battle battle) {
+        String characterId = playerDto.getPolarisId().equals(battle.getPlayer1PolarisId())
+                ? String.valueOf(battle.getPlayer1CharacterId())
+                : String.valueOf(battle.getPlayer2CharacterId());
+        return TekkenDataMapperUtils.getCharacterName(characterId);
+    }
+
+    private boolean isWinner(Integer playerNumber, Battle battle) {
+        return playerNumber == battle.getWinner();
+    }
+
+    private Integer getPlayerNumber(PlayerDTO playerDto, Battle battle) {
+        return playerDto.getPolarisId().equals(battle.getPlayer1PolarisId()) ? 1 : 2;
     }
 }

@@ -8,7 +8,7 @@ import org.ewgf.interfaces.WinrateChangesProjection;
 import org.springframework.stereotype.Service;
 import org.ewgf.interfaces.CharacterAnalyticsProjection;
 import org.ewgf.interfaces.CharacterWinrateProjection;
-import org.ewgf.utils.TekkenDataMapper;
+import org.ewgf.utils.TekkenDataMapperUtils;
 import org.ewgf.repositories.AggregatedStatisticsRepository;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -68,7 +68,7 @@ public class StatisticsService {
         Map<String, Double> globalStats = groupedByRegion.getOrDefault(GLOBAL_REGION, Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
-                        stat -> TekkenDataMapper.getCharacterName((stat.getCharacterId())),
+                        stat -> TekkenDataMapperUtils.getCharacterName((stat.getCharacterId())),
                         this::calculateWinrate
                 ));
 
@@ -79,7 +79,7 @@ public class StatisticsService {
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
                                 .collect(Collectors.toMap(
-                                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
+                                        stat -> TekkenDataMapperUtils.getCharacterName(stat.getCharacterId()),
                                         this::calculateWinrate
                                 ))
                 ));
@@ -125,7 +125,7 @@ public class StatisticsService {
         Map<String, Long> globalStats = groupedByRegion.getOrDefault(GLOBAL_REGION, Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
-                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
+                        stat -> TekkenDataMapperUtils.getCharacterName(stat.getCharacterId()),
                         CharacterAnalyticsProjection::getTotalBattles
                 ));
 
@@ -136,7 +136,7 @@ public class StatisticsService {
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
                                 .collect(Collectors.toMap(
-                                        stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
+                                        stat -> TekkenDataMapperUtils.getCharacterName(stat.getCharacterId()),
                                         CharacterAnalyticsProjection::getTotalBattles
                                 ))
                 ));
@@ -205,7 +205,7 @@ public class StatisticsService {
         List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getWinrateChanges();
         List<RankWinrateChangesDTO> changes = projections.stream()
                 .map(proj -> new RankWinrateChangesDTO(
-                        TekkenDataMapper.getCharacterName(proj.getCharacterId()),
+                        TekkenDataMapperUtils.getCharacterName(proj.getCharacterId()),
                         proj.getChange(),
                         proj.getTrend(),
                         proj.getRankCategory()))
@@ -217,14 +217,14 @@ public class StatisticsService {
     private Map<String, Long> processTopStats(List<CharacterAnalyticsProjection> stats) {
         if (stats == null) return new HashMap<>();
         return stats.stream().collect(Collectors.toMap(
-                stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
+                stat -> TekkenDataMapperUtils.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getTotalBattles
         ));
     }
     private Map<String, Double> processTopWinrates(List<CharacterAnalyticsProjection> stats) {
         if (stats == null) return new HashMap<>();
         return stats.stream().collect(Collectors.toMap(
-                stat -> TekkenDataMapper.getCharacterName(stat.getCharacterId()),
+                stat -> TekkenDataMapperUtils.getCharacterName(stat.getCharacterId()),
                 CharacterAnalyticsProjection::getWinratePercentage
         ));
     }

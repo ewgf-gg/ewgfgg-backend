@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.ewgf.utils.TekkenDataMapper;
+import org.ewgf.utils.TekkenDataMapperUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -135,22 +135,18 @@ public class Player {
                 });
     }
 
-    public Map<String, String> getMostPlayedCharacterInfo()
-    {
+    public Map<String, String> getMostPlayedCharacterInfo() {
         Map<String, String> stats = findMainCharacter();
         Map<String, String> result = new HashMap<>();
 
-        if (stats.get(CHARACTER_ID).equals("No Character Data"))
-        {
+        if (stats.get(CHARACTER_ID).equals("No Character Data")) {
             result.put(CHARACTER_NAME, "No Character Data");
             result.put(DAN_RANK, "N/A");
         }
-        else
-        {
-            result.put(CHARACTER_NAME, TekkenDataMapper.getCharacterName(stats.get(CHARACTER_ID)));
-            result.put(DAN_RANK, TekkenDataMapper.getDanName(stats.get(DAN_RANK)));
+        else {
+            result.put(CHARACTER_NAME, TekkenDataMapperUtils.getCharacterName(stats.get(CHARACTER_ID)));
+            result.put(DAN_RANK, TekkenDataMapperUtils.getDanName(stats.get(DAN_RANK)));
         }
-
         return result;
     }
 
@@ -168,8 +164,8 @@ public class Player {
 
         String characterId = latestCharacterStats.get().getKey().getCharacterId();
         int danRankId = latestCharacterStats.get().getValue().getDanRank();
-        result.put(CHARACTER_NAME, TekkenDataMapper.getCharacterName(characterId));
-        result.put(DAN_RANK, TekkenDataMapper.getDanName(String.valueOf(danRankId)));
+        result.put(CHARACTER_NAME, TekkenDataMapperUtils.getCharacterName(characterId));
+        result.put(DAN_RANK, TekkenDataMapperUtils.getDanName(String.valueOf(danRankId)));
 
         return result;
     }
