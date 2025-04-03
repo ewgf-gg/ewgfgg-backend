@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -47,7 +48,7 @@ public class AdminController {
 
 
     @GetMapping("/revalidateCharacterStats")
-    public ResponseEntity<String> revalidateSCharacterStats(
+    public ResponseEntity<String> revalidateCharacterStats(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authToken,
             HttpServletRequest request) {
 
@@ -58,13 +59,19 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
 
-        try {
-            revalidationService.startRevalidation();
-            return ResponseEntity.ok("Revalidation process finished successfully");
-        } catch (Exception e) {
-            log.error("Error starting revalidation", e);
-            return ResponseEntity.internalServerError().body("Error starting revalidation: " + e.getMessage());
-        }
+        // Start the revalidation process in a separate thread
+        CompletableFuture.runAsync(() -> {
+            try {
+                log.info("Starting asynchronous revalidation process");
+                revalidationService.startRevalidation();
+                log.info("Revalidation process completed successfully");
+            } catch (Exception e) {
+                log.error("Error during asynchronous revalidation", e);
+            }
+        });
+
+        // Return immediately without waiting for the process to complete
+        return ResponseEntity.accepted().body("Revalidation process started successfully");
     }
 
 
