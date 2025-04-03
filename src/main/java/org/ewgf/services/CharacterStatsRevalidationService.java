@@ -44,7 +44,7 @@ public class CharacterStatsRevalidationService {
 
         // Create thread executor using virtual threads
         this.executorService = Executors.newFixedThreadPool(
-                5,
+                15,
                 Thread.ofVirtual()
                         .name("revalidation-", 0)
                         .factory()
