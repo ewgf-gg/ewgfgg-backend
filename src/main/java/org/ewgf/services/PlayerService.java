@@ -179,7 +179,7 @@ public class PlayerService {
         Map<String, String> characterInfo = player.getMostPlayedCharacterInfo();
         dto.setId(player.getPlayerId());
         dto.setName(player.getName());
-        dto.setTekkenId(player.getPolarisId());
+        dto.setTekkenId(formatPolarisId(player.getPolarisId()));
         dto.setRegionId(player.getRegionId() == null ? -1 : player.getRegionId());
         dto.setMostPlayedCharacter(characterInfo.get(CHARACTER_NAME));
         dto.setDanRankName(characterInfo.get(DAN_RANK));
@@ -258,5 +258,18 @@ public class PlayerService {
 
     private Integer getPlayerNumber(PlayerDTO playerDto, Battle battle) {
         return playerDto.getPolarisId().equals(battle.getPlayer1PolarisId()) ? 1 : 2;
+    }
+
+    private String formatPolarisId(String rawPolarisId) {
+        if (rawPolarisId == null || rawPolarisId.length() < 12) return rawPolarisId;
+        try {
+            StringBuilder formatted = new StringBuilder(rawPolarisId);
+            formatted.insert(4, '-');
+            formatted.insert(9, '-');
+            return formatted.toString();
+        } catch (Exception e) {
+            logger.error("Exception thrown while formatting polarisId, returning unformatted version. Exception: {}", e.getMessage());
+            return rawPolarisId;
+        }
     }
 }
