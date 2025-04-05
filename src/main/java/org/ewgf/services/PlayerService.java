@@ -179,7 +179,8 @@ public class PlayerService {
         Map<String, String> characterInfo = player.getMostPlayedCharacterInfo();
         dto.setId(player.getPlayerId());
         dto.setName(player.getName());
-        dto.setTekkenId(formatPolarisId(player.getPolarisId()));
+        dto.setTekkenId(player.getPolarisId());
+        dto.setFormattedTekkenId(formatPolarisId(player.getPolarisId()));
         dto.setRegionId(player.getRegionId() == null ? -1 : player.getRegionId());
         dto.setMostPlayedCharacter(characterInfo.get(CHARACTER_NAME));
         dto.setDanRankName(characterInfo.get(DAN_RANK));
