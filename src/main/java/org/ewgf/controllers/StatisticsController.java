@@ -40,35 +40,35 @@ public class StatisticsController {
 
     @GetMapping("/version-popularity")
     public ResponseEntity<Map<String, CharacterPopularityDTO>> getVersionPopularity() throws Exception {
-        log.info("Fetching popularity stats for all game versions");
+        log.debug("Fetching popularity stats for all game versions");
         Map<String, CharacterPopularityDTO> popularity = statisticsService.getAllVersionPopularity();
         return ResponseEntity.ok(popularity);
     }
 
     @GetMapping("/version-winrates")
     public ResponseEntity<Map<String, CharacterWinratesDTO>> getVersionWinrates() throws Exception {
-        log.info("Fetching winrates for all game versions");
+        log.debug("Fetching winrates for all game versions");
         Map<String, CharacterWinratesDTO> winrates = statisticsService.getAllVersionWinrates();
         return ResponseEntity.ok(winrates);
     }
 
     @GetMapping("/top-popularity")
     public ResponseEntity<CharacterPopularityDTO> getTop5CharacterPopularityStats() throws Exception {
-        log.info("Fetching top 5 popular characters");
+        log.debug("Fetching top 5 popular characters");
         CharacterPopularityDTO popularity = statisticsService.getHomePageCharacterPopularity();
         return ResponseEntity.ok(popularity);
     }
 
     @GetMapping("/top-winrates")
     public ResponseEntity<CharacterWinratesDTO> getTop5CharacterWinratesStats() throws Exception {
-        log.info("Fetching top 5 highest winrate characters");
+        log.debug("Fetching top 5 highest winrate characters");
         CharacterWinratesDTO winratesDTO = statisticsService.getHomePageCharacterWinrates();
         return ResponseEntity.ok(winratesDTO);
     }
 
     @GetMapping("/gameVersions")
     public ResponseEntity<List<Integer>> getGameVersions(HttpServletRequest request) throws InterruptedException {
-        log.info("Received request for gameVersions");
+        log.debug("Received request for gameVersions");
         return statisticsService.getGameVersions()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -76,21 +76,21 @@ public class StatisticsController {
 
     @GetMapping("/rankDistribution")
     public ResponseEntity<Map<Integer, RankDistributionDTO>> getAllRankDistributions() {
-        log.info("Fetching rank distribution for all versions");
+        log.debug("Fetching rank distribution for all versions");
         Map<Integer, RankDistributionDTO> result = statisticsService.getAllRankDistributions();
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/winrate-changes")
     public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getWinrateChanges() {
-        log.info("Fetching character winrate changes");
+        log.debug("Fetching character winrate changes");
         Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getHomePageWinrateChanges();
         return ResponseEntity.ok(groupedChanges);
     }
 
     @GetMapping("/allWinrateChanges")
     public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getAllWinrateChanges() {
-        log.info("Fetching all character winrate changes");
+        log.debug("Fetching all character winrate changes");
         Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getAllWinrateChanges();
         return ResponseEntity.ok(groupedChanges);
     }

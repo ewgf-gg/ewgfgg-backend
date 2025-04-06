@@ -62,7 +62,7 @@ public class BattleProcessingService {
 
     private Map<String, Battle> fetchSurroundingBattles(List<Battle> battles) {
         if (battles.isEmpty()) {
-            logger.warn("No battles provided. Skipping database fetch.");
+            logger.debug("No battles provided. Skipping database fetch.");
             return Collections.emptyMap();
         }
         long startTime = System.currentTimeMillis();
@@ -75,7 +75,7 @@ public class BattleProcessingService {
         Map<String, Battle> existingBattles = battles.stream()
                 .filter(battle -> surroundingBattleIdSet.contains(battle.getBattleId()))
                 .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
-        logger.info("Identified {} existing battles in {} ms", existingBattles.size(), (System.currentTimeMillis() - startTime));
+        logger.debug("Identified {} existing battles in {} ms", existingBattles.size(), (System.currentTimeMillis() - startTime));
         return existingBattles;
     }
 
@@ -118,7 +118,7 @@ public class BattleProcessingService {
             }
         }
         if (duplicateBattles == battles.size()) {
-            logger.warn("Entire batch already exists in database!");
+            logger.debug("Entire batch already exists in database!");
             return;
         }
         logger.info("Updated player and battle information: {} ms", (System.currentTimeMillis() - startTime));
@@ -127,7 +127,7 @@ public class BattleProcessingService {
 
     public int executeBattleBatchWrite(Set<Battle> battleSet) {
         if (battleSet == null || battleSet.isEmpty()) {
-            logger.warn("No battles to insert or update.");
+            logger.warn("No battles to insert. (Batch already existed in database)");
             return 0;
         }
 
@@ -168,7 +168,7 @@ public class BattleProcessingService {
     {
 
         if (updatedPlayersMap.isEmpty()) {
-            logger.warn("Updated Player Set is empty! (Battle batch already existed in database)");
+            logger.debug("Updated Player Set is empty! (Battle batch already existed in database)");
             return;
         }
 
@@ -217,7 +217,7 @@ public class BattleProcessingService {
 
     public void executeCharacterStatsBulkOperations(Map<String, Player> updatedPlayersSet) {
         if (updatedPlayersSet.isEmpty()) {
-            logger.warn("Player set is empty, character updates aborted (Battle batch already existed in database)");
+            logger.debug("Player set is empty, character updates aborted (Battle batch already existed in database)");
             return;
         }
 
@@ -338,13 +338,13 @@ public class BattleProcessingService {
 
         // check if enough time has passed since last publish
         if ((currentTime - lastPublishTime) < COOLDOWN_PERIOD) {
-            logger.info("Skipping statistics computation due to cooldown period");
+            logger.info("Skipping statistics computation due to cooldown");
             return;
         }
 
         // Try to acquire the publishing lock
         if (!isPublishing.compareAndSet(false, true)) {
-            logger.info("Another thread is currently publishing an event");
+            logger.warn("Another thread is currently publishing an event");
             return;
         }
 
@@ -355,7 +355,7 @@ public class BattleProcessingService {
             if ((currentTime - lastEventPublishTime.get()) >= COOLDOWN_PERIOD) {
                 eventPublisher.publishEvent(new ReplayProcessingCompletedEvent(gameVersions));
                 lastEventPublishTime.set(currentTime);
-                logger.info("Published statistics computation event");
+                logger.debug("Published statistics computation event");
             }
         }
         finally {

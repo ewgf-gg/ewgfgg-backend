@@ -1,5 +1,6 @@
 package org.ewgf.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.ewgf.dtos.*;
 import org.ewgf.models.Player;
 import org.ewgf.services.PlayerService;
@@ -21,8 +22,8 @@ public class PlayerController {
     }
 
     @GetMapping("/{player}")
-    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String player) {
-        logger.info("Received request for Player: {}", player);
+    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request) {
+        logger.info("Received request for Player: {} from IP: {}", player, request.getRemoteAddr());
         PlayerDTO playerDTO = playerService.getPlayerStats(player);
         if (playerDTO == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(playerDTO);

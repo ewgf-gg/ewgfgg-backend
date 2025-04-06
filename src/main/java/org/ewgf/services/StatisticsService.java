@@ -182,12 +182,10 @@ public class StatisticsService {
     }
 
     public Optional<List<Integer>> getGameVersions() {
-        log.info("Fetching available game versions");
         return aggregatedStatisticsRepository.getGameVersions();
     }
 
     public Map<Integer, RankDistributionDTO> getAllRankDistributions() {
-        log.info("Fetching rank distribution for all versions");
         Optional<List<Integer>> gameVersions = aggregatedStatisticsRepository.getGameVersions();
         List<RankDistributionProjection> distributions = aggregatedStatisticsRepository.getAllRankDistributions(gameVersions.get());
         Map<Integer, RankDistributionDTO> result = new TreeMap<>(Collections.reverseOrder());
@@ -201,7 +199,6 @@ public class StatisticsService {
     }
 
     public Map<String, List<RankWinrateChangesDTO>> getHomePageWinrateChanges() {
-        log.info("Fetching character winrate changes");
         List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getWinrateChanges();
         List<RankWinrateChangesDTO> changes = projections.stream()
                 .map(proj -> new RankWinrateChangesDTO(
@@ -214,7 +211,6 @@ public class StatisticsService {
     }
 
     public Map<String, List<RankWinrateChangesDTO>> getAllWinrateChanges() {
-        log.info("Fetching All character winrate changes");
         List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getAllWinrateChanges();
         List<RankWinrateChangesDTO> changes = projections.stream()
                 .map(proj -> new RankWinrateChangesDTO(
