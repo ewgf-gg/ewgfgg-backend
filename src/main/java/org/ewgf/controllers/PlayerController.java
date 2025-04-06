@@ -30,7 +30,7 @@ public class PlayerController {
 
     @GetMapping("/search")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
-        if (query.isEmpty() || query.length() >= 20) return ResponseEntity.badRequest().build();
+        if (query == null || query.isBlank() || query.length() >= 20) return ResponseEntity.badRequest().build();
         List<PlayerSearchDTO> projections = playerService.searchPlayers(query);
         return ResponseEntity.ok(projections);
     }

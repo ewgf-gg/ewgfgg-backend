@@ -55,14 +55,14 @@ public class StatisticsController {
     @GetMapping("/top-popularity")
     public ResponseEntity<CharacterPopularityDTO> getTop5CharacterPopularityStats() throws Exception {
         log.info("Fetching top 5 popular characters");
-        CharacterPopularityDTO popularity = statisticsService.getTopCharacterPopularity();
+        CharacterPopularityDTO popularity = statisticsService.getHomePageCharacterPopularity();
         return ResponseEntity.ok(popularity);
     }
 
     @GetMapping("/top-winrates")
     public ResponseEntity<CharacterWinratesDTO> getTop5CharacterWinratesStats() throws Exception {
         log.info("Fetching top 5 highest winrate characters");
-        CharacterWinratesDTO winratesDTO = statisticsService.getTopCharacterWinrates();
+        CharacterWinratesDTO winratesDTO = statisticsService.getHomePageCharacterWinrates();
         return ResponseEntity.ok(winratesDTO);
     }
 
@@ -84,7 +84,14 @@ public class StatisticsController {
     @GetMapping("/winrate-changes")
     public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getWinrateChanges() {
         log.info("Fetching character winrate changes");
-        Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getWinrateChanges();
+        Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getHomePageWinrateChanges();
+        return ResponseEntity.ok(groupedChanges);
+    }
+
+    @GetMapping("/allWinrateChanges")
+    public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getAllWinrateChanges() {
+        log.info("Fetching all character winrate changes");
+        Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getAllWinrateChanges();
         return ResponseEntity.ok(groupedChanges);
     }
 

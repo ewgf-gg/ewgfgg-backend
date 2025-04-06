@@ -143,7 +143,7 @@ public class StatisticsService {
         return new RegionalCharacterPopularityDTO(globalStats, regionalStats);
     }
 
-    public CharacterPopularityDTO getTopCharacterPopularity() throws Exception {
+    public CharacterPopularityDTO getHomePageCharacterPopularity() throws Exception {
         List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByPopularity();
         // Group by rank category
         Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
@@ -162,7 +162,7 @@ public class StatisticsService {
         return new CharacterPopularityDTO(masterRanks, advancedRanks, intermediateRanks, beginnerRanks);
     }
 
-    public CharacterWinratesDTO getTopCharacterWinrates() throws Exception {
+    public CharacterWinratesDTO getHomePageCharacterWinrates() throws Exception {
         List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByWinrate();
         // Group by rank category
         Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
@@ -200,9 +200,22 @@ public class StatisticsService {
         return result;
     }
 
-    public Map<String, List<RankWinrateChangesDTO>> getWinrateChanges() {
+    public Map<String, List<RankWinrateChangesDTO>> getHomePageWinrateChanges() {
         log.info("Fetching character winrate changes");
         List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getWinrateChanges();
+        List<RankWinrateChangesDTO> changes = projections.stream()
+                .map(proj -> new RankWinrateChangesDTO(
+                        TekkenDataMapperUtils.getCharacterName(proj.getCharacterId()),
+                        proj.getChange(),
+                        proj.getTrend(),
+                        proj.getRankCategory()))
+                .collect(Collectors.toList());
+        return RankWinrateChangesDTO.groupByRankCategory(changes);
+    }
+
+    public Map<String, List<RankWinrateChangesDTO>> getAllWinrateChanges() {
+        log.info("Fetching All character winrate changes");
+        List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getAllWinrateChanges();
         List<RankWinrateChangesDTO> changes = projections.stream()
                 .map(proj -> new RankWinrateChangesDTO(
                         TekkenDataMapperUtils.getCharacterName(proj.getCharacterId()),

@@ -464,6 +464,118 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
             nativeQuery = true)
     List<WinrateChangesProjection> getWinrateChanges();
 
+    @Query(value = """
+    WITH latest_versions AS (
+            SELECT DISTINCT game_version
+            FROM aggregated_statistics
+            ORDER BY game_version DESC
+            LIMIT 2
+    ),
+    version_winrates AS (
+            SELECT
+                    a.character_id,
+            a.game_version,
+            CASE
+                    WHEN dan_rank >= 27 THEN 'master'
+                    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+                    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
+                    ELSE NULL -- Handle any potential NULL dan_ranks
+                    END as rank_category,
+            SUM(a.total_wins) as total_wins,
+    SUM(a.total_losses) as total_losses,
+    ROUND(
+            SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0),
+            2
+            ) as winrate
+    FROM aggregated_statistics a
+    INNER JOIN latest_versions lv ON a.game_version = lv.game_version
+    WHERE a.category = 'standard'
+    GROUP BY
+    a.character_id,
+    a.game_version,
+    CASE
+    WHEN dan_rank >= 27 THEN 'master'
+    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
+    END
+
+    UNION ALL
+
+    -- Global tier that includes all ranks
+    SELECT
+    a.character_id,
+    a.game_version,
+            'global' as rank_category,
+    SUM(a.total_wins) as total_wins,
+    SUM(a.total_losses) as total_losses,
+    ROUND(
+            SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0),
+            2
+            ) as winrate
+    FROM aggregated_statistics a
+    INNER JOIN latest_versions lv ON a.game_version = lv.game_version
+    WHERE a.category = 'standard'
+    GROUP BY
+    a.character_id,
+    a.game_version
+),
+    winrate_changes AS (
+            SELECT
+                    v1.character_id,
+            v1.rank_category,
+            v1.winrate as new_winrate,
+            v2.winrate as old_winrate,
+        (v1.winrate - v2.winrate) as winrate_change
+    FROM version_winrates v1
+    INNER JOIN version_winrates v2
+    ON v1.character_id = v2.character_id
+    AND v1.game_version > v2.game_version
+    AND v1.rank_category = v2.rank_category
+    WHERE v1.winrate IS NOT NULL
+    AND v2.winrate IS NOT NULL
+),
+    top_increases AS (
+            SELECT
+                    character_id,
+            rank_category,
+            winrate_change,
+        'increase' as trend,
+            ROW_NUMBER() OVER (PARTITION BY rank_category ORDER BY winrate_change DESC) as rn
+    FROM winrate_changes
+    WHERE winrate_change > 0
+            ),
+    top_decreases AS (
+            SELECT
+                    character_id,
+            rank_category,
+            winrate_change,
+        'decrease' as trend,
+            ROW_NUMBER() OVER (PARTITION BY rank_category ORDER BY winrate_change) as rn
+    FROM winrate_changes
+    WHERE winrate_change < 0
+            )
+    SELECT
+    character_id as characterId,
+    rank_category as rankCategory,
+    CAST(ABS(winrate_change) AS DOUBLE PRECISION) as change,
+            trend
+    FROM (
+            SELECT * FROM top_increases
+            UNION ALL
+            SELECT * FROM top_decreases
+    ) as combined_results
+    ORDER BY
+    CASE
+    WHEN rank_category = 'global' THEN 1
+    WHEN rank_category = 'master' THEN 2
+    WHEN rank_category = 'advanced' THEN 3
+    WHEN rank_category = 'intermediate' THEN 4
+    WHEN rank_category = 'beginner' THEN 5
+    END""", nativeQuery = true)
+    List<WinrateChangesProjection> getAllWinrateChanges();
+
 
     @Query(value = "SELECT DISTINCT game_version FROM aggregated_statistics", nativeQuery = true)
     Optional<List<Integer>> getGameVersions();
