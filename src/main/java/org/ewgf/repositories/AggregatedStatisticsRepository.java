@@ -1,5 +1,8 @@
 package org.ewgf.repositories;
 
+import org.ewgf.dtos.homepage.GlobalCharacterPickRateDTO;
+import org.ewgf.dtos.homepage.GlobalWinrateChangesDTO;
+import org.ewgf.dtos.homepage.GlobalWinratesDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -261,95 +264,55 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     WITH latest_version AS (
         SELECT MAX(game_version) as version FROM aggregated_statistics
     ),
-    ranked_stats AS (
-        SELECT 
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END as rankCategory,
-            a.character_id as characterId,
-            SUM(a.total_replays) as totalBattles,
-            ROW_NUMBER() OVER (
-                PARTITION BY 
-                    CASE 
-                        WHEN dan_rank >= 27 THEN 'master'
-                        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                        WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-                    END 
-                ORDER BY SUM(a.total_replays) DESC
-            ) as rank
+    total_battles AS (
+        SELECT SUM(a.total_replays) as globalTotalReplays
         FROM aggregated_statistics a, latest_version lv
         WHERE a.category = 'standard'
             AND a.game_version = lv.version
-        GROUP BY 
-            character_id,
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END
+    ),
+    character_pickrates AS (
+        SELECT
+            a.character_id as characterId,
+            SUM(a.total_replays) as characterTotalReplays
+        FROM aggregated_statistics a, latest_version lv
+        WHERE a.category = 'standard'
+            AND a.game_version = lv.version
+        GROUP BY character_id
         HAVING SUM(a.total_replays) > 0
     )
-    SELECT *
-    FROM ranked_stats
-    WHERE rank <= 5
-    ORDER BY 
-        rankCategory,
-        totalBattles DESC
+    SELECT
+        cpr.characterId as characterId,
+        CAST((cpr.characterTotalReplays * 100.0 / tb.globalTotalReplays) AS FLOAT) as pickRate
+    FROM character_pickrates cpr, total_battles tb
+    ORDER BY pickRate DESC
+    LIMIT 5
 """, nativeQuery = true)
-    List<CharacterAnalyticsProjection> findTopCharactersByPopularity();
+    List<GlobalCharacterPickRateDTO> findTopCharactersByPickRate();
 
     @Query(value = """
     WITH latest_version AS (
         SELECT MAX(game_version) as version FROM aggregated_statistics
     ),
-    ranked_stats AS (
-        SELECT 
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END as rankCategory,
+    character_winrates AS (
+        SELECT
             a.character_id as characterId,
             SUM(a.total_wins) as totalWins,
             SUM(a.total_losses) as totalLosses,
-            ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winratePercentage,
-            ROW_NUMBER() OVER (
-                PARTITION BY 
-                    CASE 
-                        WHEN dan_rank >= 27 THEN 'master'
-                        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                        WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-                    END 
-                ORDER BY SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0) DESC
-            ) as rank
+            ROUND(SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0), 2) as winRate
         FROM aggregated_statistics a, latest_version lv
         WHERE a.category = 'standard'
             AND a.game_version = lv.version
-        GROUP BY 
-            character_id,
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END
+        GROUP BY character_id
         HAVING SUM(a.total_wins + a.total_losses) > 0
     )
-    SELECT *
-    FROM ranked_stats
-    WHERE rank <= 5
-    ORDER BY 
-        rankCategory,
-        winratePercentage DESC
+    SELECT
+        characterId,
+        CAST(winRate AS FLOAT) as winRate
+    FROM character_winrates
+    ORDER BY winRate DESC
+    LIMIT 5
 """, nativeQuery = true)
-    List<CharacterAnalyticsProjection> findTopCharactersByWinrate();
+    List<GlobalWinratesDTO> findTopCharactersByWinrate();
 
     @Query(value = """
         WITH total_players_by_version AS (
@@ -379,90 +342,73 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     List<RankDistributionProjection> getAllRankDistributions(@Param("gameVersions") List<Integer> gameVersions);
 
     @Query(value = """
-        WITH latest_versions AS (
-            SELECT DISTINCT game_version
-            FROM aggregated_statistics
-            ORDER BY game_version DESC
-            LIMIT 2
-        ),
-        version_winrates AS (
-            SELECT
-                a.character_id,
-                a.game_version,
-                CASE
-                    WHEN dan_rank >= 27 THEN 'master'
-                    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-                END as rank_category,
-                SUM(a.total_wins) as total_wins,
-                SUM(a.total_losses) as total_losses,
-                ROUND(
-                    SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0),
-                    2
-                ) as winrate
-            FROM aggregated_statistics a
-            INNER JOIN latest_versions lv ON a.game_version = lv.game_version
-            WHERE a.category = 'standard'
-            GROUP BY
-                a.character_id,
-                a.game_version,
-                CASE
-                    WHEN dan_rank >= 27 THEN 'master'
-                    WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                    WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                    WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-                END
-        ),
-        winrate_changes AS (
-            SELECT
-                v1.character_id,
-                v1.rank_category,
-                v1.winrate as new_winrate,
-                v2.winrate as old_winrate,
-                (v1.winrate - v2.winrate) as winrate_change
-            FROM version_winrates v1
-            INNER JOIN version_winrates v2
-                ON v1.character_id = v2.character_id
-                AND v1.game_version > v2.game_version
-                AND v1.rank_category = v2.rank_category
-            WHERE v1.winrate IS NOT NULL
-                AND v2.winrate IS NOT NULL
-        ),
-        top_increases AS (
-            SELECT
-                character_id,
-                rank_category,
-                winrate_change,
-                'increase' as trend,
-                ROW_NUMBER() OVER (PARTITION BY rank_category ORDER BY winrate_change DESC) as rn
-            FROM winrate_changes
-            WHERE winrate_change > 0
-        ),
-        top_decreases AS (
-            SELECT
-                character_id,
-                rank_category,
-                winrate_change,
-                'decrease' as trend,
-                ROW_NUMBER() OVER (PARTITION BY rank_category ORDER BY winrate_change) as rn
-            FROM winrate_changes
-            WHERE winrate_change < 0
-        )
+    WITH latest_versions AS (
+        SELECT DISTINCT game_version
+        FROM aggregated_statistics
+        ORDER BY game_version DESC
+        LIMIT 2
+    ),
+    version_winrates AS (
         SELECT
-            character_id as characterId,
-            rank_category as rankCategory,
-            CAST(ABS(winrate_change) AS DOUBLE PRECISION) as change,
-            trend
-        FROM (
-            SELECT * FROM top_increases WHERE rn <= 2
-            UNION ALL
-            SELECT * FROM top_decreases WHERE rn <= 2
-        ) as combined_results
-        ORDER BY rank_category DESC
-        """,
+            a.character_id as characterId,
+            a.game_version,
+            SUM(a.total_wins) as total_wins,
+            SUM(a.total_losses) as total_losses,
+            ROUND(
+                SUM(a.total_wins) * 100.0 / NULLIF(SUM(a.total_wins + a.total_losses), 0),
+                2
+            ) as winrate
+        FROM aggregated_statistics a
+        INNER JOIN latest_versions lv ON a.game_version = lv.game_version
+        WHERE a.category = 'standard'
+        GROUP BY
+            a.character_id,
+            a.game_version
+    ),
+    winrate_changes AS (
+        SELECT
+            v1.characterId,
+            v1.winrate as new_winrate,
+            v2.winrate as old_winrate,
+            (v1.winrate - v2.winrate) as winrate_change
+        FROM version_winrates v1
+        INNER JOIN version_winrates v2
+            ON v1.characterId = v2.characterId
+            AND v1.game_version > v2.game_version
+        WHERE v1.winrate IS NOT NULL
+            AND v2.winrate IS NOT NULL
+    ),
+    top_increases AS (
+        SELECT
+            characterId,
+            winrate_change,
+            'increase' as trend,
+            ROW_NUMBER() OVER (ORDER BY winrate_change DESC) as rn
+        FROM winrate_changes
+        WHERE winrate_change > 0
+    ),
+    top_decreases AS (
+        SELECT
+            characterId,
+            winrate_change,
+            'decrease' as trend,
+            ROW_NUMBER() OVER (ORDER BY winrate_change) as rn
+        FROM winrate_changes
+        WHERE winrate_change < 0
+    )
+    SELECT
+        characterId,
+        CAST(ABS(winrate_change) AS DOUBLE PRECISION) as change,
+        trend
+    FROM (
+        SELECT * FROM top_increases WHERE rn <= 2
+        UNION ALL
+        SELECT * FROM top_decreases WHERE rn <= 2
+    ) as combined_results
+    ORDER BY change DESC
+    """,
             nativeQuery = true)
-    List<WinrateChangesProjection> getWinrateChanges();
+    List<GlobalWinrateChangesDTO> getWinrateChanges();
 
     @Query(value = """
     WITH latest_versions AS (

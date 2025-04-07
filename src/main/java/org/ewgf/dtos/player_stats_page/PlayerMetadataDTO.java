@@ -1,4 +1,4 @@
-package org.ewgf.dtos;
+package org.ewgf.dtos.player_stats_page;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

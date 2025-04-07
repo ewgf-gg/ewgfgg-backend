@@ -1,4 +1,4 @@
-package org.ewgf.dtos;
+package org.ewgf.dtos.homepage;
 
 import lombok.Data;
 

@@ -1,6 +1,5 @@
-package org.ewgf.dtos;
+package org.ewgf.dtos.player_stats_page;
 
-import com.sun.jdi.IntegerValue;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

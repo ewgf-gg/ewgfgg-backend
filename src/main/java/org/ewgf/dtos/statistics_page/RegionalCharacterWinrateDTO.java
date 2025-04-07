@@ -1,4 +1,4 @@
-package org.ewgf.dtos;
+package org.ewgf.dtos.statistics_page;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

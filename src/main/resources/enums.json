@@ -99,5 +99,13 @@
         "28": "Tekken God Supreme",
         "29": "God of Destruction",
         "100": "God of Destruction"
+    },
+    "regions": {
+        "-1": "N/A",
+        "0": "Asia",
+        "1": "Middle East",
+        "2": "Oceania",
+        "3": "Americas",
+        "4": "Europe"
     }
 }

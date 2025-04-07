@@ -1,6 +1,9 @@
 package org.ewgf.services;
 
 import org.ewgf.dtos.*;
+import org.ewgf.dtos.header_or_footer.PlayerSearchDTO;
+import org.ewgf.dtos.homepage.RegionalPlayerDistributionDTO;
+import org.ewgf.dtos.player_stats_page.*;
 import org.ewgf.models.Battle;
 import org.ewgf.models.CharacterStats;
 import org.ewgf.models.CharacterStatsId;
@@ -14,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.ewgf.utils.Constants.*;
 
@@ -203,6 +205,10 @@ public class PlayerService {
             recentlyActivePlayersDTOs.add(dto);
         }
         return recentlyActivePlayersDTOs;
+    }
+
+    public RegionalPlayerDistributionDTO getRegionalPlayerDistribution() {
+        return playerRepository.findAllPlayerCountByRegion();
     }
 
     private void updateBestAndWorstMatchups(PlayerMatchupSummaryDTO matchupSummary) {

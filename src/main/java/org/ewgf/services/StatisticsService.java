@@ -2,7 +2,15 @@ package org.ewgf.services;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.ewgf.dtos.*;
+import org.ewgf.dtos.RankWinrateChangesDTO;
+import org.ewgf.dtos.homepage.GlobalCharacterPickRateDTO;
+import org.ewgf.dtos.homepage.GlobalWinratesDTO;
+import org.ewgf.dtos.homepage.RankDistributionDTO;
+import org.ewgf.dtos.homepage.RankDistributionEntry;
+import org.ewgf.dtos.statistics_page.CharacterPopularityDTO;
+import org.ewgf.dtos.statistics_page.CharacterWinratesDTO;
+import org.ewgf.dtos.statistics_page.RegionalCharacterPopularityDTO;
+import org.ewgf.dtos.statistics_page.RegionalCharacterWinrateDTO;
 import org.ewgf.interfaces.RankDistributionProjection;
 import org.ewgf.interfaces.WinrateChangesProjection;
 import org.springframework.stereotype.Service;
@@ -143,46 +151,12 @@ public class StatisticsService {
         return new RegionalCharacterPopularityDTO(globalStats, regionalStats);
     }
 
-    public CharacterPopularityDTO getHomePageCharacterPopularity() throws Exception {
-        List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByPopularity();
-        // Group by rank category
-        Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
-                    .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
-
-        Map<String, Long> masterRankStats = processTopStats(statsByRank.getOrDefault(MASTER_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Long> advcancedRankStats = processTopStats(statsByRank.getOrDefault(ADVANCED_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Long> intermediateRankStats = processTopStats(statsByRank.getOrDefault(INTERMEDIATE_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Long> beginnerRankStats = processTopStats(statsByRank.getOrDefault(BEGINNER_RANK_CATEGORY, Collections.emptyList()));
-
-        // Since we're only returning top characters (for the front page) , we only need global stats
-        RegionalCharacterPopularityDTO masterRanks = new RegionalCharacterPopularityDTO(masterRankStats, new HashMap<>());
-        RegionalCharacterPopularityDTO advancedRanks = new RegionalCharacterPopularityDTO(advcancedRankStats, new HashMap<>());
-        RegionalCharacterPopularityDTO intermediateRanks = new RegionalCharacterPopularityDTO(intermediateRankStats, new HashMap<>());
-        RegionalCharacterPopularityDTO beginnerRanks = new RegionalCharacterPopularityDTO(beginnerRankStats, new HashMap<>());
-        return new CharacterPopularityDTO(masterRanks, advancedRanks, intermediateRanks, beginnerRanks);
+    public List<GlobalCharacterPickRateDTO> getHomePageCharacterPopularity() throws Exception {
+        return aggregatedStatisticsRepository.findTopCharactersByPickRate();
     }
 
-    public CharacterWinratesDTO getHomePageCharacterWinrates() throws Exception {
-        List<CharacterAnalyticsProjection> stats = aggregatedStatisticsRepository.findTopCharactersByWinrate();
-        // Group by rank category
-        Map<String, List<CharacterAnalyticsProjection>> statsByRank = stats.stream()
-                .collect(Collectors.groupingBy(CharacterAnalyticsProjection::getRankCategory));
-
-        Map<String, Double> masterRankStats = processTopWinrates(statsByRank.getOrDefault(MASTER_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Double> advancedRankStats = processTopWinrates(statsByRank.getOrDefault(ADVANCED_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Double> intermediateRankStats = processTopWinrates(statsByRank.getOrDefault(INTERMEDIATE_RANK_CATEGORY, Collections.emptyList()));
-        Map<String, Double> beginnnerRankStats = processTopWinrates(statsByRank.getOrDefault(BEGINNER_RANK_CATEGORY, Collections.emptyList()));
-
-        // Since we're only returning top characters (for the front page) , we only need global stats
-        RegionalCharacterWinrateDTO masterRanks = new RegionalCharacterWinrateDTO(masterRankStats, new HashMap<>());
-        RegionalCharacterWinrateDTO highRank = new RegionalCharacterWinrateDTO(advancedRankStats, new HashMap<>());
-        RegionalCharacterWinrateDTO mediumRank = new RegionalCharacterWinrateDTO(intermediateRankStats, new HashMap<>());
-        RegionalCharacterWinrateDTO lowRank = new RegionalCharacterWinrateDTO(beginnnerRankStats, new HashMap<>());
-        return new CharacterWinratesDTO(masterRanks,highRank, mediumRank, lowRank);
-    }
-
-    public Optional<List<Integer>> getGameVersions() {
-        return aggregatedStatisticsRepository.getGameVersions();
+    public List<GlobalWinratesDTO> getHomePageCharacterWinrates() throws Exception {
+        return aggregatedStatisticsRepository.findTopCharactersByWinrate();
     }
 
     public Map<Integer, RankDistributionDTO> getAllRankDistributions() {
