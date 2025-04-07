@@ -2,6 +2,7 @@ package org.ewgf.repositories;
 
 
 import org.ewgf.dtos.homepage.RegionalPlayerDistributionDTO;
+import org.ewgf.interfaces.RegionalPlayerDistributionProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.data.jpa.repository.Query;
@@ -42,15 +43,15 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
             "WHERE latest_battle > (EXTRACT(EPOCH FROM NOW()) - 600) ORDER BY latest_battle DESC LIMIT 40", nativeQuery = true)
     Optional<List<Player>> findAllActivePlayersInLast10Minutes();
 
-    @Query(value = """
+    @Query(value = """ 
     SELECT
-        SUM(CASE WHEN region_id = '0' THEN 1 ELSE 0 END) / COUNT(*) * 100 as asia,
-        SUM(CASE WHEN region_id = '1' THEN 1 ELSE 0 END) / COUNT(*) * 100 as middleEast,
-        SUM(CASE WHEN region_id = '2' THEN 1 ELSE 0 END) / COUNT(*) * 100 as oceania,
-        SUM(CASE WHEN region_id = '3' THEN 1 ELSE 0 END) / COUNT(*) * 100 as americas,
-        SUM(CASE WHEN region_id = '4' THEN 1 ELSE 0 END) / COUNT(*) * 100 as europe,
-        SUM(CASE WHEN region_id IS NULL THEN 1 ELSE 0 END) / COUNT(*) * 100 as unassigned
+        SUM(CASE WHEN region_id = '0' THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as Asia,
+        SUM(CASE WHEN region_id = '1' THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as MiddleEast,
+        SUM(CASE WHEN region_id = '2' THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as Oceania,
+        SUM(CASE WHEN region_id = '3' THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as Americas,
+        SUM(CASE WHEN region_id = '4' THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as Europe,
+        SUM(CASE WHEN region_id IS NULL THEN 1 ELSE 0 END)::numeric / COUNT(*)::numeric * 100 as Unassigned
     FROM players
-""", nativeQuery = true)
-    RegionalPlayerDistributionDTO findAllPlayerCountByRegion();
+    """, nativeQuery = true)
+    RegionalPlayerDistributionProjection findAllPlayerCountByRegion();
 }

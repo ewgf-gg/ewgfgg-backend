@@ -4,6 +4,7 @@ import org.ewgf.dtos.*;
 import org.ewgf.dtos.header_or_footer.PlayerSearchDTO;
 import org.ewgf.dtos.homepage.RegionalPlayerDistributionDTO;
 import org.ewgf.dtos.player_stats_page.*;
+import org.ewgf.interfaces.RegionalPlayerDistributionProjection;
 import org.ewgf.models.Battle;
 import org.ewgf.models.CharacterStats;
 import org.ewgf.models.CharacterStatsId;
@@ -208,7 +209,15 @@ public class PlayerService {
     }
 
     public RegionalPlayerDistributionDTO getRegionalPlayerDistribution() {
-        return playerRepository.findAllPlayerCountByRegion();
+        RegionalPlayerDistributionProjection projection = playerRepository.findAllPlayerCountByRegion();
+        return new RegionalPlayerDistributionDTO(
+                projection.getAsia(),
+                projection.getEurope(),
+                projection.getAmericas(),
+                projection.getOceania(),
+                projection.getMiddleEast(),
+                projection.getUnassigned()
+        );
     }
 
     private void updateBestAndWorstMatchups(PlayerMatchupSummaryDTO matchupSummary) {

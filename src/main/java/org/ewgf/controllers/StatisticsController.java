@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ewgf.dtos.RankWinrateChangesDTO;
 import org.ewgf.dtos.header_or_footer.TekkenStatsSummaryDTO;
 import org.ewgf.dtos.homepage.GlobalCharacterPickRateDTO;
+import org.ewgf.dtos.homepage.GlobalWinrateTrendsDTO;
 import org.ewgf.dtos.homepage.GlobalWinratesDTO;
 import org.ewgf.dtos.homepage.RankDistributionDTO;
 import org.ewgf.dtos.statistics_page.CharacterPopularityDTO;
@@ -59,10 +60,10 @@ public class StatisticsController {
     }
 
     @GetMapping("/winrate-changes")
-    public ResponseEntity<Map<String, List<RankWinrateChangesDTO>>> getWinrateChanges() {
+    public ResponseEntity<List<GlobalWinrateTrendsDTO>> getWinrateChanges() throws Exception {
         log.debug("Fetching character winrate changes");
-        Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getHomePageWinrateChanges();
-        return ResponseEntity.ok(groupedChanges);
+        List<GlobalWinrateTrendsDTO> winrateTrendsDTOS = statisticsService.getHomePageWinrateTrends();
+        return ResponseEntity.ok(winrateTrendsDTOS);
     }
 
     @GetMapping("/rankDistribution")

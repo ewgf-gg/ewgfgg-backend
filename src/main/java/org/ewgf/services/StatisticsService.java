@@ -3,19 +3,13 @@ package org.ewgf.services;
 import lombok.extern.slf4j.Slf4j;
 
 import org.ewgf.dtos.RankWinrateChangesDTO;
-import org.ewgf.dtos.homepage.GlobalCharacterPickRateDTO;
-import org.ewgf.dtos.homepage.GlobalWinratesDTO;
-import org.ewgf.dtos.homepage.RankDistributionDTO;
-import org.ewgf.dtos.homepage.RankDistributionEntry;
+import org.ewgf.dtos.homepage.*;
 import org.ewgf.dtos.statistics_page.CharacterPopularityDTO;
 import org.ewgf.dtos.statistics_page.CharacterWinratesDTO;
 import org.ewgf.dtos.statistics_page.RegionalCharacterPopularityDTO;
 import org.ewgf.dtos.statistics_page.RegionalCharacterWinrateDTO;
-import org.ewgf.interfaces.RankDistributionProjection;
-import org.ewgf.interfaces.WinrateChangesProjection;
+import org.ewgf.interfaces.*;
 import org.springframework.stereotype.Service;
-import org.ewgf.interfaces.CharacterAnalyticsProjection;
-import org.ewgf.interfaces.CharacterWinrateProjection;
 import org.ewgf.utils.TekkenDataMapperUtils;
 import org.ewgf.repositories.AggregatedStatisticsRepository;
 import java.util.*;
@@ -151,12 +145,36 @@ public class StatisticsService {
         return new RegionalCharacterPopularityDTO(globalStats, regionalStats);
     }
 
-    public List<GlobalCharacterPickRateDTO> getHomePageCharacterPopularity() throws Exception {
-        return aggregatedStatisticsRepository.findTopCharactersByPickRate();
+    public List<GlobalCharacterPickRateDTO> getHomePageCharacterPopularity() {
+        List<GlobalPickRateProjection> projections = aggregatedStatisticsRepository.findTopCharactersByPickRate();
+        return projections.stream()
+                .map(projection -> new GlobalCharacterPickRateDTO(
+                        projection.getCharacterId(),
+                        projection.getPickRate()
+                ))
+                .collect(Collectors.toList());
     }
 
     public List<GlobalWinratesDTO> getHomePageCharacterWinrates() throws Exception {
-        return aggregatedStatisticsRepository.findTopCharactersByWinrate();
+        List<GlobalWinrateProjection> projections = aggregatedStatisticsRepository.findTopCharactersByWinrate();
+        return projections.stream()
+                .map(projection -> new GlobalWinratesDTO(
+                        projection.getCharacterId(),
+                        projection.getWinRate()
+                ))
+                .collect(Collectors.toList());
+    }
+
+
+    public List<GlobalWinrateTrendsDTO> getHomePageWinrateTrends() throws Exception {
+        List<GlobalWinrateTrendsProjection> projections = aggregatedStatisticsRepository.getGlobalWinrateChanges();
+        return projections.stream()
+                .map(projection -> new GlobalWinrateTrendsDTO(
+                        projection.getCharacterId(),
+                        projection.getChange(),
+                        projection.getTrend()
+                ))
+                .collect(Collectors.toList());
     }
 
     public Map<Integer, RankDistributionDTO> getAllRankDistributions() {
@@ -170,18 +188,6 @@ public class StatisticsService {
                             new RankDistributionEntry(dist.getRank(), dist.getPercentage()));
         });
         return result;
-    }
-
-    public Map<String, List<RankWinrateChangesDTO>> getHomePageWinrateChanges() {
-        List<WinrateChangesProjection> projections = aggregatedStatisticsRepository.getWinrateChanges();
-        List<RankWinrateChangesDTO> changes = projections.stream()
-                .map(proj -> new RankWinrateChangesDTO(
-                        TekkenDataMapperUtils.getCharacterName(proj.getCharacterId()),
-                        proj.getChange(),
-                        proj.getTrend(),
-                        proj.getRankCategory()))
-                .collect(Collectors.toList());
-        return RankWinrateChangesDTO.groupByRankCategory(changes);
     }
 
     public Map<String, List<RankWinrateChangesDTO>> getAllWinrateChanges() {

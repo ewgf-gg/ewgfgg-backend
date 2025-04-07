@@ -40,7 +40,7 @@ public class BattleProcessingService {
         this.eventPublisher = eventPublisher;
     }
 
-    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
+    @Transactional(rollbackFor = Exception.class)
     public void processBattlesAsync(List<Battle> battles) {
         Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
         Map<String, Battle> mapOfExistingBattles = fetchSurroundingBattles(battles);

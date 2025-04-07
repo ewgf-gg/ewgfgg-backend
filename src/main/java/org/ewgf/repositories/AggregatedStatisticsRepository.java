@@ -1,7 +1,6 @@
 package org.ewgf.repositories;
 
-import org.ewgf.dtos.homepage.GlobalCharacterPickRateDTO;
-import org.ewgf.dtos.homepage.GlobalWinrateChangesDTO;
+import org.ewgf.dtos.homepage.GlobalWinrateTrendsDTO;
 import org.ewgf.dtos.homepage.GlobalWinratesDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -287,7 +286,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     ORDER BY pickRate DESC
     LIMIT 5
 """, nativeQuery = true)
-    List<GlobalCharacterPickRateDTO> findTopCharactersByPickRate();
+    List<GlobalPickRateProjection> findTopCharactersByPickRate();
 
     @Query(value = """
     WITH latest_version AS (
@@ -312,7 +311,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     ORDER BY winRate DESC
     LIMIT 5
 """, nativeQuery = true)
-    List<GlobalWinratesDTO> findTopCharactersByWinrate();
+    List<GlobalWinrateProjection> findTopCharactersByWinrate();
 
     @Query(value = """
         WITH total_players_by_version AS (
@@ -408,7 +407,7 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     ORDER BY change DESC
     """,
             nativeQuery = true)
-    List<GlobalWinrateChangesDTO> getWinrateChanges();
+    List<GlobalWinrateTrendsProjection> getGlobalWinrateChanges();
 
     @Query(value = """
     WITH latest_versions AS (
