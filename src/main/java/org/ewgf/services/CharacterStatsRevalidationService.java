@@ -44,7 +44,7 @@ public class CharacterStatsRevalidationService {
 
         // Create thread executor using virtual threads
         this.executorService = Executors.newFixedThreadPool(
-                15,
+                25,
                 Thread.ofVirtual()
                         .name("revalidation-", 0)
                         .factory()
@@ -110,7 +110,7 @@ public class CharacterStatsRevalidationService {
 
             // Wait for all threads to complete
             if (!latch.await(10, TimeUnit.HOURS)) {
-                log.error("Revalidation timed out after 1 hour");
+                log.error("Revalidation timed out after 10 hour");
                 throw new TimeoutException("Revalidation timed out");
             }
 
@@ -136,6 +136,7 @@ public class CharacterStatsRevalidationService {
 
                 Map<CharacterStatsId, CharacterStatsAccumulator> statsMap = calculatePlayerStats(battles.get(), player);
                 batchUpdates.addAll(prepareBatchUpdates(player.getPlayerId(), statsMap));
+
 
             } catch (Exception e) {
                 log.error("Error processing player {}: {}", player.getPlayerId(), e.getMessage());
