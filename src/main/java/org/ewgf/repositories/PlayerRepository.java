@@ -15,25 +15,16 @@ import java.util.Optional;
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, String> {
 
-    @Query(value = "SELECT * FROM players p WHERE p.player_id = :criteria OR p.name ILIKE :criteria OR p.polaris_id ILIKE :criteria", nativeQuery = true)
-    Optional<Player> findByIdOrNameOrPolarisIdIgnoreCase(@Param("criteria") String criteria);
-
-   @Query(value = "SELECT * FROM players p WHERE p.polaris_id = :criteria",nativeQuery = true)
+    @Query("SELECT p FROM Player p WHERE p.polarisId = :criteria")
     Optional<Player> findByPolarisId(@Param("criteria") String criteria);
 
-    @Query(value = """
-    SELECT * FROM players
-    WHERE LOWER(name) LIKE LOWER(CONCAT('%', :query, '%'))
-    OR LOWER(polaris_id) LIKE LOWER(CONCAT('%', :query, '%'))
-    ORDER BY
-        CASE
-            WHEN LOWER(name) = LOWER(:query) THEN 0
-            WHEN LOWER(name) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-            ELSE 20
-        END,
-        length(name)
-    LIMIT 50
-    """, nativeQuery = true)
+    @Query("SELECT p FROM Player p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(p.polarisId) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "ORDER BY CASE " +
+            "  WHEN LOWER(p.name) = LOWER(:query) THEN 0 " +
+            "  WHEN LOWER(p.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1 " +
+            "  ELSE 20 END, " +
+            "length(p.name)")
     Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
 
     // 600 is in seconds

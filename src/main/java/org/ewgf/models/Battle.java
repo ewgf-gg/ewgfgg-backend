@@ -27,7 +27,7 @@ public class Battle {
 
     @JsonProperty("battle_type")
     @Column(name = "battle_type")
-    private int battleType;
+    private BattleType battleType;
 
     @JsonProperty("game_version")
     @Column(name = "game_version", nullable = false)

@@ -2,16 +2,16 @@ package org.ewgf.services;
 
 import org.ewgf.events.ReplayProcessingCompletedEvent;
 import org.ewgf.models.*;
-import org.ewgf.repositories.BattleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.*;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -20,10 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static org.ewgf.models.BattleType.RANKED_BATTLE;
+
 @Service
 public class BattleProcessingService {
 
-    private final BattleRepository battleRepository;
     private final JdbcTemplate jdbcTemplate;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -32,66 +33,45 @@ public class BattleProcessingService {
     private final AtomicBoolean isPublishing = new AtomicBoolean(false);
     private static final Logger logger = LoggerFactory.getLogger(BattleProcessingService.class);
 
-    public BattleProcessingService(BattleRepository battleRepository,
-                                   JdbcTemplate jdbcTemplate,
+    public BattleProcessingService(JdbcTemplate jdbcTemplate,
                                    ApplicationEventPublisher eventPublisher) {
-        this.battleRepository = battleRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.eventPublisher = eventPublisher;
     }
 
-    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
+    @Transactional(rollbackFor = Exception.class)
     public void processBattlesAsync(List<Battle> battles) {
-        Set<Integer> gameVersionsToProcess = extractGameVersions(battles);
-        Map<String, Battle> mapOfExistingBattles = fetchSurroundingBattles(battles);
+        // this will drop any duplicate battles from the batch
+        Set<String> insertedBattleIds = executeBattleBatchWrite(battles);
+
+        List<Battle> filteredBattles = battles.stream()
+                .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() == RANKED_BATTLE)
+                .collect(Collectors.toList());
+
+        Set<Integer> gameVersionsToProcess = extractGameVersions(filteredBattles);
         HashMap<String, Player> updatedPlayers = new HashMap<>();
-        Set<Battle> battleSet = new HashSet<>();
 
         // Instantiate objects and update relevant information
-        processBattlesAndPlayers(battles, mapOfExistingBattles, updatedPlayers, battleSet);
-        executeAllDatabaseOperations(updatedPlayers, battleSet);
+        processBattlesAndPlayers(filteredBattles, updatedPlayers);
+        executePlayerUpdateOperations(updatedPlayers, insertedBattleIds.size());
         tryPublishEvent(gameVersionsToProcess);
     }
 
-    private void executeAllDatabaseOperations(Map<String, Player> updatedPlayers, Set<Battle> battleSet) {
-        int battleCount = executeBattleBatchWrite(battleSet);
+    private void executePlayerUpdateOperations(Map<String, Player> updatedPlayers, Integer insertedBattleCount ) {
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
-        updateSummaryStatistics(battleCount);
+        updateSummaryStatistics(insertedBattleCount);
     }
-
-    private Map<String, Battle> fetchSurroundingBattles(List<Battle> battles) {
-        if (battles.isEmpty()) {
-            logger.debug("No battles provided. Skipping database fetch.");
-            return Collections.emptyMap();
-        }
-        long startTime = System.currentTimeMillis();
-        // fetch the timestamp of the median battle in the list
-        long middleTimestamp = battles.get(battles.size() / 2).getBattleAt();
-        // Fetch surrounding battle IDs directly as a Set
-        Set<String> surroundingBattleIdSet = new HashSet<>(battleRepository.findSurroundingBattleIds(middleTimestamp));
-
-        // Create a map of existing battles
-        Map<String, Battle> existingBattles = battles.stream()
-                .filter(battle -> surroundingBattleIdSet.contains(battle.getBattleId()))
-                .collect(Collectors.toMap(Battle::getBattleId, battle -> battle));
-        logger.debug("Identified {} existing battles in {} ms", existingBattles.size(), (System.currentTimeMillis() - startTime));
-        return existingBattles;
-    }
-
 
     private void processBattlesAndPlayers(
             List<Battle> battles,
-            Map<String, Battle> existingBattlesMap,
-            HashMap<String, Player> updatedPlayers,
-            Set<Battle> battleSet) {
+            HashMap<String, Player> updatedPlayers) {
 
         long startTime = System.currentTimeMillis();
-        int duplicateBattles = 0;
 
         for (Battle battle : battles) {
-            if (!existingBattlesMap.containsKey(battle.getBattleId())) {
-                battle.setDate(getReadableDateInUTC(battle));
+
+                if(battle.getBattleType() != RANKED_BATTLE) continue;
 
                 // Process Player 1
                 String player1Id = getPlayerUserIdFromBattle(battle, 1);
@@ -112,56 +92,114 @@ public class BattleProcessingService {
                     updatedPlayers.put(player2Id, player2);
                 }
                 setCharacterStatsWithBattle(player2, battle, 2);
-                battleSet.add(battle);
-            } else {
-                duplicateBattles++;
             }
-        }
-        if (duplicateBattles == battles.size()) {
-            logger.debug("Entire batch already exists in database!");
-            return;
-        }
+
         logger.info("Updated player and battle information: {} ms", (System.currentTimeMillis() - startTime));
     }
 
 
-    public int executeBattleBatchWrite(Set<Battle> battleSet) {
-        if (battleSet == null || battleSet.isEmpty()) {
-            logger.warn("No battles to insert. (Batch already existed in database)");
-            return 0;
-        }
-
+    public Set<String> executeBattleBatchWrite(List<Battle> batch) {
         try {
+            int CHUNK_SIZE = 1000;
             long startTime = System.currentTimeMillis();
-
             // insert battle and increment replay count, else do nothing
-            String sql =
-                    "INSERT INTO battles (" +
-                            "battle_id, date, battle_at, battle_type, game_version, " +
-                            "player1_character_id, player1_name, player1_region, player1_area, " +
-                            "player1_language, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
-                            "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
-                            "player2_character_id, player2_name, player2_region, player2_area, player2_language, " +
-                            "player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
-                            "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
-                            "stageid, winner" +
-                            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                            "ON CONFLICT (battle_id) DO NOTHING";
 
-            List<Object[]> batchArgs = getBattleBatchObjects(battleSet);
+            Set<String> inserted = new HashSet<>(batch.size());
+            // we keep the whole operation in one transaction so it is still atomic
+            jdbcTemplate.execute((Connection con) -> {
+                con.setAutoCommit(false);
+                return null;
+            });
 
-            int[] results = jdbcTemplate.batchUpdate(sql, batchArgs);
+            for (int start = 0; start < batch.size(); start += CHUNK_SIZE) {
+                int end = Math.min(start + CHUNK_SIZE, batch.size());
+                List<Battle> slice = batch.subList(start, end);
 
-            int insertedCount = Arrays.stream(results).sum();
+                inserted.addAll(insertChunk(slice));
+            }
 
-            logger.info("Battle Insertion: {} ms, Inserted Count: {}", (System.currentTimeMillis() - startTime), insertedCount);
-
-            return insertedCount;
+            logger.info("All Battles inserted successfully: {} ms", (System.currentTimeMillis() - startTime));
+            return inserted;
         }
         catch (Exception e) {
-            logger.error("BATTLE INSERTION FAILED: ", e);
-            return 0;
+            logger.error("BATTLE INSERTION FAILED: {} ", e.getMessage());
+            throw e;
         }
+    }
+
+    private Set<String> insertChunk(List<Battle> chunk) {
+        String SQL =
+                "INSERT INTO battles (" +
+                        "battle_id, date, battle_at, battle_type, game_version, " +
+                        "player1_character_id, player1_name, player1_region, player1_area, " +
+                        "player1_language, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
+                        "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
+                        "player2_character_id, player2_name, player2_region, player2_area, player2_language, " +
+                        "player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
+                        "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
+                        "stageid, winner" +
+                        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                        "ON CONFLICT (battle_id) DO NOTHING " +
+                        "RETURNING battle_id";
+
+        for (Battle battle : chunk) {
+            battle.setDate(getReadableDateInUTC(battle));
+        }
+
+        return jdbcTemplate.execute(
+                (Connection con) -> con.prepareStatement(
+                        SQL,
+                        new String[]{"battle_id"}
+                ),
+                (PreparedStatement ps) -> {
+                    for (Battle b : chunk) {
+                        int i = 1;
+                        ps.setString(i++, b.getBattleId());
+                        ps.setString(i++, b.getDate());
+                        ps.setLong(i++, b.getBattleAt());
+                        ps.setInt(i++, b.getBattleType().getBattleCode());
+                        ps.setInt(i++, b.getGameVersion());
+                        ps.setInt(i++, b.getPlayer1CharacterId());
+                        ps.setString(i++, b.getPlayer1Name());
+                        setNullableInt(ps, i++, b.getPlayer1RegionId());
+                        setNullableInt(ps, i++, b.getPlayer1AreaId());
+                        ps.setString(i++, b.getPlayer1Language());
+                        ps.setString(i++, b.getPlayer1PolarisId());
+                        ps.setLong(i++, b.getPlayer1TekkenPower());
+                        ps.setInt(i++, b.getPlayer1DanRank());
+                        setNullableInt(ps, i++, b.getPlayer1RegionId());
+                        setNullableInt(ps, i++, b.getPlayer1RatingChange());
+                        ps.setInt(i++, b.getPlayer1RoundsWon());
+                        ps.setString(i++, b.getPlayer1UserId());
+                        ps.setInt(i++, b.getPlayer2CharacterId());
+                        ps.setString(i++, b.getPlayer2Name());
+                        setNullableInt(ps, i++, b.getPlayer2RegionId());
+                        setNullableInt(ps, i++, b.getPlayer2AreaId());
+                        ps.setString(i++, b.getPlayer2Language());
+                        ps.setString(i++, b.getPlayer2PolarisId());
+                        ps.setLong(i++, b.getPlayer2TekkenPower());
+                        ps.setInt(i++, b.getPlayer2DanRank());
+                        setNullableInt(ps, i++, b.getPlayer2RatingBefore());
+                        setNullableInt(ps, i++, b.getPlayer2RatingChange());
+                        ps.setInt(i++, b.getPlayer2RoundsWon());
+                        ps.setString(i++, b.getPlayer2UserId());
+                        ps.setInt(i++, b.getStageId());
+                        ps.setInt(i++, b.getWinner());
+                        ps.addBatch();
+                    }
+
+                    /* Actually run the batch — one round‑trip */
+                    ps.executeBatch();
+
+                    /* Postgres returns one row per **successful** insert */
+                    Set<String> ids = new HashSet<>();
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        while (rs != null && rs.next()) {
+                            ids.add(rs.getString(1));
+                        }
+                    }
+                    return ids; // Spring returns this to the caller
+                });
     }
     
     public void executePlayerBulkOperations(Map<String, Player> updatedPlayersMap)
@@ -526,6 +564,17 @@ public class BattleProcessingService {
             return (battle.getPlayer2RatingBefore() != null ? battle.getPlayer2RatingBefore() : 0) +
                     (battle.getPlayer2RatingChange() != null ? battle.getPlayer2RatingChange() : 0);
         }
+    }
+    private static void setNullableInt(PreparedStatement ps, int idx, Integer val)
+            throws SQLException {
+        if (val == null) ps.setNull(idx, Types.INTEGER);
+        else             ps.setInt(idx, val);
+    }
+
+    private static void setNullableLong(PreparedStatement ps, int idx, Long val)
+            throws SQLException {
+        if (val == null) ps.setNull(idx, Types.BIGINT);
+        else             ps.setLong(idx, val);
     }
 }
 
