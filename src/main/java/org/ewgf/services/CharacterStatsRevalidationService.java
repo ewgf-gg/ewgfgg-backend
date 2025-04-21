@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -27,21 +28,19 @@ public class CharacterStatsRevalidationService {
     private final PlayerRepository playerRepository;
     private final BattleRepository battleRepository;
     private final BackpressureManager backpressureManager;
-    private final JdbcTemplate jdbcTemplate;
     private final ExecutorService executorService;
     private volatile boolean isRevalidating = false;
-
+    private final BatchExecutorService batchExecutorService;
     public CharacterStatsRevalidationService(
             PlayerRepository playerRepository,
             BattleRepository battleRepository,
             CharacterStatsRepository characterStatsRepository,
             BackpressureManager backpressureManager,
-            JdbcTemplate jdbcTemplate) {
+            BatchExecutorService batchExecutorService) {
         this.playerRepository = playerRepository;
         this.battleRepository = battleRepository;
         this.backpressureManager = backpressureManager;
-        this.jdbcTemplate = jdbcTemplate;
-
+        this.batchExecutorService = batchExecutorService;
         // Create thread executor using virtual threads
         this.executorService = Executors.newFixedThreadPool(
                 25,
@@ -51,7 +50,7 @@ public class CharacterStatsRevalidationService {
         );
     }
 
-    @Transactional
+
     public void startRevalidation() {
         if (isRevalidating) {
             log.warn("Revalidation is already in progress");
@@ -144,7 +143,7 @@ public class CharacterStatsRevalidationService {
         }
 
         if (!batchUpdates.isEmpty()) {
-            executeBatchUpdate(batchUpdates);
+            batchExecutorService.executeBatchUpdate(batchUpdates);
         }
     }
 
@@ -191,19 +190,6 @@ public class CharacterStatsRevalidationService {
                         entry.getValue().getLosses()
                 })
                 .collect(Collectors.toList());
-    }
-
-    private void executeBatchUpdate(List<Object[]> batchUpdates) {
-        String sql = """
-            INSERT INTO character_stats (player_id, character_id, dan_rank, game_version, wins, losses)
-            VALUES (?, ?, ?, ?, ?,?)
-            ON CONFLICT (player_id, character_id, game_version)
-            DO UPDATE SET
-                wins = EXCLUDED.wins,
-                losses = EXCLUDED.losses
-            """;
-
-        jdbcTemplate.batchUpdate(sql, batchUpdates);
     }
 
     private static class CharacterStatsAccumulator {
