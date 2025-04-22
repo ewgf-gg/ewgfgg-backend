@@ -2,6 +2,7 @@ package org.ewgf.dtos;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.ewgf.models.BattleType;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 public class BattleDTO
 {
     private String date;
+    private BattleType battleType;
     private Integer gameVersion;
     private String player1Name;
     private String player1PolarisId;
@@ -29,6 +31,7 @@ public class BattleDTO
     private Integer StageId;
 
     public BattleDTO(String date,
+                     BattleType battleType,
                      Integer gameVersion,
                      String player1Name,
                      String player1PolarisId,
@@ -48,6 +51,7 @@ public class BattleDTO
                      Integer stageId)
     {
         this.date = date;
+        this.battleType = battleType;
         this.gameVersion = gameVersion;
         this.player1Name = player1Name;
         this.player1PolarisId = player1PolarisId;

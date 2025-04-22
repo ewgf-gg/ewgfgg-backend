@@ -1,10 +1,7 @@
 package org.ewgf.services;
 
 import org.ewgf.dtos.*;
-import org.ewgf.models.Battle;
-import org.ewgf.models.CharacterStats;
-import org.ewgf.models.CharacterStatsId;
-import org.ewgf.models.Player;
+import org.ewgf.models.*;
 import org.ewgf.repositories.BattleRepository;
 import org.ewgf.repositories.PlayerRepository;
 import org.ewgf.utils.DateTimeUtils;
@@ -69,8 +66,13 @@ public class PlayerService {
         playerDto.setPlayedCharacters(matchupSummaryDto);
 
         for (Battle battle : playerBattles) {
-            updatePlayerDTOWithBattle(playerDto, battle);
-            BattleDTO battleDTO = new BattleDTO( battle.getDate(),
+            if (battle.getBattleType() == BattleType.RANKED_BATTLE) {
+                updatePlayerDTOWithBattle(playerDto, battle);
+            }
+
+            BattleDTO battleDTO = new BattleDTO(
+                    battle.getDate(),
+                    battle.getBattleType(),
                     battle.getGameVersion(),
                     battle.getPlayer1Name(),
                     battle.getPlayer1PolarisId(),

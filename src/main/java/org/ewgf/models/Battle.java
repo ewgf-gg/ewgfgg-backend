@@ -1,11 +1,9 @@
 package org.ewgf.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.ewgf.configuration.BattleTypeConverter;
 
 @Entity
 @Table(name = "battles")
@@ -27,6 +25,7 @@ public class Battle {
 
     @JsonProperty("battle_type")
     @Column(name = "battle_type")
+    @Convert(converter = BattleTypeConverter.class)
     private BattleType battleType;
 
     @JsonProperty("game_version")
@@ -136,5 +135,4 @@ public class Battle {
     @JsonProperty("winner")
     @Column(name = "winner")
     private int winner;
-
 }
