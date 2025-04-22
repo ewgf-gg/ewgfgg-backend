@@ -43,6 +43,10 @@ public class BattleProcessingService {
     public void processBattlesAsync(List<Battle> battles) {
         // this will drop any duplicate battles from the batch
         Set<String> insertedBattleIds = executeBattleBatchWrite(battles);
+        if (insertedBattleIds.isEmpty()) {
+            logger.info("No battles inserted, skipping processing");
+            return;
+        }
 
         List<Battle> filteredBattles = battles.stream()
                 .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() == RANKED_BATTLE)
