@@ -3,6 +3,7 @@ package org.ewgf.services;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,15 +30,11 @@ import java.util.stream.Collectors;
 
 import static org.ewgf.utils.Constants.TIMESTAMP_HEADER;
 
+@Slf4j
 @Service
 public class RabbitService {
 
-    private static final Logger logger = LogManager.getLogger(RabbitService.class);
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final BattleProcessingService battleProcessingService;
-
-    private final JavaType battleListType = objectMapper.getTypeFactory()
-            .constructCollectionType(ArrayList.class, Battle.class);
 
     public RabbitService(BattleProcessingService battleProcessingService) {
         this.battleProcessingService = battleProcessingService;
@@ -45,14 +42,11 @@ public class RabbitService {
 
     @RabbitListener(queues = "#{rabbitMQConfig.queueName}",
             containerFactory = "rabbitListenerContainerFactory")
-    public void receiveMessage(String message, @Header(TIMESTAMP_HEADER) String unixTimestamp) throws Exception
-    {
-        logger.info("Received Battle Data from RabbitMQ, Timestamped: {}", unixTimestamp);
+    public void receiveMessage(List<Battle> battles, @Header(TIMESTAMP_HEADER) String timestamp) {
+        log.info("Received {} battles from RabbitMQ, timestamp: {}", battles.size(), timestamp);
+        long start = System.currentTimeMillis();
 
-        long startTime = System.currentTimeMillis();
-        List<Battle> battles = objectMapper.readValue(message, battleListType);
         battleProcessingService.processBattlesAsync(battles);
-
-        logger.info("Total Operation Time: {} ms", System.currentTimeMillis() - startTime);
+        log.info("Total operation time: {} ms", System.currentTimeMillis() - start);
     }
 }

@@ -66,8 +66,12 @@ public class BattleProcessingService {
     private void processBattlesAndPlayers(
             List<Battle> battles,
             HashMap<String, Player> updatedPlayers) {
-
+        if(battles.isEmpty()) {
+            logger.warn("Battle batch was empty, Skipping player updates.");
+            return;
+        }
         long startTime = System.currentTimeMillis();
+
 
         for (Battle battle : battles) {
 

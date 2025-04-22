@@ -2,11 +2,16 @@ package org.ewgf.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ewgf.configuration.BackpressureManager;
+import org.ewgf.models.Battle;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -78,8 +83,14 @@ public class RefetchBattleService {
                 currentBefore, currentBefore - 700, currentStep, totalSteps);
 
         try {
-            String jsonResponse = restTemplate.getForObject(url, String.class);
-            processApiResponse(jsonResponse, currentBefore);
+            ResponseEntity<List<Battle>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {}
+            );
+
+            processApiResponse(response.getBody(), currentBefore);
         } catch (Exception e) {
             log.error("Error fetching replays for 'before={}', skipping step. Reason: {}",
                     currentBefore, e.getMessage());
@@ -94,13 +105,13 @@ public class RefetchBattleService {
         return (int) (totalSeconds / STEP_SECONDS);
     }
 
-    private void processApiResponse(String jsonResponse, long beforeValue) {
-        if (jsonResponse == null) {
+    private void processApiResponse(List<Battle> battles, long beforeValue) {
+        if (battles == null) {
             log.warn("Got empty response from Wavu API for 'before={}'", beforeValue);
             return;
         }
 
-        log.debug("Received response of length {} for 'before={}'", jsonResponse.length(), beforeValue);
-        wavuService.sendToRabbitMQ(jsonResponse, String.valueOf(beforeValue));
+        log.debug("Received response of length {} for 'before={}'", battles.size(), beforeValue);
+        wavuService.sendToRabbitMQ(battles, String.valueOf(beforeValue));
     }
 }

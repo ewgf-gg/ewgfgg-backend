@@ -187,4 +187,8 @@ public class Player {
         return Objects.hash(playerId);
     }
 
+    @Override
+    public String toString() {
+        return "Player: " + playerId;
+    }
 }

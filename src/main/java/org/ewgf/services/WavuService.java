@@ -7,6 +7,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import org.ewgf.repositories.TekkenStatsSummaryRepository;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -93,8 +96,8 @@ public class WavuService implements InitializingBean, DisposableBean {
 
     private void initializeService() {
         try {
-            Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestBattle();
-            Optional<Battle> newestBattleInDatabase = battleRepository.findNewestBattle();
+            Optional<Battle> oldestBattleInDatabase = battleRepository.findOldestRankedBattle();
+            Optional<Battle> newestBattleInDatabase = battleRepository.findNewestRankedBattle();
             checkIfActiveProfileIsDev(activeProfile);
 
             if (oldestBattleInDatabase.isPresent() && newestBattleInDatabase.isPresent() && isDatabaseFullyPreloaded(oldestBattleInDatabase)) {
@@ -146,7 +149,7 @@ public class WavuService implements InitializingBean, DisposableBean {
         log.info("Fetching battles before timestamp: {} UTC, Unix: {}", readableTimestamp, currentFetchTimestamp);
 
         try {
-            String response = fetchBattlesFromApi(currentFetchTimestamp);
+            List<Battle> response = fetchBattlesFromApi(currentFetchTimestamp);
             processApiResponse(response, readableTimestamp);
             currentFetchTimestamp -= (TIME_STEP - TIME_STEP_OVERLAP);
         } catch (Exception e) {
@@ -170,7 +173,7 @@ public class WavuService implements InitializingBean, DisposableBean {
             String readableTimestamp = DateTimeUtils.toReadableTime(currentFetchTimestamp);
             log.info("Fetching historical battles before: {} UTC (Unix: {})", readableTimestamp, currentFetchTimestamp);
 
-            String response = fetchBattlesFromApi(currentFetchTimestamp);
+            List<Battle> response = fetchBattlesFromApi(currentFetchTimestamp);
             processApiResponse(response, readableTimestamp);
 
             currentFetchTimestamp -= (TIME_STEP - TIME_STEP_OVERLAP); // Overlap to ensure no battles are missed
@@ -185,12 +188,17 @@ public class WavuService implements InitializingBean, DisposableBean {
         }
     }
 
-    private String fetchBattlesFromApi(long timestamp) {
+    private List<Battle> fetchBattlesFromApi(long timestamp) {
         String url = UriComponentsBuilder.fromUriString(wavuApiUrl)
                 .queryParam("before", timestamp)
                 .toUriString();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        ResponseEntity<List<Battle>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<>() {}
+        );
 
         if (!response.getStatusCode().is2xxSuccessful())
             throw new RuntimeException("API request failed with status: " + response.getStatusCode());
@@ -201,7 +209,7 @@ public class WavuService implements InitializingBean, DisposableBean {
     private void switchToFetchingNewReplays() {
         eventPublisherUtils.publishEventForAllGameVersions();
 
-        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
+        newestBattleTimestampInDatabase = battleRepository.findNewestRankedBattle()
                 .map(Battle::getBattleAt)
                 .orElse(Instant.now().getEpochSecond());
 
@@ -210,20 +218,20 @@ public class WavuService implements InitializingBean, DisposableBean {
         isFetchingNewReplays = true;
     }
 
-    private void processApiResponse(String jsonResponse, String readableTimestamp) {
-        if (jsonResponse != null) {
-            log.debug("Received response from Wavu API");
-            long startTime = System.currentTimeMillis();
-            sendToRabbitMQ(jsonResponse, readableTimestamp + " UTC");
-            log.debug("Sending data to RabbitMQ took {} ms", (System.currentTimeMillis() - startTime));
-        }
+    private void processApiResponse(List<Battle> battles, String readableTimestamp) {
+        if (battles == null || battles.isEmpty()) return;
+
+        log.debug("Received response from Wavu API");
+        long startTime = System.currentTimeMillis();
+        sendToRabbitMQ(battles, readableTimestamp + " UTC");
+        log.debug("Sending data to RabbitMQ took {} ms", (System.currentTimeMillis() - startTime));
     }
 
-    void sendToRabbitMQ(String message, String dateAndTime) {
+    void sendToRabbitMQ(List<Battle> battles, String dateAndTime) {
         rabbitTemplate.convertAndSend(
                 rabbitMQConfig.getExchangeName(),
                 rabbitMQConfig.getRoutingKey(),
-                message,
+                battles,
                 msg -> {
                     msg.getMessageProperties()
                             .setHeader(TIMESTAMP_HEADER, dateAndTime);
@@ -236,7 +244,7 @@ public class WavuService implements InitializingBean, DisposableBean {
         currentFetchIsBelowNewestBattleInDatabase = false;
         scheduleNextExecution(NEW_REPLAYS_DELAY_MILLIS);
         currentFetchTimestamp = Instant.now().getEpochSecond() + NEW_REPLAYS_DELAY_SECONDS;
-        newestBattleTimestampInDatabase = battleRepository.findNewestBattle()
+        newestBattleTimestampInDatabase = battleRepository.findNewestRankedBattle()
                 .map(Battle::getBattleAt)
                 .orElse(Instant.now().getEpochSecond());
     }

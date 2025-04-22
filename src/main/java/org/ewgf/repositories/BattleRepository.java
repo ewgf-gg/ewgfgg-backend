@@ -8,23 +8,17 @@ import org.ewgf.models.Battle;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public interface BattleRepository extends JpaRepository<Battle, String> {
 
-    @Query("SELECT b FROM Battle b ORDER BY b.battleAt ASC LIMIT 1")
-    Optional<Battle> findOldestBattle();
+    @Query(value = "SELECT * FROM battles WHERE battle_type = '2' ORDER BY battle_at ASC LIMIT 1",
+            nativeQuery = true)
+    Optional<Battle> findOldestRankedBattle();
 
-    @Query("SELECT b FROM Battle b ORDER BY b.battleAt DESC LIMIT 1")
-    Optional<Battle> findNewestBattle();
-
-    @Query(value = "SELECT battle_id FROM (" +
-            "(SELECT battle_id FROM battles WHERE battle_at <= :timestamp ORDER BY battle_at DESC LIMIT 40000) " +
-            "UNION " +
-            "(SELECT battle_id FROM battles WHERE battle_at > :timestamp ORDER BY battle_at ASC LIMIT 40000)" +
-            ") AS combined_battles", nativeQuery = true)
-    Set<String> findSurroundingBattleIds(@Param("timestamp") long timestamp);
+    @Query(value = "SELECT * FROM battles WHERE battle_type = '2' ORDER BY battle_at DESC LIMIT 1",
+            nativeQuery = true)
+    Optional<Battle> findNewestRankedBattle();
 
     @Query(value = "SELECT * FROM battles WHERE player1_id = :playerId OR player2_id = :playerId " +
             "ORDER BY battles.battle_at DESC",

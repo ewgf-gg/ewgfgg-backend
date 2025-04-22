@@ -53,7 +53,7 @@ public class StatisticsCalculationService {
         }
 
         try {
-            logger.info("Computing statistics.");
+            logger.info("Computing statistics for game versions: {} ", event.getGameVersions());
             processGameVersions(event.getGameVersions());
             tekkenStatsSummaryRepository.updateTotalPlayersCount();
         } catch (Exception e) {

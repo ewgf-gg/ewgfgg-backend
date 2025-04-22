@@ -20,7 +20,6 @@ spring:
   output:
     ansi:
       enabled: ALWAYS
-
 admin:
   auth:
     token: ${AUTHORIZATION_TOKEN:test}

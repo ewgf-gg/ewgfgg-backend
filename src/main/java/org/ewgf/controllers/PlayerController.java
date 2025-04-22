@@ -21,10 +21,10 @@ public class PlayerController {
         this.playerService = playerService;
     }
 
-    @GetMapping("/{player}")
-    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String player, HttpServletRequest request) {
-        logger.info("Received request for Player: {} from IP: {}", player, request.getRemoteAddr());
-        PlayerDTO playerDTO = playerService.getPlayerStats(player);
+    @GetMapping("/{polarisId}")
+    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String polarisId, HttpServletRequest request) {
+        logger.info("Received request for Player: {} from IP: {}", polarisId, request.getRemoteAddr());
+        PlayerDTO playerDTO = playerService.getPlayerStats(polarisId);
         if (playerDTO == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(playerDTO);
     }
