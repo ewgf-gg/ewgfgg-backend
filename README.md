@@ -1,20 +1,22 @@
 
 # EWGF.GG - Tekken 8 Statistics Website (Backend)
 
-This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/), a website dedicated to collecting, analyzing, and serving Tekken 8 replay data. The service integrates with the Wavu Wank API as its primary data source.
+This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/), a website dedicated to collecting, analyzing, and serving Tekken 8 replay data. The service integrates the official Tekken servers and the Wavu Wank API as its primary data sources.
 
 ## Technologies used
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Production Architecture (as of 03/29/2025)
-![Tekken Diagrams(2)](https://github.com/user-attachments/assets/c605b74e-81c4-4618-bc4c-1047199c4068)
+## Current Production Architecture (as of 04/21/2025)
+![Tekken Diagrams(4)](https://github.com/user-attachments/assets/57a17184-5dfa-4ca6-bfda-8b9b3d2081c0)
+
+
 
 
 ## Data Flow
 
 1. Battle data is fetched by `WavuService.java`
-2. Battle data is published to RabbitMQ in batches of 6000 - 12000
+2. Battle data is published to RabbitMQ.
 3. BattleProcessingService listens for new messages from RabbitMQ, processes batches
 4. Events are published when new data is processed, triggering a statistics recalculation
 5. Frontend requests data through REST endpoints
@@ -35,7 +37,7 @@ This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/)
 
 Spring will automatically:
 
-* Download required Docker images (PostgreSQL v17, RabbitMQ)
+* Download required Docker images (PostgreSQL v17, RabbitMQ v4)
 * Execute init.sql to create all necessary database tables
 * Start the application with development configurations (if set to "Dev" or active profile is empty/not set)
 
@@ -61,6 +63,9 @@ Discovered limitations with JPA for high-throughput operations:
 
 
 ## Changelog
+
+### April 2024
+- **04/21/2024**: Finally added support for unranked battles! The website now stores Player, Group, and Quick matches. These will be excluded from ranked analysis.  
 
 ### March 2024
 - **03/29/2024**: Huge refactor on `WavuService.java`, as well as added the recently active players feature!
