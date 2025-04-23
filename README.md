@@ -7,8 +7,10 @@ This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/)
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Production Architecture (as of 03/29/2025)
+## Current Production Architecture (as of 04/21/2025)
 ![Tekken Diagrams(2)](https://github.com/user-attachments/assets/c605b74e-81c4-4618-bc4c-1047199c4068)
+![Tekken Diagrams(3)](https://github.com/user-attachments/assets/4098e3d3-6084-45aa-bf2f-457705b01564)
+
 
 
 ## Data Flow
