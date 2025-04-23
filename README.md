@@ -8,7 +8,6 @@ This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/)
 
 
 ## Current Production Architecture (as of 04/21/2025)
-![Tekken Diagrams(2)](https://github.com/user-attachments/assets/c605b74e-81c4-4618-bc4c-1047199c4068)
 ![Tekken Diagrams(3)](https://github.com/user-attachments/assets/4098e3d3-6084-45aa-bf2f-457705b01564)
 
 
