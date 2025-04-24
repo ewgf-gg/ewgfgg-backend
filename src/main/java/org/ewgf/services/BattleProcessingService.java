@@ -17,7 +17,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static org.ewgf.models.BattleType.RANKED_BATTLE;
 
@@ -47,18 +46,22 @@ public class BattleProcessingService {
             return;
         }
 
-        List<Battle> filteredBattles = battles.stream()
+        List<Battle> InsertedRankedBattles = battles.stream()
                 .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() == RANKED_BATTLE)
-                .collect(Collectors.toList());
+                .toList();
 
-        int unrankedBattleCount = battles.size() - filteredBattles.size();
+        List<Battle> InsertedUnrankedBattles = battles.stream()
+                .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() != RANKED_BATTLE)
+                .toList();
+
+        int unrankedBattleCount = InsertedUnrankedBattles.size();
         if (unrankedBattleCount > 0) updateUnrankedBattleCount(unrankedBattleCount);
 
-        Set<Integer> gameVersionsToProcess = extractGameVersions(filteredBattles);
+        Set<Integer> gameVersionsToProcess = extractGameVersions(InsertedRankedBattles);
         HashMap<String, Player> updatedPlayers = new HashMap<>();
 
         // Instantiate objects and update relevant information
-        processBattlesAndPlayers(filteredBattles, updatedPlayers);
+        processBattlesAndPlayers(InsertedRankedBattles, updatedPlayers);
         executePlayerUpdateOperations(updatedPlayers, insertedBattleIds.size());
         tryPublishEvent(gameVersionsToProcess);
     }
