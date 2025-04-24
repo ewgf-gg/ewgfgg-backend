@@ -140,50 +140,49 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
 
     @Query(value = """
 SELECT
-    game_version          AS "gameVersion",
-    character_id          AS "characterId",
-    COALESCE(rank_category, 'allRanks') AS "rankCategory",
+    game_version    AS "gameVersion",
+    character_id    AS "characterId",
+    COALESCE(rank_category, 'allRanks')   AS "rankCategory",
     COALESCE(region_id::text, 'Global') AS "regionId",
-    SUM(total_wins)       AS "totalWins",
-    SUM(total_losses)     AS "totalLosses",
+    SUM(total_wins)   AS "totalWins",
+    SUM(total_losses) AS "totalLosses",
     (SUM(total_wins)::float
          / NULLIF(SUM(total_wins + total_losses),0)
-    ) * 100               AS winrate
+        ) * 100 AS winrate
 FROM (
-  SELECT
+SELECT
     game_version,
     character_id,
-    -- treat -1 as “no region” by mapping it to NULL
-    CASE WHEN region_id = -1 THEN NULL ELSE region_id END AS region_id,
+    region_id,
     total_wins,
     total_losses,
     CASE
-      WHEN dan_rank >= 27             THEN 'master'
-      WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-      WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-      ELSE 'beginner'
+        WHEN dan_rank >= 27 THEN 'master'
+        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+        ELSE 'beginner'
     END AS rank_category
-  FROM aggregated_statistics
-  WHERE category = 'standard'
-) AS base
+FROM aggregated_statistics
+WHERE category = 'standard'
+ )
+    AS base
 GROUP BY
-  GROUPING SETS (
-    (game_version, character_id),
-    (game_version, character_id, region_id),
-    (game_version, character_id, rank_category),
-    (game_version, character_id, region_id, rank_category)
-  )
-HAVING SUM(total_wins + total_losses) > 0
-ORDER BY
-  "gameVersion" DESC,
-  CASE WHEN "rankCategory" = 'allRanks' THEN 0 ELSE 1 END,
-  "rankCategory",
-  CASE WHEN "regionId" = 'Global' THEN 0 ELSE 1 END,
-  "regionId",
-  winrate DESC;
+    GROUPING SETS (
+    (game_version, character_id),                                  -- global all‐ranks
+    (game_version, character_id, region_id),                       -- regional all‐ranks
+    (game_version, character_id, rank_category),                   -- global by‐rank
+    (game_version, character_id, region_id, rank_category)         -- regional by‐rank
+    )
+ HAVING SUM(total_wins + total_losses) > 0
+ ORDER BY
+     "gameVersion" DESC,
+     CASE WHEN rank_category = 'allRanks' THEN 0 ELSE 1 END,
+     rank_category,
+     CASE WHEN COALESCE(region_id::text,'Global') = 'Global' THEN 0 ELSE 1 END,
+     COALESCE(region_id::text,'Global'),
+     winrate DESC;
 """, nativeQuery = true)
     List<CharacterWinrateProjection> findAllWinrateStats();
-
 
     @Query(value = """
     WITH latest_version AS (
