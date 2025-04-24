@@ -99,6 +99,7 @@ public class StatisticsController {
         TekkenStatsSummaryDTO dto = new TekkenStatsSummaryDTO();
         dto.setTotalPlayers(tekkenStatsSummary.getTotalPlayers());
         dto.setTotalReplays(tekkenStatsSummary.getTotalReplays());
+        dto.setTotalUnrankedReplays(tekkenStatsSummary.getTotalUnrankedReplays());
         return dto;
     }
 }

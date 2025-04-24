@@ -6,4 +6,5 @@ import lombok.Data;
 public class TekkenStatsSummaryDTO {
    private long totalReplays;
    private long totalPlayers;
+   private int totalUnrankedReplays;
 }

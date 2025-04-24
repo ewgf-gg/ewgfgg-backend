@@ -2,6 +2,9 @@ package org.ewgf.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.ewgf.configuration.BackpressureManager;
+import org.ewgf.configuration.MessageConsumptionManager;
+import org.ewgf.configuration.RabbitMQConfig;
 import org.ewgf.services.CharacterStatsRevalidationService;
 import org.ewgf.services.RefetchBattleService;
 import org.ewgf.utils.EventPublisherUtils;
@@ -26,15 +29,20 @@ public class AdminController {
     private final String devAuthToken;
     private final RefetchBattleService refetchBattleService;
     private final EventPublisherUtils eventPublisherUtils;
+    private final MessageConsumptionManager messageConsumptionManager;
 
     public AdminController(
             CharacterStatsRevalidationService revalidationService,
-            @Value("${admin.auth.token}") String devAuthToken, RefetchBattleService refetchBattleService, EventPublisherUtils eventPublisherUtils) {
+            @Value("${admin.auth.token}") String devAuthToken,
+            RefetchBattleService refetchBattleService,
+            EventPublisherUtils eventPublisherUtils,
+            MessageConsumptionManager messageConsumptionManager) {
 
         this.revalidationService = revalidationService;
         this.devAuthToken = devAuthToken;
         this.refetchBattleService = refetchBattleService;
         this.eventPublisherUtils = eventPublisherUtils;
+        this.messageConsumptionManager = messageConsumptionManager;
     }
 
     private boolean isAuthenticated(String authToken) {
@@ -116,5 +124,35 @@ public class AdminController {
             return ResponseEntity.internalServerError().body("Error recalculating stats");
         }
         return ResponseEntity.ok("Successfully Recalculated stats");
+    }
+
+    @GetMapping("/pause")
+    public ResponseEntity<String> pauseRabbitMQConsumption(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+            HttpServletRequest request) {
+
+        if (!isAuthenticated(authToken)) {
+            log.warn("Unauthorized pause request from IP: {}", request.getRemoteAddr());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        messageConsumptionManager.pauseAllConsumers();
+        log.info("RabbitMQ consumption paused by {}", request.getRemoteAddr());
+        return ResponseEntity.ok("RabbitMQ consumers paused");
+    }
+
+    @GetMapping("/resume")
+    public ResponseEntity<String> resumeRabbitMQConsumption(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+            HttpServletRequest request) {
+
+        if (!isAuthenticated(authToken)) {
+            log.warn("Unauthorized resume request from IP: {}", request.getRemoteAddr());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        messageConsumptionManager.resumeAllConsumers();
+        log.info("RabbitMQ consumption resumed by {}", request.getRemoteAddr());
+        return ResponseEntity.ok("RabbitMQ consumers resumed");
     }
 }

@@ -59,7 +59,7 @@ public class BackpressureManager {
                 deactivateBackpressure();
             }
         } catch (Exception e) {
-            logger.error("Failed to fetch queue depth from RabbitMQ API", e);
+            logger.error("Failed to fetch queue depth from RabbitMQ API {}", e.getMessage());
         }
     }
 
