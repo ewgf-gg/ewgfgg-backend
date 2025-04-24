@@ -15,4 +15,5 @@ public class TekkenStatsSummary
     private Integer id = 1;
     private long totalReplays;
     private long totalPlayers;
+    private int totalUnrankedReplays;
 }

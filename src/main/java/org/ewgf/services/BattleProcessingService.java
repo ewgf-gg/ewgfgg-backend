@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -52,6 +51,9 @@ public class BattleProcessingService {
                 .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() == RANKED_BATTLE)
                 .collect(Collectors.toList());
 
+        int unrankedBattleCount = battles.size() - filteredBattles.size();
+        if (unrankedBattleCount > 0) updateUnrankedBattleCount(unrankedBattleCount);
+
         Set<Integer> gameVersionsToProcess = extractGameVersions(filteredBattles);
         HashMap<String, Player> updatedPlayers = new HashMap<>();
 
@@ -64,7 +66,7 @@ public class BattleProcessingService {
     private void executePlayerUpdateOperations(Map<String, Player> updatedPlayers, Integer insertedBattleCount ) {
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
-        updateSummaryStatistics(insertedBattleCount);
+        updateRankedBattleCount(insertedBattleCount);
     }
 
     private void processBattlesAndPlayers(
@@ -343,15 +345,6 @@ public class BattleProcessingService {
         }
     }
 
-    private void updateSummaryStatistics(int newBattleCount) {
-        if (newBattleCount == 0) return;
-        String sql = "UPDATE tekken_stats_summary SET " +
-                "total_replays = total_replays + ?";
-
-        jdbcTemplate.update(sql, newBattleCount);
-    }
-
-
     private void setPlayerStatsWithBattle(Player player, Battle battle, int playerNumber) {
         player.setPlayerId(getPlayerUserIdFromBattle(battle, playerNumber));
         player.setName(getPlayerNameFromBattle(battle, playerNumber));
@@ -424,51 +417,6 @@ public class BattleProcessingService {
         }
     }
 
-
-    private List<Object[]> getBattleBatchObjects(Set<Battle> battleSet) {
-        List<Object[]> batchArgs = new ArrayList<>();
-
-        // the order of these parameters must match the SQL statement above
-        for (Battle battle : battleSet) {
-            Object[] args = new Object[] {
-                    battle.getBattleId(),
-                    battle.getDate(),
-                    battle.getBattleAt(),
-                    battle.getBattleType(),
-                    battle.getGameVersion(),
-                    battle.getPlayer1CharacterId(),
-                    battle.getPlayer1Name(),
-                    battle.getPlayer1RegionId(),
-                    battle.getPlayer1AreaId(),
-                    battle.getPlayer1Language(),
-                    battle.getPlayer1PolarisId(),
-                    battle.getPlayer1TekkenPower(),
-                    battle.getPlayer1DanRank(),
-                    battle.getPlayer1RatingBefore(),
-                    battle.getPlayer1RatingChange(),
-                    battle.getPlayer1RoundsWon(),
-                    battle.getPlayer1UserId(),
-                    battle.getPlayer2CharacterId(),
-                    battle.getPlayer2Name(),
-                    battle.getPlayer2RegionId(),
-                    battle.getPlayer2AreaId(),
-                    battle.getPlayer2Language(),
-                    battle.getPlayer2PolarisId(),
-                    battle.getPlayer2TekkenPower(),
-                    battle.getPlayer2DanRank(),
-                    battle.getPlayer2RatingBefore(),
-                    battle.getPlayer2RatingChange(),
-                    battle.getPlayer2RoundsWon(),
-                    battle.getPlayer2UserId(),
-                    battle.getStageId(),
-                    battle.getWinner()
-            };
-            batchArgs.add(args);
-        }
-        return batchArgs;
-    }
-
-
     private List<Object[]> getPlayerBatchObjects(Map<String, Player> updatedPlayersMap) {
         List<Object[]> batchArgs = new ArrayList<>();
 
@@ -520,6 +468,22 @@ public class BattleProcessingService {
         return batchArgs;
     }
 
+    private void updateRankedBattleCount(int battleCount) {
+        if (battleCount == 0) return;
+        String sql = "UPDATE tekken_stats_summary SET " +
+                "total_replays = total_replays + ?";
+
+        jdbcTemplate.update(sql, battleCount);
+    }
+
+    private void updateUnrankedBattleCount(int battleCount) {
+        if (battleCount == 0) return;
+        String sql = "UPDATE tekken_stats_summary SET " +
+                "total_unranked_replays = total_unranked_replays + ?";
+
+        jdbcTemplate.update(sql, battleCount);
+    }
+
     private String getReadableDateInUTC(Battle battle) {
         return Instant.ofEpochSecond(battle.getBattleAt())
                 .atZone(ZoneId.of("UTC"))
@@ -542,11 +506,9 @@ public class BattleProcessingService {
         return playerNumber == 1 ? battle.getPlayer1RegionId() : battle.getPlayer2RegionId();
     }
 
-
     private String getPlayerCharacterFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? String.valueOf(battle.getPlayer1CharacterId()) : String.valueOf(battle.getPlayer2CharacterId());
     }
-
 
     private String getPlayerUserIdFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1UserId() : battle.getPlayer2UserId();
@@ -564,25 +526,10 @@ public class BattleProcessingService {
         return playerNumber == 1 ? battle.getPlayer1DanRank() : battle.getPlayer2DanRank();
     }
 
-    private int calculatePlayerRating(Battle battle, int playerNumber) {
-        if (playerNumber == 1) {
-            return (battle.getPlayer1RatingBefore() != null ? battle.getPlayer1RatingBefore() : 0) +
-                    (battle.getPlayer1RatingChange() != null ? battle.getPlayer1RatingChange() : 0);
-        } else {
-            return (battle.getPlayer2RatingBefore() != null ? battle.getPlayer2RatingBefore() : 0) +
-                    (battle.getPlayer2RatingChange() != null ? battle.getPlayer2RatingChange() : 0);
-        }
-    }
     private static void setNullableInt(PreparedStatement ps, int idx, Integer val)
             throws SQLException {
         if (val == null) ps.setNull(idx, Types.INTEGER);
         else             ps.setInt(idx, val);
-    }
-
-    private static void setNullableLong(PreparedStatement ps, int idx, Long val)
-            throws SQLException {
-        if (val == null) ps.setNull(idx, Types.BIGINT);
-        else             ps.setLong(idx, val);
     }
 }
 

@@ -139,121 +139,48 @@ public interface AggregatedStatisticsRepository extends JpaRepository<Aggregated
     List<CharacterAnalyticsProjection> findAllCharactersByPopularity();
 
     @Query(value = """
-    WITH global_all_ranks AS (
-        SELECT
-            game_version,
-            character_id,
-            SUM(total_wins) as total_wins,
-            SUM(total_losses) as total_losses
-        FROM aggregated_statistics
-        WHERE category = 'standard'
-        GROUP BY game_version, character_id
-    ),
-    global_by_rank AS (
-        SELECT
-            game_version,
-            character_id,
-            CASE
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END as rank_category,
-            SUM(total_wins) as total_wins,
-            SUM(total_losses) as total_losses
-        FROM aggregated_statistics
-        WHERE category = 'standard'
-        GROUP BY
-            game_version,
-            character_id,
-            CASE
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END
+SELECT
+    game_version    AS "gameVersion",
+    character_id    AS "characterId",
+    COALESCE(rank_category, 'allRanks')   AS "rankCategory",
+    COALESCE(region_id::text, 'Global') AS "regionId",
+    SUM(total_wins)   AS "totalWins",
+    SUM(total_losses) AS "totalLosses",
+    (SUM(total_wins)::float
+         / NULLIF(SUM(total_wins + total_losses),0)
+        ) * 100 AS winrate
+FROM (
+SELECT
+    game_version,
+    character_id,
+    region_id,
+    total_wins,
+    total_losses,
+    CASE
+        WHEN dan_rank >= 27 THEN 'master'
+        WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
+        WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
+        ELSE 'beginner'
+    END AS rank_category
+FROM aggregated_statistics
+WHERE category = 'standard'
+ )
+    AS base
+GROUP BY
+    GROUPING SETS (
+    (game_version, character_id),                                  -- global all‐ranks
+    (game_version, character_id, region_id),                       -- regional all‐ranks
+    (game_version, character_id, rank_category),                   -- global by‐rank
+    (game_version, character_id, region_id, rank_category)         -- regional by‐rank
     )
-    SELECT * FROM (
-        -- All ranks query with global stats
-        SELECT
-            game_version as gameVersion,
-            'allRanks' as rankCategory,
-            'Global' as regionId,
-            character_id as characterId,
-            total_wins as totalWins,
-            total_losses as totalLosses,
-            (total_wins::float / NULLIF((total_wins + total_losses), 0)) * 100 as winrate
-        FROM global_all_ranks
-        
-        UNION ALL
-        
-        -- All ranks query with regional stats
-        SELECT
-            a.game_version as gameVersion,
-            'allRanks' as rankCategory,
-            a.region_id::text as regionId,
-            a.character_id as characterId,
-            SUM(a.total_wins) as totalWins,
-            SUM(a.total_losses) as totalLosses,
-            (SUM(a.total_wins)::float / NULLIF(SUM(a.total_wins + a.total_losses), 0)) * 100 as winrate
-        FROM aggregated_statistics a
-        WHERE a.category = 'standard'
-        GROUP BY 
-            a.game_version,
-            a.region_id,
-            a.character_id
-        HAVING SUM(a.total_wins + a.total_losses) > 0
-        
-        UNION ALL
-        
-        -- Rank categories query with global stats
-        SELECT 
-            game_version as gameVersion,
-            rank_category as rankCategory,
-            'Global' as regionId,
-            character_id as characterId,
-            total_wins as totalWins,
-            total_losses as totalLosses,
-            (total_wins::float / NULLIF((total_wins + total_losses), 0)) * 100 as winrate
-        FROM global_by_rank
-        
-        UNION ALL
-        
-        -- Rank categories query with regional stats
-        SELECT 
-            a.game_version as gameVersion,
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END as rankCategory,
-            a.region_id::text as regionId,
-            a.character_id as characterId,
-            SUM(a.total_wins) as totalWins,
-            SUM(a.total_losses) as totalLosses,
-            (SUM(a.total_wins)::float / NULLIF(SUM(a.total_wins + a.total_losses), 0)) * 100 as winrate
-        FROM aggregated_statistics a
-        WHERE a.category = 'standard'
-        GROUP BY 
-            a.game_version,
-            CASE 
-                WHEN dan_rank >= 27 THEN 'master'
-                WHEN dan_rank BETWEEN 21 AND 26 THEN 'advanced'
-                WHEN dan_rank BETWEEN 15 AND 20 THEN 'intermediate'
-                WHEN dan_rank BETWEEN 0 AND 14 THEN 'beginner'
-            END,
-            a.region_id,
-            a.character_id
-        HAVING SUM(a.total_wins + a.total_losses) > 0
-    ) combined
-    ORDER BY 
-        gameVersion DESC,
-        CASE WHEN rankCategory = 'allRanks' THEN 0 ELSE 1 END,
-        rankCategory,
-        CASE WHEN regionId = 'Global' THEN 0 ELSE 1 END,
-        regionId,
-        winrate DESC
+ HAVING SUM(total_wins + total_losses) > 0
+ ORDER BY
+     "gameVersion" DESC,
+     CASE WHEN rank_category = 'allRanks' THEN 0 ELSE 1 END,
+     rank_category,
+     CASE WHEN COALESCE(region_id::text,'Global') = 'Global' THEN 0 ELSE 1 END,
+     COALESCE(region_id::text,'Global'),
+     winrate DESC;
 """, nativeQuery = true)
     List<CharacterWinrateProjection> findAllWinrateStats();
 
