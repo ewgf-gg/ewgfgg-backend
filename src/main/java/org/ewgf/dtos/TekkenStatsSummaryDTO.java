@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class TekkenStatsSummaryDTO {
-   private long totalReplays;
+   private long totalRankedReplays;
    private long totalPlayers;
    private int totalUnrankedReplays;
 }

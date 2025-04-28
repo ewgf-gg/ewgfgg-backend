@@ -455,7 +455,7 @@ public class BattleProcessingService {
     private void updateRankedBattleCount(int battleCount) {
         if (battleCount == 0) return;
         String sql = "UPDATE tekken_stats_summary SET " +
-                "total_replays = total_replays + ?";
+                "total_ranked_replays = total_ranked_replays + ?";
 
         jdbcTemplate.update(sql, battleCount);
     }
@@ -511,7 +511,6 @@ public class BattleProcessingService {
         if (val == null) ps.setNull(idx, Types.INTEGER);
         else ps.setInt(idx, val);
     }
-
 }
 
 

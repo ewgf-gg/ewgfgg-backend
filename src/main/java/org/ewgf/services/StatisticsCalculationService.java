@@ -131,8 +131,8 @@ public class StatisticsCalculationService {
         Map<String, List<IndividualStatistic>> playerDataMap = new HashMap<>();
 
         for (Object[] row : stats) {
-            // Skip records with missing region or area
-            if (row[5] == null || row[6] == null) continue;
+            // Skip records with missing region
+            if (row[5] == null) continue;
 
             try {
                 String playerId = (String) row[0];
@@ -167,8 +167,7 @@ public class StatisticsCalculationService {
         Map<AggregatedStatisticId, AggregatedStatistic> aggregatedData = new HashMap<>();
         Map<AggregatedStatisticId, Set<String>> playersPerStat = new HashMap<>();
 
-        if(category.equals(STANDARD_CATEGORY)) {
-            for (Map.Entry<String, IndividualStatistic> entry : playerCharacters.entrySet()) {
+        for (Map.Entry<String, IndividualStatistic> entry : playerCharacters.entrySet()) {
                 String playerId = entry.getKey();
                 IndividualStatistic data = entry.getValue();
 
@@ -178,35 +177,7 @@ public class StatisticsCalculationService {
                 updateStatisticCounts(stat, data);
                 playersPerStat.computeIfAbsent(id, k -> new HashSet<>()).add(playerId);
                 aggregatedData.put(id, stat);
-            }
-        } else {
-            for (Map.Entry<String, List<IndividualStatistic>> entry : allPlayerCharacters.entrySet()) {
-                String playerId = entry.getKey();
-                List<IndividualStatistic> characterDataList = entry.getValue();
-
-                for (IndividualStatistic data : characterDataList) {
-                    AggregatedStatisticId id = createStatisticId(gameVersion, data, OVERALL_CATEGORY);
-                    AggregatedStatistic stat = getOrCreateStatistic(id, existingStats, aggregatedData);
-
-                    updateStatisticCounts(stat, data);
-                    playersPerStat.computeIfAbsent(id, k -> new HashSet<>()).add(playerId);
-                    aggregatedData.put(id, stat);
-                }
-                }
         }
-
-        for (Map.Entry<String, IndividualStatistic> entry : playerCharacters.entrySet()) {
-            String playerId = entry.getKey();
-            IndividualStatistic data = entry.getValue();
-
-            AggregatedStatisticId id = createStatisticId(gameVersion, data, category);
-            AggregatedStatistic stat = getOrCreateStatistic(id, existingStats, aggregatedData);
-
-            updateStatisticCounts(stat, data);
-            playersPerStat.computeIfAbsent(id, k -> new HashSet<>()).add(playerId);
-            aggregatedData.put(id, stat);
-        }
-
         updatePlayerCounts(aggregatedData, playersPerStat);
         return aggregatedData;
     }
@@ -232,7 +203,6 @@ public class StatisticsCalculationService {
                 aggregatedData.put(id, stat);
             }
         }
-
         updatePlayerCounts(aggregatedData, playersPerStat);
         return aggregatedData;
     }

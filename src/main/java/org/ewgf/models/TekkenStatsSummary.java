@@ -13,7 +13,7 @@ public class TekkenStatsSummary
 {
     @Id
     private Integer id = 1;
-    private long totalReplays;
+    private long totalRankedReplays;
     private long totalPlayers;
     private int totalUnrankedReplays;
 }
