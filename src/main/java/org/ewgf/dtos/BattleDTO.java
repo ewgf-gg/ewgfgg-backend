@@ -4,8 +4,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.ewgf.models.BattleType;
 
-import java.time.LocalDateTime;
-
 @NoArgsConstructor
 @Data
 public class BattleDTO
@@ -28,7 +26,7 @@ public class BattleDTO
     private Integer player1RoundsWon;
     private Integer player2RoundsWon;
     private Integer winner;
-    private Integer StageId;
+    private Integer stageId;
 
     public BattleDTO(String date,
                      BattleType battleType,
@@ -68,7 +66,7 @@ public class BattleDTO
         this.player1RoundsWon = player1RoundsWon;
         this.player2RoundsWon = player2RoundsWon;
         this.winner = winner;
-        this.StageId = stageId;
+        this.stageId = stageId;
 
     }
 }

@@ -26,18 +26,14 @@ public class AggregatedStatisticId implements Serializable {
     @Column(name = "region_id")
     private int regionId;
 
-    @Column(name = "area_id")
-    private int areaId;
-
     public AggregatedStatisticId() {}
 
-    public AggregatedStatisticId(int gameVersion, String characterId, int danRank, String category, int regionId, int areaId) {
+    public AggregatedStatisticId(int gameVersion, String characterId, int danRank, String category, int regionId) {
         this.gameVersion = gameVersion;
         this.characterId = characterId;
         this.danRank = danRank;
         this.category = category;
         this.regionId = regionId;
-        this.areaId = areaId;
     }
 
     @Override
@@ -51,13 +47,12 @@ public class AggregatedStatisticId implements Serializable {
         return gameVersion == that.gameVersion &&
                 danRank == that.danRank &&
                 regionId == that.regionId &&
-                areaId == that.areaId &&
                 Objects.equals(characterId, that.characterId) &&
                 Objects.equals(category, that.category);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gameVersion, characterId, danRank, category, regionId, areaId);
+        return Objects.hash(gameVersion, characterId, danRank, category, regionId);
     }
 }

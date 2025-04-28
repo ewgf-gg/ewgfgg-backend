@@ -58,7 +58,6 @@ public class PlayerService {
         playerDto.setPolarisId(player.getPolarisId());
         playerDto.setName(player.getName());
         playerDto.setRegionId(player.getRegionId());
-        playerDto.setAreaId(player.getAreaId());
         playerDto.setTekkenPower(player.getTekkenPower());
         playerDto.setLatestBattle(player.getLatestBattle());
         playerDto.setMainCharacterAndRank(player.getMostPlayedCharacterInfo());
@@ -168,7 +167,6 @@ public class PlayerService {
         PlayerMetadataDTO dto = new PlayerMetadataDTO();
         dto.setPlayerName(player.getName());
         dto.setRegionId(player.getRegionId());
-        dto.setAreaId(player.getAreaId());
         dto.setPolarisId(player.getPolarisId());
         dto.setLatestBattleDate(DateTimeUtils.toReadableTime(player.getLatestBattle()));
         dto.setTekkenPower(player.getTekkenPower());

@@ -36,10 +36,6 @@ public class Battle {
     @Column(name = "player1_character_id", nullable = false)
     private int player1CharacterId;
 
-    @JsonProperty("p1_area_id")
-    @Column(name = "player1_area")
-    private Integer player1AreaId;
-
     @JsonProperty("p1_region_id")
     @Column(name = "player1_region")
     private Integer player1RegionId;
@@ -83,10 +79,6 @@ public class Battle {
     @JsonProperty("p2_chara_id")
     @Column(name = "player2_character_id", nullable = false)
     private int player2CharacterId;
-
-    @JsonProperty("p2_area_id")
-    @Column(name = "player2_area")
-    private Integer player2AreaId;
 
     @JsonProperty("p2_region_id")
     @Column(name = "player2_region")

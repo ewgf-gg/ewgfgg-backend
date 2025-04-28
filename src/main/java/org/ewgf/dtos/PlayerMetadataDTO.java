@@ -7,11 +7,10 @@ import java.util.Map;
 @NoArgsConstructor
 @Data
 public class PlayerMetadataDTO {
-    String playerName;
-    String polarisId;
-    Integer regionId;
-    Integer areaId;
-    String latestBattleDate;
-    Long tekkenPower;
-    Map<String,String> mainCharacterAndRank;
+    private String playerName;
+    private String polarisId;
+    private Integer regionId;
+    private String latestBattleDate;
+    private Long tekkenPower;
+    private Map<String,String> mainCharacterAndRank;
 }

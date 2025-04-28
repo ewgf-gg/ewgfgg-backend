@@ -23,14 +23,10 @@ public interface CharacterStatsRepository extends JpaRepository<CharacterStats, 
             cs.dan_rank as danRank,
             cs.wins as wins,
             cs.losses as losses,
-            p.region_id as regionId,
-            p.area_id as areaId
+            p.region_id as regionId
         FROM character_stats cs
         JOIN players p ON cs.player_id = p.player_id
         WHERE cs.game_version = :gameVersion
-        AND p.region_id IS NOT NULL
-        AND p.area_id IS NOT NULL
-        """,
-            nativeQuery = true)
+        """, nativeQuery = true)
     List<Object[]> findAllStatsByGameVersion(@Param("gameVersion") int gameVersion);
 }

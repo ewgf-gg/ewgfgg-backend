@@ -18,7 +18,7 @@ public class TekkenDataMapperUtils
     static {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            InputStream inputStream = new ClassPathResource("enums.json").getInputStream();
+            InputStream inputStream = new ClassPathResource("tekken_enums.json").getInputStream();
 
             JsonNode root = mapper.readTree(inputStream);
             JsonNode characters = root.get("characters");

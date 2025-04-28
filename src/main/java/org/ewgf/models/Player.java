@@ -37,16 +37,8 @@ public class Player {
     @Column(name = "region_id")
     private Integer regionId;
 
-    @Column(name = "area_id")
-    private Integer areaId;
-
     @Column(name = "language")
     private String language;
-
-    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Set<PastPlayerNames> playerNames = new HashSet<>();
 
     // Update the map to use a composite key of character ID and game version
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -64,7 +56,6 @@ public class Player {
             String polarisId,
             Long tekkenPower,
             Integer regionId,
-            Integer areaId,
             String language,
             Long latestBattle)
     {
@@ -73,18 +64,13 @@ public class Player {
         this.polarisId = polarisId;
         this.tekkenPower = tekkenPower;
         this.regionId = regionId;
-        this.areaId = areaId;
         this.language = language;
         this.latestBattle = latestBattle;
     }
 
     // Logic for setting/updating tekkenPower based on the latest battle
-    public void updateTekkenPower(long newPower, long battleTime)
-    {
-        if (battleTime >= getLatestBattle())
-        {
-            this.tekkenPower = newPower;
-        }
+    public void updateTekkenPower(long newPower, long battleTime) {
+        if (battleTime >= getLatestBattle()) this.tekkenPower = newPower;
     }
 
     private Map<String, String> findMainCharacter() {
@@ -168,10 +154,6 @@ public class Player {
         result.put(DAN_RANK, TekkenDataMapperUtils.getDanName(String.valueOf(danRankId)));
 
         return result;
-    }
-
-    public boolean hasPlayerName(String name) {
-        return playerNames.stream().anyMatch(pn -> pn.getName().equals(name));
     }
 
     @Override
