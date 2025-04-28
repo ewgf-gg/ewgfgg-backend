@@ -189,7 +189,7 @@ public class CharacterStatsRevalidationService {
                         entry.getValue().getWins(),
                         entry.getValue().getLosses()
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static class CharacterStatsAccumulator {

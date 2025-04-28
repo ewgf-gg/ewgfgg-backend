@@ -144,14 +144,14 @@ public class BattleProcessingService {
         String SQL =
                 "INSERT INTO battles (" +
                         "battle_id, date, battle_at, battle_type, game_version, " +
-                        "player1_character_id, player1_name, player1_region, player1_area, " +
+                        "player1_character_id, player1_name, player1_region, " +
                         "player1_language, player1_polaris_id, player1_tekken_power, player1_dan_rank, " +
                         "player1_rating_before, player1_rating_change, player1_rounds_won, player1_id, " +
-                        "player2_character_id, player2_name, player2_region, player2_area, player2_language, " +
+                        "player2_character_id, player2_name, player2_region, player2_language, " +
                         "player2_polaris_id, player2_tekken_power, player2_dan_rank, " +
                         "player2_rating_before, player2_rating_change, player2_rounds_won, player2_id, " +
                         "stageid, winner" +
-                        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (battle_id) DO NOTHING " +
                         "RETURNING battle_id";
 
@@ -175,7 +175,6 @@ public class BattleProcessingService {
                         ps.setInt(i++, b.getPlayer1CharacterId());
                         ps.setString(i++, b.getPlayer1Name());
                         setNullableInt(ps, i++, b.getPlayer1RegionId());
-                        setNullableInt(ps, i++, b.getPlayer1AreaId());
                         ps.setString(i++, b.getPlayer1Language());
                         ps.setString(i++, b.getPlayer1PolarisId());
                         ps.setLong(i++, b.getPlayer1TekkenPower());
@@ -187,7 +186,6 @@ public class BattleProcessingService {
                         ps.setInt(i++, b.getPlayer2CharacterId());
                         ps.setString(i++, b.getPlayer2Name());
                         setNullableInt(ps, i++, b.getPlayer2RegionId());
-                        setNullableInt(ps, i++, b.getPlayer2AreaId());
                         ps.setString(i++, b.getPlayer2Language());
                         ps.setString(i++, b.getPlayer2PolarisId());
                         ps.setLong(i++, b.getPlayer2TekkenPower());
@@ -227,8 +225,8 @@ public class BattleProcessingService {
 
         String sql =
                 "INSERT INTO players " +
-                        "(player_id, name, region_id, area_id, language, polaris_id, tekken_power, latest_battle) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+                        "(player_id, name, region_id, language, polaris_id, tekken_power, latest_battle) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (player_id) DO UPDATE SET " +
 
                         "name = CASE WHEN EXCLUDED.latest_battle > players.latest_battle " +
@@ -242,10 +240,6 @@ public class BattleProcessingService {
                         "region_id = CASE " +
                         "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.region_id, players.region_id) " +
                         "ELSE players.region_id END, " +
-
-                        "area_id = CASE " +
-                        "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.area_id, players.area_id) " +
-                        "ELSE players.area_id END, " +
 
                         "language = CASE " +
                         "WHEN EXCLUDED.latest_battle > players.latest_battle THEN COALESCE(EXCLUDED.language, players.language) " +
@@ -304,12 +298,10 @@ public class BattleProcessingService {
                 (System.currentTimeMillis() - startTime), batchArgs.size());
     }
 
-    private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber)
-    {
+    private void setCharacterStatsWithBattle(Player player, Battle battle, int playerNumber) {
         String characterId = getPlayerCharacterFromBattle(battle, playerNumber);
         int gameVersion = battle.getGameVersion();
 
-        // Create a CharacterStatsId for lookup
         CharacterStatsId statsId = new CharacterStatsId();
         statsId.setPlayerId(player.getPlayerId());
         statsId.setCharacterId(characterId);
@@ -319,7 +311,6 @@ public class BattleProcessingService {
         CharacterStats stats = player.getCharacterStats().get(statsId);
 
         if (stats == null) {
-            // Initialize a new CharacterStats object if none exists
             stats = new CharacterStats();
             stats.setId(statsId);
             stats.setDanRank(getPlayerDanRankFromBattle(battle, playerNumber));
@@ -355,7 +346,6 @@ public class BattleProcessingService {
         player.setTekkenPower(getPlayerTekkenPowerFromBattle(battle, playerNumber));
         player.setLanguage(getPlayerLanguageFromBattle(battle, playerNumber));
         player.setRegionId(getPlayerRegionIDFromBattle(battle, playerNumber));
-        player.setAreaId(getPlayerAreaIDFromBattle(battle, playerNumber));
 
         CharacterStats characterStats = new CharacterStats();
         CharacterStatsId statsId = new CharacterStatsId();
@@ -370,7 +360,6 @@ public class BattleProcessingService {
 
         player.getCharacterStats().put(statsId, characterStats);
         player.setLatestBattle(battle.getBattleAt());
-        addPlayerNameIfNew(player, player.getName());
     }
 
     private void tryPublishEvent(Set<Integer> gameVersions)
@@ -413,13 +402,6 @@ public class BattleProcessingService {
         return gameVersions;
     }
 
-    private void addPlayerNameIfNew(Player player, String name) {
-        if (player.getPlayerNames().stream().noneMatch(pastName -> pastName.getName().equals(name))) {
-            PastPlayerNames pastName = new PastPlayerNames(name, player);
-            player.getPlayerNames().add(pastName);
-        }
-    }
-
     private List<Object[]> getPlayerBatchObjects(Map<String, Player> updatedPlayersMap) {
         List<Object[]> batchArgs = new ArrayList<>();
 
@@ -428,7 +410,6 @@ public class BattleProcessingService {
                     updatedPlayer.getPlayerId(),
                     updatedPlayer.getName(),
                     updatedPlayer.getRegionId(),
-                    updatedPlayer.getAreaId(),
                     updatedPlayer.getLanguage(),
                     updatedPlayer.getPolarisId(),
                     updatedPlayer.getTekkenPower(),
@@ -474,7 +455,7 @@ public class BattleProcessingService {
     private void updateRankedBattleCount(int battleCount) {
         if (battleCount == 0) return;
         String sql = "UPDATE tekken_stats_summary SET " +
-                "total_replays = total_replays + ?";
+                "total_ranked_replays = total_ranked_replays + ?";
 
         jdbcTemplate.update(sql, battleCount);
     }
@@ -499,10 +480,6 @@ public class BattleProcessingService {
 
     private String getPlayerLanguageFromBattle(Battle battle, int playerNumber) {
         return playerNumber == 1 ? battle.getPlayer1Language() : battle.getPlayer2Language();
-    }
-
-    private Integer getPlayerAreaIDFromBattle(Battle battle, int playerNumber) {
-        return playerNumber == 1 ? battle.getPlayer1AreaId() : battle.getPlayer2AreaId();
     }
 
     private Integer getPlayerRegionIDFromBattle(Battle battle, int playerNumber) {
@@ -532,7 +509,8 @@ public class BattleProcessingService {
     private static void setNullableInt(PreparedStatement ps, int idx, Integer val)
             throws SQLException {
         if (val == null) ps.setNull(idx, Types.INTEGER);
-        else             ps.setInt(idx, val);
+        else ps.setInt(idx, val);
     }
 }
+
 

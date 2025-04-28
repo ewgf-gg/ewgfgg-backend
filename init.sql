@@ -18,7 +18,6 @@ CREATE TABLE public.aggregated_statistics (
     dan_rank integer NOT NULL,
     category character varying NOT NULL,
     region_id integer NOT NULL,
-    area_id integer NOT NULL,
     total_wins integer,
     total_losses integer,
     total_players integer,
@@ -70,23 +69,6 @@ CREATE TABLE public.character_stats (
    losses integer
 );
 
-CREATE TABLE public.enums (
-  id integer NOT NULL,
-  enum_type character varying(40),
-  enum_key integer,
-  enum_value character varying(40)
-);
-
-CREATE SEQUENCE public.enums_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.enums_id_seq OWNED BY public.enums.id;
-
 CREATE TABLE public.past_player_names (
    id bigint NOT NULL,
    name character varying(255) NOT NULL,
@@ -107,7 +89,6 @@ CREATE TABLE public.players (
     polaris_id character varying,
     name character varying,
     region_id integer,
-    area_id integer,
     language character varying,
     latest_battle bigint,
     tekken_power bigint
@@ -115,26 +96,23 @@ CREATE TABLE public.players (
 
 CREATE TABLE public.tekken_stats_summary (
     id integer NOT NULL,
-    total_replays bigint,
-    total_players bigint
+    total_replays bigint DEFAULT 0,
+    total_players bigint DEFAULT 0,
+    total_unranked_replays int DEFAULT 0
 );
 
 -- Default values
-ALTER TABLE ONLY public.enums ALTER COLUMN id SET DEFAULT nextval('public.enums_id_seq'::regclass);
 ALTER TABLE ONLY public.past_player_names ALTER COLUMN id SET DEFAULT nextval('public.past_player_names_id_seq'::regclass);
 
 -- Primary Keys and Constraints
 ALTER TABLE ONLY public.aggregated_statistics
-    ADD CONSTRAINT aggregated_statistics_pkey PRIMARY KEY (game_version, character_id, dan_rank, category, region_id, area_id);
+    ADD CONSTRAINT aggregated_statistics_pkey PRIMARY KEY (game_version, character_id, dan_rank, category, region_id);
 
 ALTER TABLE ONLY public.battles
     ADD CONSTRAINT battles_pkey PRIMARY KEY (battle_id);
 
 ALTER TABLE ONLY public.character_stats
     ADD CONSTRAINT character_stats_pkey PRIMARY KEY (player_id, character_id, game_version);
-
-ALTER TABLE ONLY public.enums
-    ADD CONSTRAINT enums_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.past_player_names
     ADD CONSTRAINT past_player_names_pkey PRIMARY KEY (id);

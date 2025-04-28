@@ -13,7 +13,6 @@ public class PlayerDTO {
     private String polarisId;
     private String name;
     private Integer regionId;
-    private Integer areaId;
     private long tekkenPower;
     private long latestBattle;
     private Map<String, String> mainCharacterAndRank = new HashMap<>();

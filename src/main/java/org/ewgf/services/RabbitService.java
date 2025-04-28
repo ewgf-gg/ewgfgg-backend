@@ -45,7 +45,6 @@ public class RabbitService {
     public void receiveMessage(List<Battle> battles, @Header(TIMESTAMP_HEADER) String timestamp) {
         log.info("Received {} battles from RabbitMQ, timestamp: {}", battles.size(), timestamp);
         long start = System.currentTimeMillis();
-
         battleProcessingService.processBattlesAsync(battles);
         log.info("Total operation time: {} ms", System.currentTimeMillis() - start);
     }
