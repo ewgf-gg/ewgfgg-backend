@@ -54,22 +54,20 @@ public class BattleProcessingService {
                 .filter(battle -> insertedBattleIds.contains(battle.getBattleId()) && battle.getBattleType() != RANKED_BATTLE)
                 .toList();
 
-        int unrankedBattleCount = InsertedUnrankedBattles.size();
-        if (unrankedBattleCount > 0) updateUnrankedBattleCount(unrankedBattleCount);
-
         Set<Integer> gameVersionsToProcess = extractGameVersions(InsertedRankedBattles);
         HashMap<String, Player> updatedPlayers = new HashMap<>();
 
         // Instantiate objects and update relevant information
         processBattlesAndPlayers(InsertedRankedBattles, updatedPlayers);
-        executePlayerUpdateOperations(updatedPlayers, insertedBattleIds.size());
+        executePlayerUpdateOperations(updatedPlayers, InsertedRankedBattles.size(), InsertedUnrankedBattles.size());
         tryPublishEvent(gameVersionsToProcess);
     }
 
-    private void executePlayerUpdateOperations(Map<String, Player> updatedPlayers, Integer insertedBattleCount ) {
+    private void executePlayerUpdateOperations(Map<String, Player> updatedPlayers, Integer insertedRankedBattles, Integer insertedUnrankedBattles) {
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
-        updateRankedBattleCount(insertedBattleCount);
+        if (insertedRankedBattles> 0) updateRankedBattleCount(insertedRankedBattles);
+        if (insertedUnrankedBattles > 0) updateUnrankedBattleCount(insertedUnrankedBattles);
     }
 
     private void processBattlesAndPlayers(
