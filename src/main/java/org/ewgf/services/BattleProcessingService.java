@@ -362,6 +362,7 @@ public class BattleProcessingService {
 
     private void tryPublishEvent(Set<Integer> gameVersions)
     {
+        if(gameVersions.isEmpty()) return;
         long currentTime = System.currentTimeMillis();
         long lastPublishTime = lastEventPublishTime.get();
 
