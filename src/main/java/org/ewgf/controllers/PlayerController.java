@@ -64,7 +64,13 @@ public class PlayerController {
             logger.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
-        params.put(USER_ID, playerId.get());
+
+        String paddedPlayerId = playerId.get();
+        if (paddedPlayerId.length() < 18) {
+            paddedPlayerId = String.format("%018d", Long.parseLong(paddedPlayerId));
+        }
+
+        params.put(USER_ID, paddedPlayerId);
         return ResponseEntity.ok(polarisProxyService.fetchStatPentagonFromProxy(params));
     }
 }
