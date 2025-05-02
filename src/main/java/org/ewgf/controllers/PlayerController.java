@@ -57,11 +57,16 @@ public class PlayerController {
 
     @GetMapping("/getStatPentagon")
     public ResponseEntity<StatPentagonResponse> getPolarisIdMapping(@RequestParam String polarisId) throws Exception {
-        Optional<String> playerId = playerService.getPlayerIdFromPolarisId(polarisId);
+        String paddedPolarisId = polarisId;
+        if (polarisId.length() < 18) {
+            paddedPolarisId = String.format("%18s", polarisId).replace(' ', '0');
+        }
+
+        Optional<String> playerId = playerService.getPlayerIdFromPolarisId(paddedPolarisId);
         Map<String, String> params = new HashMap<>();
 
         if (playerId.isEmpty()) {
-            logger.warn("No player found for polaris id: {}", polarisId);
+            logger.warn("No player found for polaris id: {}", paddedPolarisId);
             return ResponseEntity.notFound().build();
         }
         params.put(USER_ID, playerId.get());
