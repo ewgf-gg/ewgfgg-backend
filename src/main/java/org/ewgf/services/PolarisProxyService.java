@@ -44,14 +44,15 @@ public class PolarisProxyService {
         );
 
         try {
-            ResponseEntity<StatPentagonResponse> response = restTemplate.exchange(
+            ResponseEntity<StatPentagonResponse[]> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     requestEntity,
-                    StatPentagonResponse.class
+                    StatPentagonResponse[].class
             );
 
-            return response.getBody();
+            StatPentagonResponse[] responseArray = response.getBody();
+            return responseArray != null && responseArray.length > 0 ? responseArray[0] : null;
         } catch (HttpClientErrorException.TooManyRequests e) {
             log.error(ERROR_CODE_429_MESSAGE);
             throw e;
