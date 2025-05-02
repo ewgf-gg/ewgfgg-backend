@@ -15,5 +15,7 @@ public class Constants {
     public static final String TIMESTAMP_HEADER = "unixTimestamp";
     public static final Integer SEASON_2_GAME_VERSION = 20001;
     public static final Integer CHUNK_SIZE = 1000;
-
+    public static final String GET_PROFILE = "GET_PROFILE";
+    public static final String USER_ID = "userId";
+    public static final String ERROR_CODE_429_MESSAGE = "Server is overloaded with requests.";
 }

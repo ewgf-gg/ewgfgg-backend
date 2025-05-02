@@ -92,6 +92,10 @@ rabbitmq:
     username: guest
     password: guest
 
+polaris:
+  api:
+    baseUrl: http://localhost:8081
+
 security:
   cors:
     allowed-origin: http://localhost:3000
@@ -104,8 +108,8 @@ spring:
     activate:
       on-profile: "prod"
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
   application:
@@ -121,6 +125,11 @@ rabbitmq:
       url: ${RABBITMQ_API_URL}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+
+polaris:
+  api:
+    baseUrl: ${PROXY_SERVICE_URL}
+    basePath: ${PROXY_BASE_PATH}
 
 security:
   cors:

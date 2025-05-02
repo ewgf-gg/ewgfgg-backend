@@ -53,6 +53,10 @@ public class PlayerService {
         return player.map(this::convertToMetadataDTO).orElse(null);
     }
 
+    public Optional<String> getPlayerIdFromPolarisId(String polarisId) {
+        return playerRepository.findPolarisIdByPlayerId(polarisId);
+    }
+
     private PlayerDTO convertToPlayerDTO(Player player, List<Battle> playerBattles) {
         PlayerDTO playerDto = new PlayerDTO();
         playerDto.setPolarisId(player.getPolarisId());

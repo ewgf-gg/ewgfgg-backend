@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.ewgf.models.Player;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -31,4 +32,8 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
     @Query(value = "SELECT * FROM players " +
             "WHERE latest_battle > (EXTRACT(EPOCH FROM NOW()) - 600) ORDER BY latest_battle DESC LIMIT 40", nativeQuery = true)
     Optional<List<Player>> findAllActivePlayersInLast10Minutes();
+
+    @Query("SELECT p.playerId FROM Player p WHERE p.polarisId = :polarisId")
+    Optional<String> findPolarisIdByPlayerId(@Param("polarisId") String polarisId);
+
 }
