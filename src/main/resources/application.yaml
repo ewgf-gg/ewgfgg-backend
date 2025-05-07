@@ -3,10 +3,10 @@ spring:
     active: dev
   datasource:
     hikari:
-      maximum-pool-size: 30
+      maximum-pool-size: 15
       minimum-idle: 5
       idle-timeout: 300000        # 5 minutes
-      connection-timeout: 20000   # 20 seconds
+      connection-timeout: 10000   # 10 seconds
       max-lifetime: 1200000      # 20 minutes
   jpa:
     hibernate:

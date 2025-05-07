@@ -39,7 +39,6 @@ public class PlayerService {
     }
 
     public List<PlayerSearchDTO> searchPlayers(String query) {
-        if (query.isEmpty() || query.length() >= 20) return Collections.emptyList();
         Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
 
         return playersOpt.map(players -> players.stream()
@@ -53,8 +52,16 @@ public class PlayerService {
         return player.map(this::convertToMetadataDTO).orElse(null);
     }
 
-    public Optional<String> getPlayerIdFromPolarisId(String polarisId) {
-        return playerRepository.findPolarisIdByPlayerId(polarisId);
+    public String getPlayerIdFromPolarisId(String polarisId) {
+        Optional<String> playerId = playerRepository.findPolarisIdByPlayerId(polarisId);
+        String paddedPlayerId = null;
+        if (playerId.isPresent()) {
+            paddedPlayerId = playerId.get();
+            if (paddedPlayerId.length() < 18) {
+                paddedPlayerId = String.format("%018d", Long.parseLong(paddedPlayerId));
+            }
+        }
+        return paddedPlayerId;
     }
 
     private PlayerDTO convertToPlayerDTO(Player player, List<Battle> playerBattles) {
