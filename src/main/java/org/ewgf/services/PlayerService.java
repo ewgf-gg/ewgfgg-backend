@@ -8,6 +8,7 @@ import org.ewgf.utils.DateTimeUtils;
 import org.ewgf.utils.TekkenDataMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -39,7 +40,7 @@ public class PlayerService {
     }
 
     public List<PlayerSearchDTO> searchPlayers(String query) {
-        Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
+        Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query, PageRequest.of(0, 20));
 
         return playersOpt.map(players -> players.stream()
                 .map(this::convertToSearchDTO)

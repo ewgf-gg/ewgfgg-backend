@@ -1,6 +1,7 @@
 package org.ewgf.repositories;
 
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.data.jpa.repository.Query;
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import org.ewgf.models.Player;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 
@@ -26,7 +26,7 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
             "  WHEN LOWER(p.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1 " +
             "  ELSE 20 END, " +
             "length(p.name)")
-    Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query);
+    Optional<List<Player>> findByNameOrPolarisIdContainingIgnoreCase(@Param("query") String query, PageRequest pageRequest);
 
     // 600 is in seconds
     @Query(value = "SELECT * FROM players " +

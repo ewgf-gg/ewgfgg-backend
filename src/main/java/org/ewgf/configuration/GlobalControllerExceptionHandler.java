@@ -11,8 +11,7 @@ public class GlobalControllerExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Void> handleGenericException(Exception ex) {
-        log.error("Unhandled exception caught: {}", ex.getMessage());
+        log.error("Unhandled exception caught: ", ex);
         return ResponseEntity.internalServerError().build();
     }
-
 }
