@@ -38,7 +38,11 @@ public class PlayerController {
 
     @GetMapping("/search")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
-        if (query == null || query.trim().isBlank() || query.trim().length() >= 20) return ResponseEntity.badRequest().build();
+        if (query == null || query.trim().isBlank() || query.trim().length() >= 20) {
+            logger.warn("Invalid search query: {}", query);
+            return ResponseEntity.badRequest().build();
+        }
+        logger.info("Received search query: {}", query);
         List<PlayerSearchDTO> projections = playerService.searchPlayers(query.trim());
         return ResponseEntity.ok(projections);
     }
@@ -60,10 +64,11 @@ public class PlayerController {
         String playerId = playerService.getPlayerIdFromPolarisId(polarisId);
         Map<String, String> params = new HashMap<>();
 
-        if (playerId.isEmpty()) {
+        if (playerId == null || playerId.isEmpty()) {
             logger.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
+
         params.put(USER_ID, playerId);
         return ResponseEntity.ok(polarisProxyService.fetchStatPentagonFromProxy(params));
     }
