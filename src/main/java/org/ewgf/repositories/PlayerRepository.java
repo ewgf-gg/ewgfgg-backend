@@ -20,7 +20,7 @@ public interface PlayerRepository extends JpaRepository<Player, String> {
     Optional<Player> findByPolarisId(@Param("criteria") String criteria);
 
     @Query("SELECT p FROM Player p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
-            "OR LOWER(p.polarisId) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(p.polarisId) LIKE LOWER(CONCAT('%', REPLACE(:query, '-', ''), '%')) " +
             "ORDER BY CASE " +
             "  WHEN LOWER(p.name) = LOWER(:query) THEN 0 " +
             "  WHEN LOWER(p.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1 " +

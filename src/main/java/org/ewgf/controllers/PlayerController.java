@@ -38,8 +38,8 @@ public class PlayerController {
 
     @GetMapping("/search")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
-        if (query == null || query.isBlank() || query.length() >= 20) return ResponseEntity.badRequest().build();
-        List<PlayerSearchDTO> projections = playerService.searchPlayers(query);
+        if (query == null || query.trim().isBlank() || query.trim().length() >= 20) return ResponseEntity.badRequest().build();
+        List<PlayerSearchDTO> projections = playerService.searchPlayers(query.trim());
         return ResponseEntity.ok(projections);
     }
 
@@ -57,20 +57,14 @@ public class PlayerController {
 
     @GetMapping("/getStatPentagon")
     public ResponseEntity<StatPentagonResponse> getPolarisIdMapping(@RequestParam String polarisId) throws Exception {
-        Optional<String> playerId = playerService.getPlayerIdFromPolarisId(polarisId);
+        String playerId = playerService.getPlayerIdFromPolarisId(polarisId);
         Map<String, String> params = new HashMap<>();
 
         if (playerId.isEmpty()) {
             logger.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
-
-        String paddedPlayerId = playerId.get();
-        if (paddedPlayerId.length() < 18) {
-            paddedPlayerId = String.format("%018d", Long.parseLong(paddedPlayerId));
-        }
-
-        params.put(USER_ID, paddedPlayerId);
+        params.put(USER_ID, playerId);
         return ResponseEntity.ok(polarisProxyService.fetchStatPentagonFromProxy(params));
     }
 }
