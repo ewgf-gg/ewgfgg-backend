@@ -68,7 +68,6 @@ public class PlayerController {
             logger.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
-
         params.put(USER_ID, playerId);
         return ResponseEntity.ok(polarisProxyService.fetchStatPentagonFromProxy(params));
     }
