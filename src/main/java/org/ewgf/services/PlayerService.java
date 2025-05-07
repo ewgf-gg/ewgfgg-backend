@@ -39,7 +39,7 @@ public class PlayerService {
     }
 
     public List<PlayerSearchDTO> searchPlayers(String query) {
-        Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query.trim());
+        Optional<List<Player>> playersOpt = playerRepository.findByNameOrPolarisIdContainingIgnoreCase(query);
 
         return playersOpt.map(players -> players.stream()
                 .map(this::convertToSearchDTO)
