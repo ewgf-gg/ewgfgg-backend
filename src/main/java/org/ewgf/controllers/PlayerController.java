@@ -29,8 +29,9 @@ public class PlayerController {
     }
 
     @GetMapping("/{polarisId}")
-    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String polarisId, HttpServletRequest request) {
+    public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String polarisId, HttpServletRequest request) throws Exception {
         logger.info("Received request for Player: {} from IP: {}", polarisId, request.getRemoteAddr());
+
         PlayerDTO playerDTO = playerService.getPlayerStats(polarisId);
         if (playerDTO == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(playerDTO);
@@ -62,12 +63,13 @@ public class PlayerController {
     @GetMapping("/getStatPentagon")
     public ResponseEntity<StatPentagonResponse> getPolarisIdMapping(@RequestParam String polarisId) throws Exception {
         String playerId = playerService.getPlayerIdFromPolarisId(polarisId);
-        Map<String, String> params = new HashMap<>();
 
         if (playerId == null || playerId.isEmpty()) {
             logger.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
+
+        Map<String, String> params = new HashMap<>();
         params.put(USER_ID, playerId);
         return ResponseEntity.ok(polarisProxyService.fetchStatPentagonFromProxy(params));
     }

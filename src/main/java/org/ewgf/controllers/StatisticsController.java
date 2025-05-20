@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.ewgf.response.CombinedLeaderboardResponse;
+import org.ewgf.services.PolarisProxyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,13 +22,16 @@ import java.util.*;
 public class StatisticsController {
     private final TekkenStatsSummaryRepository tekkenStatsSummaryRepository;
     private final StatisticsService statisticsService;
+    private final PolarisProxyService polarisProxyService;
 
     public StatisticsController(
             TekkenStatsSummaryRepository tekkenStatsSummaryRepository,
-            StatisticsService statisticsService)
+            StatisticsService statisticsService,
+            PolarisProxyService polarisProxyService)
     {
         this.tekkenStatsSummaryRepository = tekkenStatsSummaryRepository;
         this.statisticsService = statisticsService;
+        this.polarisProxyService = polarisProxyService;
     }
 
     @GetMapping("/stats-summary")
@@ -93,6 +98,13 @@ public class StatisticsController {
         log.debug("Fetching all character winrate changes");
         Map<String, List<RankWinrateChangesDTO>> groupedChanges = statisticsService.getAllWinrateChanges();
         return ResponseEntity.ok(groupedChanges);
+    }
+
+    @GetMapping("/leaderboards")
+    public ResponseEntity<CombinedLeaderboardResponse> getLeaderboards(HttpServletRequest request) throws Exception  {
+        log.info("Received leaderboard Request from {}", request.getRemoteAddr());
+        Map<String,String> params = new HashMap<>();
+        return ResponseEntity.ok(polarisProxyService.fetchLeaderboardFromProxy(params));
     }
 
     private TekkenStatsSummaryDTO convertToDTO(TekkenStatsSummary tekkenStatsSummary) {
