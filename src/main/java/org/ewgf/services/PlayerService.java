@@ -1,5 +1,6 @@
 package org.ewgf.services;
 
+import org.apache.coyote.BadRequestException;
 import org.ewgf.dtos.*;
 import org.ewgf.models.*;
 import org.ewgf.repositories.BattleRepository;
@@ -28,7 +29,14 @@ public class PlayerService {
         this.battleRepository = battleRepository;
     }
 
-    public PlayerDTO getPlayerStats(String polarisId) {
+    public PlayerDTO getPlayerStats(String polarisId) throws Exception {
+        if (polarisId == null ) throw new BadRequestException("Invalid Polaris Id");
+        polarisId = polarisId.trim();
+
+        if (polarisId.isEmpty() || polarisId.length() > MAX_POLARIS_LENGTH || !polarisId.matches("^[A-Za-z0-9]+$")) {
+            throw new BadRequestException("Invalid Polaris Id");
+        }
+
         Optional<Player> playerStats = playerRepository.findByPolarisId(polarisId);
         if (playerStats.isEmpty()) return null;
 

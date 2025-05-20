@@ -94,7 +94,8 @@ rabbitmq:
 
 polaris:
   api:
-    baseUrl: http://localhost:8081
+    baseUrl: ${PROXY_SERVICE_URL:http://localhost:8081}
+    basePath: ${PROXY_BASE_PATH:/path}
 
 security:
   cors:
