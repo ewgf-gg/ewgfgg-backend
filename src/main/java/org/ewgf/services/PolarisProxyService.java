@@ -13,7 +13,9 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.util.Map;
 
-import static org.ewgf.utils.Constants.*;
+import static org.ewgf.utils.Constants.ERROR_CODE_429_MESSAGE;
+import static org.ewgf.utils.Constants.GET_PROFILE;
+import static org.ewgf.utils.Constants.GET_LEADERBOARD_DATA;
 
 @Slf4j
 @Service
