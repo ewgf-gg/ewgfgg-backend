@@ -7,9 +7,8 @@ This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/)
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
 
 
-## Current Production Architecture (as of 04/21/2025)
-![Tekken Diagrams(4)](https://github.com/user-attachments/assets/57a17184-5dfa-4ca6-bfda-8b9b3d2081c0)
-
+## Current Production Architecture (as of 05/23/2025)
+![Tekken Diagrams](https://github.com/user-attachments/assets/2ab31c7e-5af6-4d7f-ab43-c0065afaf44f)
 
 
 
@@ -64,12 +63,20 @@ Discovered limitations with JPA for high-throughput operations:
 
 ## Changelog
 
-### April 2024
-- **04/21/2024**: Finally added support for unranked battles! The website now stores Player, Group, and Quick matches. These will be excluded from ranked analysis.  
+### May 2025:
+- **05/02/2025**: Finally added the stat pentagon!!!
+- **05/07/2025**: Added a limit to the amount of search results returned from /playerSearch endpoint. This was causing the server to run out of ram and crash. (How'd i miss this?)
+- **05/20/2025**: Added ingame leaderboard support! 
 
-### March 2024
-- **03/29/2024**: Huge refactor on `WavuService.java`, as well as added the recently active players feature!
-- **03/18/2024**: Website has been running successfully for a few months now! Though there were some speedbumps along the way:
+### April 2025
+- **04/21/2025**: Finally added support for unranked battles! The website now stores Player, Group, and Quick matches. These will be excluded from ranked analysis.
+- **04/22/2025**: Fixed a hidden bug that was causing character stats to be double counted. This was a particularly hidden and annoying bug but thank god its squashed
+- **04/28/2025**: General housecleaning/refactoring. Removed the area-id parameter as it was no longer needed.
+- **04/30/2025**: Began compressing all data that is sent to the frontend (how was this not already a thing?) 
+
+### March 2025
+- **03/29/2025**: Huge refactor on `WavuService.java`, as well as added the recently active players feature!
+- **03/18/2025**: Website has been running successfully for a few months now! Though there were some speedbumps along the way:
   - There were race conditions still occuring in the character_stats table. This only occurs during the initial preload (as that is when the database is under the heaviest load), so I added a revalidator that will manually recalculate all character stats until I could implement a more permanent solution.
   - Fixed a bug with the fetching of battles. Prior to this, the fetching logic was allowing a small window of time to go unaccounted for.
   - Cleaned up some of the codebase and created some static utils classes.
