@@ -20,7 +20,7 @@ import static org.ewgf.utils.Constants.USER_ID;
 @RequestMapping("/player-stats")
 public class PlayerController {
     private final PlayerService playerService;
-    private static final Logger logger = LoggerFactory.getLogger(PlayerController.class);
+    private static final Logger log = LoggerFactory.getLogger(PlayerController.class);
     private final PolarisProxyService polarisProxyService;
 
     public PlayerController(PlayerService playerService, PolarisProxyService polarisProxyService) {
@@ -30,20 +30,20 @@ public class PlayerController {
 
     @GetMapping("/{polarisId}")
     public ResponseEntity<PlayerDTO> getPlayerStats(@PathVariable String polarisId, HttpServletRequest request) throws Exception {
-        logger.info("Received request for Player: {} from IP: {}", polarisId, request.getRemoteAddr());
-
+        long requestStartTime = System.currentTimeMillis();
         PlayerDTO playerDTO = playerService.getPlayerStats(polarisId);
         if (playerDTO == null) return ResponseEntity.notFound().build();
+        log.info("Requested player {} completed in {} ms", polarisId, System.currentTimeMillis() - requestStartTime);
         return ResponseEntity.ok(playerDTO);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<PlayerSearchDTO>> searchPlayers(@RequestParam String query) {
         if (query == null || query.trim().isBlank() || query.trim().length() >= 20) {
-            logger.warn("Invalid search query: {}", query);
+            log.warn("Invalid search query: {}", query);
             return ResponseEntity.badRequest().build();
         }
-        logger.info("Received search query: {}", query);
+        log.info("Received search query: {}", query);
         List<PlayerSearchDTO> projections = playerService.searchPlayers(query.trim());
         return ResponseEntity.ok(projections);
     }
@@ -65,7 +65,7 @@ public class PlayerController {
         String playerId = playerService.getPlayerIdFromPolarisId(polarisId);
 
         if (playerId == null || playerId.isEmpty()) {
-            logger.warn("No player found for polaris id: {}", polarisId);
+            log.warn("No player found for polaris id: {}", polarisId);
             return ResponseEntity.notFound().build();
         }
 
