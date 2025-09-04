@@ -20,7 +20,9 @@ public interface BattleRepository extends JpaRepository<Battle, String> {
             nativeQuery = true)
     Optional<Battle> findNewestRankedBattle();
 
-    @Query(value = "SELECT * FROM battles WHERE player1_id = :playerId OR player2_id = :playerId " +
+    @Query(value = "SELECT * FROM battles WHERE " +
+            "(player1_id = :playerId OR player1_id = LPAD(:playerId, 18, '0')) OR " +
+            "(player2_id = :playerId OR player2_id = LPAD(:playerId, 18, '0')) " +
             "ORDER BY battles.battle_at DESC",
             nativeQuery = true)
     Optional<List<Battle>> findAllBattlesByPlayer(@Param("playerId") String playerId);
