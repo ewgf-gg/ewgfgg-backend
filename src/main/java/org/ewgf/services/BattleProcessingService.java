@@ -66,14 +66,14 @@ public class BattleProcessingService {
     private void executePlayerUpdateOperations(Map<String, Player> updatedPlayers, Integer insertedRankedBattles, Integer insertedUnrankedBattles) {
         executePlayerBulkOperations(updatedPlayers);
         executeCharacterStatsBulkOperations(updatedPlayers);
-        if (insertedRankedBattles> 0) updateRankedBattleCount(insertedRankedBattles);
+        if (insertedRankedBattles > 0) updateRankedBattleCount(insertedRankedBattles);
         if (insertedUnrankedBattles > 0) updateUnrankedBattleCount(insertedUnrankedBattles);
     }
 
     private void processBattlesAndPlayers(
             List<Battle> battles,
             HashMap<String, Player> updatedPlayers) {
-        if(battles.isEmpty()) {
+        if (battles.isEmpty()) {
             logger.warn("Battle batch was empty, Skipping player updates.");
             return;
         }
@@ -81,29 +81,30 @@ public class BattleProcessingService {
 
 
         for (Battle battle : battles) {
+            if (battle.getBattleType() != RANKED_BATTLE) continue;
 
-                if(battle.getBattleType() != RANKED_BATTLE) continue;
-
-                // Process Player 1
-                String player1Id = getPlayerUserIdFromBattle(battle, 1);
-                Player player1 = updatedPlayers.get(player1Id);
-                if (player1 == null) {
-                    player1 = new Player();
-                    setPlayerStatsWithBattle(player1, battle, 1);
-                    updatedPlayers.put(player1Id, player1);
-                }
-                setCharacterStatsWithBattle(player1, battle, 1);
-
-                // Process Player 2
-                String player2Id = getPlayerUserIdFromBattle(battle, 2);
-                Player player2 = updatedPlayers.get(player2Id);
-                if (player2 == null) {
-                    player2 = new Player();
-                    setPlayerStatsWithBattle(player2, battle, 2);
-                    updatedPlayers.put(player2Id, player2);
-                }
-                setCharacterStatsWithBattle(player2, battle, 2);
+            // Process Player 1
+            String player1Id = getPlayerUserIdFromBattle(battle, 1);
+            player1Id = padPlayerIdToEighteen(player1Id); // restore original id, since ranked battles have player_ids truncated
+            Player player1 = updatedPlayers.get(player1Id);
+            if (player1 == null) {
+                player1 = new Player();
+                setPlayerStatsWithBattle(player1, battle, 1);
+                updatedPlayers.put(player1Id, player1);
             }
+            setCharacterStatsWithBattle(player1, battle, 1);
+
+            // Process Player 2
+            String player2Id = getPlayerUserIdFromBattle(battle, 2);
+            player2Id = padPlayerIdToEighteen(player2Id);
+            Player player2 = updatedPlayers.get(player2Id);
+            if (player2 == null) {
+                player2 = new Player();
+                setPlayerStatsWithBattle(player2, battle, 2);
+                updatedPlayers.put(player2Id, player2);
+            }
+            setCharacterStatsWithBattle(player2, battle, 2);
+        }
 
         logger.info("Updated player and battle information: {} ms", (System.currentTimeMillis() - startTime));
     }
@@ -131,8 +132,7 @@ public class BattleProcessingService {
 
             logger.info("All Battles inserted successfully: {} ms", (System.currentTimeMillis() - startTime));
             return inserted;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("BATTLE INSERTION FAILED: {} ", e.getMessage());
             throw e;
         }
@@ -210,9 +210,8 @@ public class BattleProcessingService {
                     return ids; // Spring returns this to the caller
                 });
     }
-    
-    public void executePlayerBulkOperations(Map<String, Player> updatedPlayersMap)
-    {
+
+    public void executePlayerBulkOperations(Map<String, Player> updatedPlayersMap) {
 
         if (updatedPlayersMap.isEmpty()) {
             logger.debug("Updated Player Set is empty! (Battle batch already existed in database)");
@@ -319,8 +318,7 @@ public class BattleProcessingService {
         if (battle.getWinner() == playerNumber) {
             stats.setWinsIncrement(stats.getWinsIncrement() + 1);
             stats.setWins(stats.getWins() + 1);
-        }
-        else {
+        } else {
             stats.setLossIncrement(stats.getLossIncrement() + 1);
             stats.setLosses(stats.getLosses() + 1);
         }
@@ -360,9 +358,8 @@ public class BattleProcessingService {
         player.setLatestBattle(battle.getBattleAt());
     }
 
-    private void tryPublishEvent(Set<Integer> gameVersions)
-    {
-        if(gameVersions.isEmpty()) return;
+    private void tryPublishEvent(Set<Integer> gameVersions) {
+        if (gameVersions.isEmpty()) return;
         long currentTime = System.currentTimeMillis();
         long lastPublishTime = lastEventPublishTime.get();
 
@@ -387,8 +384,7 @@ public class BattleProcessingService {
                 lastEventPublishTime.set(currentTime);
                 logger.debug("Published statistics computation event");
             }
-        }
-        finally {
+        } finally {
             isPublishing.set(false);
         }
     }
@@ -509,6 +505,15 @@ public class BattleProcessingService {
             throws SQLException {
         if (val == null) ps.setNull(idx, Types.INTEGER);
         else ps.setInt(idx, val);
+    }
+
+    private String padPlayerIdToEighteen(String playerId) {
+        if (playerId == null) {
+            return null;
+        }
+
+        // Pad with leading zeros to ensure 18 characters
+        return String.format("%018d", Long.parseLong(playerId));
     }
 }
 
