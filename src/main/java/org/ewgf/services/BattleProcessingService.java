@@ -83,9 +83,12 @@ public class BattleProcessingService {
         for (Battle battle : battles) {
             if (battle.getBattleType() != RANKED_BATTLE) continue;
 
+            // restore original id, since ranked battles might have player_ids truncated
+            battle.setPlayer1UserId(padPlayerIdToEighteen(battle.getPlayer1UserId()));
+            battle.setPlayer2UserId(padPlayerIdToEighteen(battle.getPlayer2UserId()));
+
             // Process Player 1
             String player1Id = getPlayerUserIdFromBattle(battle, 1);
-            player1Id = padPlayerIdToEighteen(player1Id); // restore original id, since ranked battles have player_ids truncated
             Player player1 = updatedPlayers.get(player1Id);
             if (player1 == null) {
                 player1 = new Player();
@@ -96,7 +99,7 @@ public class BattleProcessingService {
 
             // Process Player 2
             String player2Id = getPlayerUserIdFromBattle(battle, 2);
-            player2Id = padPlayerIdToEighteen(player2Id);
+
             Player player2 = updatedPlayers.get(player2Id);
             if (player2 == null) {
                 player2 = new Player();
@@ -508,13 +511,14 @@ public class BattleProcessingService {
     }
 
     private String padPlayerIdToEighteen(String playerId) {
-        if (playerId == null) {
-            return null;
+        if (playerId == null || playerId.length() >= 18) {
+            return playerId;
         }
 
-        // Pad with leading zeros to ensure 18 characters
-        return String.format("%018d", Long.parseLong(playerId));
+        // Pad with leading zeros to reach 18 characters
+        return "0".repeat(18 - playerId.length()) + playerId;
     }
+
 }
 
 
