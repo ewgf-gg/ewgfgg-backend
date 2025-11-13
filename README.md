@@ -1,7 +1,11 @@
 
 # EWGF.GG - Tekken 8 Statistics Website (Backend)
+## ⚠️ Repository Archived ⚠️
 
-This repository contains the backend service for [ewgf.gg](https://www.ewgf.gg/), a website dedicated to collecting, analyzing, and serving Tekken 8 replay data. The service integrates the official Tekken servers and the Wavu Wank API as its primary data sources.
+As of October 16th, 2025, this repository has been archived and is now read-only. **EWGF.GG will continue operating as a closed-source project.**  The website isn't going anywhere, and development will continue! Thank you for your understanding :) 
+
+##
+This repository contains the legacy version of the backend service for [ewgf.gg](https://www.ewgf.gg/), a website dedicated to collecting, analyzing, and serving Tekken 8 replay data. The service integrates the official Tekken servers and the Wavu Wank API as its primary data sources.
 
 ## Technologies used
 ![java](https://github.com/user-attachments/assets/b199be0a-1d89-404b-8ba8-c1f2bf399a99) ![spring-boot](https://github.com/user-attachments/assets/4b94f768-a3bf-4faa-8fc8-c05b2e324b0e) ![postgresql(1)](https://github.com/user-attachments/assets/5d1fd3f9-742e-42ef-bfc5-42ed60954938) ![docker(1)](https://github.com/user-attachments/assets/141d79d6-38e9-426d-9c52-1e464da5eddb) ![rabbitmq(2)](https://github.com/user-attachments/assets/3fa507a4-2fc9-4d80-accd-5dad79a3e774)
